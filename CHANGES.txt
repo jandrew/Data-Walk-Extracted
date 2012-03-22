@@ -1,5 +1,0 @@
-Revision history for Data-Walk-Extracted
-
-v0.03_01  2012-02-10 16:07:16 America/Los_Angeles
-
-Initial Release

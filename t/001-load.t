@@ -1,13 +1,17 @@
 #! C:/Perl/bin/perl
 ### Test that the module loads
 
-use Test::More tests => 1;
+use Test::Most;
 
-use lib 'lib';##Change for Scite vs non Scite testing
-BEGIN { 
-    use_ok( 
-        'Data::Walk::Extracted'
-    ); 
-}
+use lib '../lib', 'lib';
+
+my  @modules = ( 
+        'Data::Walk::Extracted v0.05',
+        'Data::Walk::Print v0.05',
+        'Data::Walk::Prune v0.01',
+    );
+
+map{ use_ok( $_ ) } @modules;
+done_testing;
 
 

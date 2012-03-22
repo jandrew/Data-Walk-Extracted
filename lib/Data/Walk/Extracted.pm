@@ -2,11 +2,11 @@ package Data::Walk::Extracted;
 
 use Modern::Perl;
 use Moose;
-use version; our $VERSION = qv('0.03_01');
+use version; our $VERSION = qv('0.05_01');
 use Carp;
-#~ use Smart::Comments '###';#, '####'
+use Smart::Comments -ENV;
+$| = 1;
 ### Smart-Comments turned on for Data-Walk-Extracted
-
 use MooseX::Types::Moose qw(
         ArrayRef
         HashRef
@@ -15,175 +15,319 @@ use MooseX::Types::Moose qw(
         RegexpRef
         ClassName
         RoleName
+        Ref
         Str
         Int
+        Bool
     );
+use Moose::Util qw( apply_all_roles with_traits );# 
+
+my $walk_the_data_keys = {
+    primary_ref     => 1,#Required
+    secondary_ref   => 0,#Optional
+    branch_ref      => 0,#Don't generally use
+};
+
+#Add type here and then Search on ARRAY or HASH and is_ArrayRef 
+# or is_HashRef to find locations to update
+my $supported_types = {######<------------------------------------------------------  ADD New types here
+    'HASH'          => 'is_HashRef',
+    'ARRAY'         => 'is_ArrayRef',
+    'TERMINATOR'    => 'is_Str',
+    'END'           => undef,
+};
 
 ###############  Public Attributes  ####################################
+
+for my $type ( keys %$supported_types ){
+    my $sort_attribute = 'sort_' . $type;
+    has $sort_attribute =>(
+        is      => 'ro',
+        isa     => Bool,#TODO Add other sort type support
+        default => 0,
+    );
+    my $skip_attribute = 'skip_' . $type . '_ref';
+    has $skip_attribute =>(
+        is      => 'rw',
+        isa     => Bool,
+        default => 0,
+    );
+}
 
 ###############  Public Methods  #######################################
 
 sub walk_the_data{#Used to scrub high level input
     ### <where> - Made it to walk_the_data
-    #### <where> - Passed input  : @_
+    ##### <where> - Passed input  : @_
     my  $self = $_[0];
-    my  $passedref = ( @_ == 2 and is_HashRef( $_[1] ) ) ? $_[1] : { @_[1 .. $#_] } ;
-    ### <where> - Passed hashref: $passedref
-    my ( $level, $branchref ) = ();
-    if( is_HashRef( $passedref->{primary_ref} ) or
-        is_ArrayRef( $passedref->{primary_ref} ) ){
-        #### <where> - primary_ref passed from user
-    }else{
-        croak "No primary hash or array reference passed to evaluate";
-    }
-    if( exists $passedref->{secondary_ref} ){
-        #### <where> - secondary_ref passed from user
-        if( is_HashRef( $passedref->{secondary_ref} ) or
-            is_ArrayRef( $passedref->{secondary_ref} ) ){
-            #### <where> - secondary_ref can be processed
-            $passedref->{_has_secondary} = 1;
-        }else{
-            croak "The passed secondary_ref cannot be processesed - " . __PACKAGE__ .
-            " does not handle " . (ref  $passedref->{secondary_ref}) . " refs";
-        }
-    }else{
-        $passedref->{_has_secondary} = 0;
-    }
-    if( is_Object( $passedref->{object} ) ){
-        #### <where> - object passed from user
-    }else{
-        require Data::Walk::Extracted::Print;
-        $passedref->{object} = Data::Walk::Extracted::Print->new();
-        carp "No action object passed to -" . __PACKAGE__ . 
-            "- so -" . (ref $passedref->{object}) . "- will be used";
-    }
-    $passedref->{level} = ( is_Int( $passedref->{level} ) ) ? 
-        is_Int( $passedref->{level} ) : 0 ;
-    $passedref->{branchref} = [];
-    ### <where> - Current dataref   : $passedref->{dataref}
-    ### <where> - Current object    : $passedref->{object}
-    ### <where> - Current level     : $passedref->{level}
-    ### <where> - Initial branch    : $passedref->{branchref}
-    $passedref->{object} = $self->_walk_the_data( $passedref );
-    
-    return $passedref->{object};
+    my  $passed_ref = ( @_ == 2 and is_HashRef( $_[1] ) ) ? $_[1] : { @_[1 .. $#_] } ;
+    ##### <where> - Passed hashref: $passed_ref
+    $self->_has_required_inputs( $passed_ref );
+    $self->_test_inputs( $passed_ref );
+    $self->_has_secondary( exists $passed_ref->{secondary_ref} );
+    ##### <where> - Start recursive passing with  : $passed_ref
+    $passed_ref = $self->_walk_the_data( $passed_ref );
+    delete $passed_ref->{branch_ref};
+    ### <where> - End recursive passing with    : $passed_ref
+    return $passed_ref;
 }
 
 ###############  Private Attributes  ###################################
 
+has '_had_secondary' =>(
+    is      => 'ro',
+    isa     => Bool,
+    writer  => '_has_secondary',
+    default => 0,
+);
+
 ###############  Private Methods / Modifiers  ##########################
 
 sub _walk_the_data{
-    my( $self, $passedref ) = @_;
+    my( $self, $passed_ref ) = @_;
     ### <where> - Made it to _walk_the_data
-    ### <where> - Passed input  : $passedref
-    if( $passedref->{object}->can( 'before_method' ) ){
-        #### <where> - object has before_method
-        my  $newref = $passedref->{object}->before_method( $passedref );
-        if( $newref ){
-            ### <where> - successfully passed before_method
-            $passedref = $newref;
-        }else{
-            return $passedref->{object};
+    ##### <where> - Passed input  : $passed_ref
+    
+    if( $self->can( 'before_method' ) ){
+        ### <where> - role has a before_method
+        $passed_ref = $self->before_method( $passed_ref );
+        ### <where> - completed before_method
+        #### <where> - the current passed ref is: $passed_ref
+        if( !$passed_ref or exists $passed_ref->{bounce} ){
+            ### <where> - returning to the previous level without parsing this node!
+            delete $passed_ref->{bounce};
+            return $passed_ref;
         }
+    }else{
+        ### <where> - No before_method found
     }
+    
     ### <where> - determine what is next
-    my  $nextlevel = $passedref->{level} + 1;
-    my  $newpassedref = {
-            level   => $nextlevel,
-            object  => $passedref->{object},
+    my  $ref_type   = $self->_will_parse_next_ref( $passed_ref );
+    my  $list_ref;
+    if( $ref_type ){
+        @$list_ref =######<------------------------------------------------------  ADD New types here
+            ( $ref_type eq 'ARRAY' ) ?
+                @{$passed_ref->{primary_ref}} :
+            ( $ref_type eq 'HASH' ) ?
+                ( keys %{$passed_ref->{primary_ref}} ) :
+            ( $ref_type eq 'TERMINATOR' ) ?
+                ( $passed_ref->{primary_ref} ) :
+                () ;
+        my  $sort_attribute = 'sort_' . $ref_type;
+        ### <where> - Sort attribute: $sort_attribute
+        ### <where> - Sort setting  : $self->$sort_attribute
+        if( $ref_type and $self->$sort_attribute eq 1 ){
+            @$list_ref = sort @$list_ref;
+            if( $ref_type eq 'ARRAY' ){
+                $passed_ref->{primary_ref} = [ sort @{$passed_ref->{primary_ref}} ];
+                if( exists $passed_ref->{secondary_ref} ){
+                    $passed_ref->{secondary_ref} = 
+                        [ sort @{$passed_ref->{secondary_ref}} ];
+                }
+            }
+        }elsif( $ref_type and $self->$sort_attribute ){###################   UNTESTED !!!! ######
+            @$list_ref = sort { $self->$sort_attribute } @$list_ref;
+            if( $ref_type eq 'ARRAY' ){
+                $passed_ref->{primary_ref} =
+                    [ sort { $self->$sort_attribute } @{$passed_ref->{primary_ref}} ];
+                if( exists $passed_ref->{secondary_ref} ){
+                    $passed_ref->{secondary_ref} = 
+                        [ sort { $self->$sort_attribute } @{$passed_ref->{secondary_ref}} ];
+                }
+            }
+        }
+        my  $new_passed_ref = {
+            branch_ref  => $passed_ref->{branch_ref},
         };
-    #~ my  $secondary_match = 1;#Innocent until proven guilty
-    if( is_ArrayRef( $passedref->{primary_ref} ) ){
-        ### <where> - found ArrayRef at level : $nextlevel
-        my $x = 0;
-        #~ $secondary_match = ( 
-            #~ exists $passedref->{secondary_ref} and
-            #~ is_ArrayRef( $passedref->{secondary_ref} ) 
-        #~ ) ? 1 : 0 ;
-        for my $item ( @{$passedref->{primary_ref}} ){
-            ### <where> - Proceccing array position : $x
-            #### <where> - Processing array item     : $item
-            ### <where> - Checking for secondary ref match
-            if( exists $passedref->{secondary_ref} and
-                is_ArrayRef( $passedref->{secondary_ref} ) and
-                $#{$passedref->{secondary_ref}} >= $x           ){
-                ### <where> - found an equivalent position in the secondary_ref at: $x
-                $newpassedref->{secondary_ref} = $passedref->{secondary_ref}->[$x];
-            }else{
-                ### <where> - the currently researched array position doesn't exist in the secondary_ref
-                #~ $secondary_match = 0;
-            }
-            push @{$newpassedref->{branchref}}, [ 'array_position', $x];
-            $newpassedref->{primary_ref} = $passedref->{primary_ref}->[$x++];
-            $newpassedref->{_has_secondary} = $passedref->{_has_secondary};
-            #### <where> - Passing the data: $newpassedref
-            $passedref->{object} = $self->_walk_the_data( $newpassedref );
-        }
-        ### <where> - returned from array_position parsing
-    }elsif( is_HashRef( $passedref->{primary_ref} ) ){
-        ### <where> - found HashRef at level : $nextlevel
-        #~ $newpassedref->{type} = 'HashRef';
-        #~ $secondary_match = ( 
-            #~ exists $passedref->{secondary_ref} and
-            #~ is_HashRef( $passedref->{secondary_ref} ) 
-        #~ ) ? 1 : 0 ;
-        for my $key ( keys %{$passedref->{primary_ref}} ){
-            ### <where> - Processing hashref key: $key
-            ### <where> - Checking for secondary ref match
-            if( exists $passedref->{secondary_ref} and
-                is_HashRef( $passedref->{secondary_ref} ) and
-                exists $passedref->{secondary_ref}->{$key} ){
-                ### <where> - found match in the secondary_ref for: $key
-                $newpassedref->{secondary_ref} = $passedref->{secondary_ref}->{$key};
-            }else{
-                ### <where> - the currently researched hash key doesn't exist in the secondary_ref
-                #~ $secondary_match = 0;
-            }
-            push @{$newpassedref->{branchref}}, [ 'hash_key', $key ];
-            $newpassedref->{primary_ref} = $passedref->{primary_ref}->{$key};
-            $newpassedref->{_has_secondary} = $passedref->{_has_secondary};
-            #### <where> - Passing the data: $newpassedref
-            $passedref->{object} = $self->_walk_the_data( $newpassedref );
-        }
-        ### <where> - returned from hashkey parsing
-    }elsif( is_CodeRef( $passedref->{primary_ref} ) ){
-        croak "Unmanaged datatype -CodeRef- found at level -$nextlevel-";
-    }elsif( is_Object( $passedref->{primary_ref} ) ){
-        croak "Unmanaged datatype -Object- found at level -$nextlevel-";
-    }elsif( is_RegexpRef( $passedref->{primary_ref} ) ){
-        croak "Unmanaged datatype -Regexpref- found at level -$nextlevel-";
-    }elsif( is_ClassName( $passedref->{primary_ref} ) ){
-        croak "Unmanaged value type -ClassName- found at level -$nextlevel-";
-    }elsif( is_RoleName( $passedref->{primary_ref} ) ){
-        croak "Unmanaged value type -RoleName- found at level -$nextlevel-";
-    }elsif( is_Str( $passedref->{primary_ref} ) ){
-        ### <where> - found Str at level : $nextlevel
-        ### <where> - this is a base state and any value handling should be in the after_method!
-        if( exists $passedref->{secondary_ref} ){
-            if( $passedref->{primary_ref} eq $passedref->{secondary_ref} ){
-                ### <where> - match found as string level for: $passedref->{primary_ref}
-            }else{
-                ### <where> - NO match found as string level for: $passedref->{primary_ref}
-                delete $passedref->{secondary_ref};
-            }
-        }
-    }else{
-        croak "Unmanaged datatype -" . (ref $passedref->{primary_ref}) . 
-                "- found at level -$nextlevel-";
+        $passed_ref = $self->_cycle_the_list( $ref_type, $list_ref, $passed_ref, $new_passed_ref );
     }
-    ### <where> - testing possible action of after_method
-    ### <where> - using passedref: $passedref
-    if( $passedref->{object}->can( 'after_method' ) ){
-        ### <where> - object has an after_method
-        $passedref->{object} = $passedref->{object}->after_method( $passedref );
-        ### <where> - returned from after_method
+    
+    if( $self->can( 'after_method' ) ){
+        ### <where> - role has an after_method
+        $passed_ref = $self->after_method( $passed_ref );
+        #### <where> - returned from after_method: $passed_ref
     }else{
-        ### <where> - no action for next level  : $nextlevel
-        ### <where> - and Type                  : $newpassedref->{type}
+        ### <where> - No after_method found
     }
-    return $passedref->{object};
+    #### <where> - returning passedref: $passed_ref
+    return $passed_ref;
 }
+
+sub _will_parse_next_ref{
+    my ( $self, $passed_ref ) = @_;
+    ### <where> - Made it to _will_parse_next_ref
+    ##### <where> - Passed ref              : $passed_ref
+    my  $ref_type = $self->_extracted_ref_type( $passed_ref->{primary_ref} );
+    my  $skip_attribute = 'skip_' . $ref_type . '_ref';
+    my  $skip_ref       = $self->$skip_attribute;
+    ### <where> - The current ref type is   : $ref_type
+    ### <where> - Skip attribute is         : $skip_attribute
+    ### <where> - Skip attribute method call: $self->$skip_attribute
+    ### <where> - Skip ref status is        : $skip_ref
+    if( $skip_ref ){# or $ref_type eq 'TERMINATOR'
+        ### <where> - returning skip -0-
+        return 0;
+    }elsif( exists $supported_types->{$ref_type} and
+            $supported_types->{$ref_type}           ){
+        ### <where> - returning: $ref_type
+        return $ref_type;
+    }else{
+        croak "The passed reference type -$ref_type- cannot (yet) be processed by " . __PACKAGE__;
+    }
+}
+
+sub _cycle_the_list{
+    my ( $self, $ref_type, $list_ref, $passed_ref, $new_passed_ref ) = @_;#
+    ### <where> - Made it to _cycle_the_list
+    ##### <where> - ref type    : $ref_type
+    ##### <where> - ref list    : $list_ref
+    ##### <where> - Passed ref  : $passed_ref
+    ##### <where> - New ref     : $new_passed_ref
+    for my $x ( 0..$#$list_ref ){
+        my  $item = (   $ref_type eq 'HASH' or
+                        $ref_type eq 'TERMINATOR' ) ?######<------------------------------------------------------  ADD New types here
+            $list_ref->[$x] : '' ;
+        ### <where> - Processing position   : $x
+        ### <where> - Processing item       : $item
+        $new_passed_ref->{primary_ref} =######<------------------------------------------------------  ADD New types here
+            ( $ref_type eq 'ARRAY' ) ?
+                $list_ref->[$x] :
+            ( $ref_type eq 'HASH' ) ?
+                $passed_ref->{primary_ref}->{$item} : undef ;
+        push @{$new_passed_ref->{branch_ref}}, [ 
+            $ref_type, 
+            $item, 
+            $x,
+            ((exists $passed_ref->{branch_ref} and @{$passed_ref->{branch_ref}}) ?
+                ($passed_ref->{branch_ref}->[-1]->[3] + 1) : 1),
+        ];
+        ### <where> - Checking for secondary ref match
+        if( $self->_had_secondary and $self->_secondary_ref_match( $passed_ref, $new_passed_ref ) ){
+            $new_passed_ref->{secondary_ref} =######<------------------------------------------------------  ADD New types here
+            ( $ref_type eq 'ARRAY' ) ?
+                $passed_ref->{secondary_ref}->[$x] :
+            ( $ref_type eq 'HASH' ) ?
+                $passed_ref->{secondary_ref}->{$item} :
+                undef ;
+        }else{
+            delete $new_passed_ref->{secondary_ref};
+        }
+        ##### <where> - Passing the data: $new_passed_ref
+        my $alternative_passed_ref = $self->_walk_the_data( $new_passed_ref );
+        pop @{$new_passed_ref->{branch_ref}};
+        ### <where> - pass any data reference adjustments upward
+        #### <where> - current position is: $x
+        #### <where> - the returned ref is: $alternative_passed_ref
+        if( $ref_type eq 'ARRAY' ){######<------------------------------------------------------  ADD New types here
+            $passed_ref->{primary_ref}->[$x] = $alternative_passed_ref->{primary_ref};
+            if( exists $alternative_passed_ref->{secondary_ref} ){
+                $passed_ref->{secondary_ref}->[$x] = $alternative_passed_ref->{secondary_ref};
+            }
+        }elsif( $ref_type eq 'HASH' ){
+            $passed_ref->{primary_ref}->{$item} = $alternative_passed_ref->{primary_ref};
+            if( exists $alternative_passed_ref->{secondary_ref} ){
+                $passed_ref->{secondary_ref}->{$item} = $alternative_passed_ref->{secondary_ref};
+            }
+        }
+        #### <where> - current passed_ref: $passed_ref
+        $x++;
+    }
+    return $passed_ref;
+}
+
+sub _has_required_inputs{
+    my ( $self, $passed_ref ) = @_;
+    ### <where> - Made it to _has_required_inputs
+    ##### <where> - Passed ref    : $passed_ref
+    for my $key ( keys %$walk_the_data_keys ){
+        if( $walk_the_data_keys->{$key} ){
+            ### <where> - A value is required for: $key
+            if( $passed_ref->{$key} ){
+                ### <where> - Required value exists for: $key
+            }else{
+                croak "The key -$key- is a required value and cannot be undefined";
+            }
+        }
+    }
+    return 1;
+}
+
+sub _test_inputs{
+    my ( $self, $passed_ref ) = @_;
+    ### <where> - Made it to _test_inputs
+    ##### <where> - Passed ref    : $passed_ref
+    for my $key ( keys %$passed_ref ){
+        ### <where> - Testing key: $key
+        if( exists $walk_the_data_keys->{$key} ){
+            ### <where> - Acceptable passed key: $key
+        }else{
+            croak "The passed key -$key- is not supported by " . __PACKAGE__;
+        }
+    }
+}
+
+sub _extracted_ref_type{
+    my ( $self, $passed_ref ) = @_;
+    ### <where> - made it to _extracted_ref_type
+    ##### <where> - the passed ref is: $passed_ref
+    my  $response =
+            ( !( defined $passed_ref ) ) ?
+                'END' :
+            is_Ref( $passed_ref ) ?
+                ref $passed_ref : 
+                'TERMINATOR' ;
+    ### <where> - returning: $response
+    return $response;
+}
+    
+
+sub _secondary_ref_match{
+    my ( $self, $main_ref, $new_ref ) = @_;
+    ### <where> - made it to _secondary_ref_match
+    ##### <where> - the main ref is    : $main_ref
+    ### <where> - the current test is: $new_ref->{branch_ref}->[-1]
+    my $result = 0;
+    if( exists $main_ref->{secondary_ref} ){######<------------------------------------------------------  ADD New types here
+        if( $new_ref->{branch_ref}->[-1]->[0] eq 'ARRAY' and
+            is_ArrayRef( $main_ref->{secondary_ref} ) and
+            $#{$main_ref->{secondary_ref}} >= $new_ref->{branch_ref}->[-1]->[2] ){
+            ### <where> - found an equivalent position in the secondary_ref at: $new_ref->{branch_ref}->[-1]->[2]
+            $result = 1;
+        }elsif( $new_ref->{branch_ref}->[-1]->[0] eq 'HASH' and
+                is_HashRef( $main_ref->{secondary_ref} ) and
+                exists $main_ref->{secondary_ref}->{$new_ref->{branch_ref}->[-1]->[1]} ){
+            ### <where> - found an equivalent position in the secondary_ref at: $new_ref->{branch_ref}->[-1]->[2]
+            $result = 1;
+        }elsif( $new_ref->{branch_ref}->[-1]->[0] eq 'TERMINATOR' and
+                $main_ref->{primary_ref} eq $main_ref->{secondary_ref} ){
+            ### <where> - found an equivalent position in the secondary_ref at: $new_ref->{branch_ref}->[-1]->[2]
+            $result = 1;
+        }else{
+            ### <where> - No match found in the secondary_ref
+        }
+    }else{
+        ### <where> - No secondary_ref exists
+    }
+    return $result;
+}
+
+sub BUILD{
+    my ( $self, $args ) = @_;
+    ###  <where> - Reached BUILD - (to check for 'before_method' or 'after_method')
+    ###  <where> - passed: $args
+    my  $meta = $self->meta;
+    my  $new_object;
+    ##### <where> - Old meta object   : $meta
+    if( !$meta->has_method( 'before_method' ) and !$meta->has_method( 'after_method' ) ){
+        carp "The composed class passed to 'new' does not have either a 'before_method' or an 'after_method' the Role 'Data::Walk::Print' will be added";
+        $new_object = apply_all_roles( $self, ( 'Data::Walk::Print' ) );
+    }
+    ### <where> - New object        : $new_object
+    ##### <where> - New meta object   : $meta
+    $self->skip_END_ref( 1 );
+}
+    
 
 #################### Phinish with a Phlourish ##########################
 
@@ -206,8 +350,10 @@ Data::Walk::Extracted - An extracted dataref walker
     #! C:/Perl/bin/perl
     use Modern::Perl;
     use YAML::Any;
-    use Data::Walk::Extracted v0.03;
-    use Data::Walk::Extracted::Print v0.03;#Only required if explicitly called
+    use Moose::Util qw( with_traits );
+    use lib '../lib';
+    use Data::Walk::Extracted v0.05;
+    use Data::Walk::Print v0.05;
     
     $| = 1;
 
@@ -247,44 +393,49 @@ Data::Walk::Extracted - An extracted dataref walker
                         - bavalue1
                         - bavalue3'
     );
-    Data::Walk::Extracted->walk_the_data(
+    # Apply the role
+    my $newclass = with_traits( 'Data::Walk::Extracted', ( 'Data::Walk::Print' ) );
+    # Use the combined class to build an instance
+    my $AT_ST = $newclass->new(
+            match_highlighting => 1,#This is the default
+            sort_HASH => 1,#To force order for demo purposes
+    );
+    # Walk the data with the Data walker
+    $AT_ST->walk_the_data(
         primary_ref     =>  $firstref,
         secondary_ref   =>  $secondref,
-        #\/This is the default and does not need to be called(but will warn that the default is being used)
-        object          =>  Data::Walk::Extracted::Default::Print->new(
-                                #\/This is the default and can be turned off(#<-- messages)
-                                match_highlighting => 1,
-                            ),
     );
     
     #######################################
     #     Output of SYNOPSIS
-    # 01:   Parsing => {#<--no match
-    # 02: 	    HashRef => {#<--no match
-    # 03: 		    LOGGER => {#<--no match
-    # 04: 			    run => 'INFO',#<--no match
-    # 05: 		    },
-    # 06:       },
-    # 07:   },
-    # 08:   Someotherkey => 'value',#<--matches secondary_ref
-    # 09:   Helping => [<--matches secondary_ref
-    # 10: 	    'Somelevel',<--matches secondary_ref
-    # 11:	    {<--matches secondary_ref
-    # 12:		    MyKey => {<--matches secondary_ref
-    # 13:			    MiddleKey => {<--matches secondary_ref
-    # 14:				    LowerKey2 => {<--matches secondary_ref
-    # 15:   					BottomKey1 => '12345',<--no match
-    # 16:   					BottomKey2 => [<--matches secondary_ref
-    # 17:   						 'bavalue1',<--matches secondary_ref
-    # 18:   						 'bavalue2',<--no match
-    # 19:   						 'bavalue3',<--no match
-    # 20:   					],
-    # 21:   				},
-    # 22:   				LowerKey1 => 'lvalue1',<--matches secondary_ref
-    # 23:   			},
-    # 24:		},
-    # 25:	},
-    # 26:],
+    # 01:{#<--- Ref Type Match
+    # 02:	Helping => [#<--- Secondary Key Match - Ref Type Match
+    # 03:		'Somelevel',#<--- Secondary Position Exists - Secondary Value Matches
+    # 04:		{#<--- Secondary Position Exists - Ref Type Match
+    # 05:			MyKey => {#<--- Secondary Key Match - Ref Type Match
+    # 06:				MiddleKey => {#<--- Secondary Key Match - Ref Type Match
+    # 07:					LowerKey1 => 'lvalue1',#<--- Secondary Key Match - Secondary Value Matches
+    # 08:					LowerKey2 => {#<--- Secondary Key Match - Ref Type Match
+    # 09:						BottomKey1 => '12345',#<--- Secondary Key Match - Secondary Value Does NOT Match
+    # 10:						BottomKey2 => [#<--- Secondary Key Match - Ref Type Match
+    # 11:							'bavalue1',#<--- Secondary Position Exists - Secondary Value Matches
+    # 12:							'bavalue2',#<--- Secondary Position Exists - Secondary Value Does NOT Match
+    # 13:							'bavalue3',#<--- Secondary Position Does NOT Exist - Secondary Value Does NOT Match
+    # 14:						],
+    # 15:					},
+    # 16:				},
+    # 17:			},
+    # 18:		},
+    # 19:	],
+    # 20:	Parsing => {#<--- Secondary Key Mismatch - Ref Type Mismatch
+    # 21:		HashRef => {#<--- Secondary Key Mismatch - Ref Type Mismatch
+    # 22:			LOGGER => {#<--- Secondary Key Mismatch - Ref Type Mismatch
+    # 23:				run => 'INFO',#<--- Secondary Key Mismatch - Secondary Value Does NOT Match
+    # 24:			},
+    # 25:		},
+    # 26:	},
+    # 27:	Someotherkey => 'value',#<--- Secondary Key Match - Secondary Value Matches
+    # 28:},
     #######################################
 
     
@@ -292,32 +443,41 @@ Data::Walk::Extracted - An extracted dataref walker
 
 This module takes a data reference (or two) and recursivly travels through it(them).  
 Where the two references diverge the walker follows the primary data reference.
-At the beginning and end of each branching node the code will attempt to call a method 
-on a passed object instance with data from the current location of the node.  
-This module is largely useless without that additional functionality provided by the 
-object instance.  If no instance is provided the module has a default that will 
-print the perlish version of the data stucture as it goes through.  Both 
-L<Data::Dumper> Dump and L<YAML> Dump functions are more mature than the default 
-Data::Walk Printing function included here.
+At the beginning and end of each node the code will attempt to call a 
+L<method|/Extending Data::Walk::Extracted> using data from the current location of 
+the node.
 
-The module uses L<Carp> to carp and croak so the variable $Carp::Verbose can be set 
-for debugging.  There are no attributes used to maintain data in this module so each
-recursive level creates its own view of itself.  B<Beware> Recursive parsing is not a 
-good fit for all data since very deep data structures will burn a fair amount of perl 
-memory!  Meaning that as the module recursively parses through the levels perl leaves
-behind snapshots of the previous level that allow perl to keep track of it's location.
+B<Beware> Recursive parsing is not a good fit for all data since very deep data 
+structures will burn a fair amount of perl memory!  Meaning that as the module 
+recursively parses through the levels perl leaves behind snapshots of the previous 
+level that allow perl to keep track of it's location.
 
 This is an implementation of the concept of extracted data walking from 
-L<Higher-Order-Perl|http://hop.perl.plover.com/book/> Chapter 1 by Mark Jason Dominus.  
-I<The book is well worth the money!>  With that said this is object oriented 
-code not functional code and is both written in L<Moose> and the code expects an 
-object instance (does not have to be a Moose class) to be available at the appropriate 
-places for action.  The MJD equivalent is written in the functional style and expects 
-a passed CodeRef at the action points.  There is clearly some overhead associated with 
-both L<Moose> and the object oriented style choices.  Those choices are intentional on 
-my side and should not be attributed to MJD.  
+L<Higher-Order-Perl|http://hop.perl.plover.com/book/> Chapter 1 by 
+L<Mark Jason Dominus|https://metacpan.org/author/MJD>.  I<The book is well worth the 
+money!>  With that said I diverged from MJD purity in two ways. This is object oriented 
+code not functional code and moreover it is written in L<Moose>. :) Second, the code uses 
+methods L<that are not included|/Extending Data::Walk::Extracted> in the class, to provide 
+add-on functionality at the appropriate places for action.  The MJD equivalent expects to 
+use a passed CodeRef at the action points.  There is clearly some overhead associated with 
+both of these differences.  I made those choices consciously and if that upsets you 
+L<do not hassle MJD|/AUTHOR>!
 
-=head2 v0.03
+=head2 Default Functionality
+
+This module is does not do anything by itself but walk the data structure.
+Because I want the code to do something every time I call it a new instance will 
+append a default set of functionality L</Data::Walk::Print> during BUILD using 
+'apply_all_roles' from L<Moose::Util>.  See L</Extending Data::Walk::Extracted> for 
+more details of extending this data walker.
+
+L<Data::Walk::Print> will print a perlish version of the primary data stucture as 
+it walks through.  If a second data set is provided and the correct flag is set it 
+will add a comment string with matching information.  Both L<Data::Dumper> Dump and 
+L<YAML> Dump functions are more mature than the default Data::Walk::Print function 
+included here.
+
+=head2 v0.05
 
 =over
 
@@ -330,56 +490,171 @@ All fixed functionality will be defined by the test suit.
 =item B<Included> ArrayRefs and HashRefs are supported data walker nodes.  Strings and Numbers 
 are all currently treated as base states.
 
-=item B<Excluded> Objects and CodeRefs are not currently handled and may cause the code to croak.
+=item B<Excluded> Objects and CodeRefs are not currently handled.  The should cause the code 
+to croak if the module encounters them (not tested).  See L</TODO>
 
 =back
 
-=head1 Use
+=head1 Extending Data::Walk::Extracted
 
-This is an object oriented L<Moose> module and generally behaves that way.  
-It uses the built-in Moose constructor (new).
+All action taken during the data walking must be initiated by implementation of two possible 
+methods. The B<before_method> and the B<after_method>.  The methods are not provided by the 
+base L<Data::Walk::Extracted> class.  They can be added with a 
+L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> or by L<extending the 
+class|https://metacpan.org/module/Moose::Manual::Classes>.  
+
+=over
+
+=item B<How to add methods using a Role?>
+
+One way to incorporate a role into this class and then use it is the method 'with_traits' 
+from L<Moose::Util>. B<Warning> When the Data::Walk::Extracted class is used to create a new 
+instance it will check (using L<Moose|https://metacpan.org/module/Moose::Manual::Construction> 
+BUILD) if the instance can( 'before_method' ) or can( 'after_method' ).  If neither method is 
+available the  L<Default Role|/Data::Walk::Print> will be added to the instance using L<Moose::Util> 
+'apply_all_roles' and then 'carp' a warning.
+
+=item B<what are the minimum requriements for use?>
+
+The role must provide one of either a B<before_method> or an B<after_method>.
+
+=item B<How does the class interact with these methods?>
+
+At each node the  class calls $passed_ref = $self->before_method( $passed_ref ) before 
+parsing the node and $passed_ref = $self->after_method( $passed_ref ) after parsing the 
+node when available.  Both methods can either return a (possibly modified) $passed_ref 
+or undef.  If either method returns undef, then undef is immediatly passed back up to 
+the previous layer.  I<So if the before_method returns undef the data walker also skips 
+parsing the node or attempting the 'after_method'.>
+
+=item B<what does the $passed_ref contain?>
+
+Every time the extracted walker calls a method it will pass a master data ref specific 
+to that layer.  L<See below|/Third> for more details.
+
+=back
 
 =head1 Attributes
 
-There are no attributes. L<currently|/TODO>
+Data passed to ->new when creating an instance.  For modification of these attributes 
+see L</Methods>.  The ->new function will either accept fat comma lists or a complete 
+hash ref that has the possible appenders as the top keys.
+
+=head3 sort_HASH 
+
+=over
+
+=item B<Definition:> This attribute is set to L<sort|http://perldoc.perl.org/functions/sort.html> 
+(or not) Hash Ref keys prior to walking the Hash Ref node.
+
+=item B<Default> 0 (No sort)
+
+=item B<Range> Boolean values. See L</TODO> for future direction.
+    
+=back
+
+=head3 sort_ARRAY
+
+=over
+
+=item B<Definition:> This attribute is set to L<sort|http://perldoc.perl.org/functions/sort.html> 
+(or not) Array values prior to walking the Array Ref node.  B<Warning> this will permanantly sort 
+the actual data in the passed ref permanently.  If a secondary ref also exists it will be sorted 
+as well!
+
+=item B<Default> 0 (No sort)
+
+=item B<Range> Boolean values. See L</TODO> for future direction.
+
+=back
+
+=head3 skip_HASH_ref
+
+=over
+
+=item B<Definition:> This attribute is set to skip (or not) the processing of HASH Ref nodes.
+
+=item B<Default> 0 (Don't skip)
+
+=item B<Range> Boolean values.
+
+=back
+
+=head3 skip_ARRAY_ref
+
+=over
+
+=item B<Definition:> This attribute is set to skip (or not) the processing of ARRAY Ref nodes.
+
+=item B<Default> 0 (Don't skip)
+
+=item B<Range> Boolean values.
+
+=back
+
+=head3 skip_TERMINATOR_ref
+
+=over
+
+=item B<Definition:> This attribute is set to skip (or not) the processing of TERMINATOR's 
+of ref branches.
+
+=item B<Default> 0 (Don't skip)
+
+=item B<Range> Boolean values.
+
+=back
 
 =head1 Methods
 
 =head2 walk_the_data( %args )
 
 This method is used to build a data reference that will recursivly parse the target 
-data reference.  Effectivly it takes the passed reference(s) and an object instance used 
-for node actions and bundles them with some Hansel and Gretel type programming crumbs.
-This includes an attribute that remembers if a secondary_ref was initially passed to the
-data walker.  The data walker then walks the data structure vertically using the following steps;
+data reference.  Effectivly it takes the passed reference(s) and walks vertically down 
+each data branch.  At each node it calls a 'before_method' and an 'after_method' if 
+available.  The detailed sequence is listed below.
 
 =over
 
-=item B<First> L</before_method> is called on the passed action object instance if available.  
-If the object method returns nothing the program returns back up the tree.  Otherwise the result
-of the before_method is used to replace the passed ref recieved at this level of the recursion.
+=item B<First> The class checks for an available 'before_method'.  If available 
+$passed_ref = $self->before_method( $passed_ref ) is called.  If the new $passed_ref 
+contains the key $passed_ref->{bounce} or is undef the program deletes the key 'bounce' 
+from the $passed_ref (as needed) and then returns $passed_ref back up the tree.  I<Do 
+not pass 'Go' do not collect $200.>  Otherwise $passed_ref is sent on to the node parser.  
+If the $passed_ref is modified by the 'before_method' then the node parser will parse 
+the new ref and not the old one. 
 
-=item B<Second> It determines what type of node is next.
+=item B<Second> It determines what reference type the node is at the current level.  
+Strings and Numbers are considered 'TERMINATOR' types and are handled as single element 
+nodes.  Then, any listing available for elements of that node is created and if the list 
+L<should be sorted|/sort_HASH> then the list is sorted. If the current node is 
+'undef' this is considered a 'base state' and the code skips to the L</Fifth> step.
 
-=item B<Third> - B<If> a branching node is found then the branches are identified, I<go to 
-L</Fourth>> B<else> I<goto L</Sixth>>
+=item B<Third - building the $passed_ref> For each element of the node a new dataset is built.  
+The dataset consists of a L</primary_ref>, a L</secondary_ref> and a L</branch_ref>.  The primary_ref 
+contains only the portion of the dataset that exists below the selected element of that node.  
+The secondary_ref is only constructed if it has a matching element at that node with the 
+primary_ref.  Node matching for hashrefs is done by string compares of the key only.  Node 
+matching for arrayrefs is done by testing if the secondary_ref has the same array position 
+available as the primary_ref.  I<No position content compare is done!>   The secondary_ref 
+would then be built like the primary_ref.  The branch_ref will contain an array ref of array 
+refs.  Each of the top array positions represents a previously traveled node on the current 
+branch.  The lower array ref will have four positions which describe the the element taken 
+for that branch.  The values in each position are; 0-ref type, 1-hash key name or '', 
+2-element sequence position (from 0), and 3-level of the node (from 1).  The branch_ref 
+arrays are effectivly the linear (vertical) breadcrumbs that show how the parser got to that 
+point.  Past completed branches and future pending branches are not shown.  The new dataset 
+is then passed to the recursive (private) subroutine to be parsed in the same manner 
+(I<L</First>>).
 
-=item B<Fourth> the next branch is chosen, the Hansel and Gretel breadcrumbs are 
-built for the node choice and a new set of %args are built with a pared down dataref of data 
-only found below that node choice.  If the secondary_ref has the same node then a pared down 
-secondary_ref is also prepared.  Node matching for hashrefs is done by string compares of the
-key only.  Node matching for arrayrefs is done by testing if the secondary_ref has the same array 
-position as the primary_ref.  I<No position content compare is done!> The %newargs are 
-then passed to the recursive (private) subroutine to be parsed in the same manner.  
+=item B<Fourth> When the values are returned from the recursion call the returned value(s) 
+is(are) used to replace the pased primary_ref and secondary_ref values in the current 
+$passed_ref.
 
-=item B<Fifth> When the values are returned from the recursion call the node is checked 
-for more branches. B<If> more branches are available I<go to L</Fourth>> B<else> I<go to L</Sixth>>
+=item B<Fifth> - $passed_ref = $self->after_method( $passed_ref ) is called on the instance
+if available.  
 
-=item B<Sixth> - L</after_method>  is called on the passed action object instance if available.  If 
-the next level is a string or number it must be handled here.  The after_method is expected to 
-always return the action object instance.
-
-=item B<Seventh> the action object instance is passed back up to the next level.
+=item B<Seventh> the $passed_ref is passed back up to the next level.  (with changes)
 
 =back
 
@@ -387,93 +662,53 @@ always return the action object instance.
 
 arguments are accepted in either a hash or hashref style.
 
-=over
-
-=item B<key> 'primary_ref'
-
-=item B<value> - mandatory
+=head4 primary_ref
 
 =over
 
-=item B<accepts> a multilevel dataref
+=item B<accepts> a multilevel dataref - B<Mandatory>
 
 =item B<range> HashRefs or ArrayRefs with string or number terminators
 
 =back
 
-=back
+=head4 secondary_ref
 
 =over
 
-=item B<key> 'secondary_ref'
-
-=item B<value> - optional
-
-=over
-
-=item B<accepts> a multilevel dataref
+=item B<accepts> a multilevel dataref - B<Optional>
 
 =item B<range> HashRefs or ArrayRefs with string or number terminators
 
 =back
 
-=back
-
-=over
-
-=item B<key> 'object'
-
-=item B<value> - optional - highly suggested
-
-=over
-
-=item B<default> If no object is sent the module will "require" 
-L<Data::Walk::Extracted::Print> and then pass it to the walker with the data ref.  In 
-general this shouldn't be a problem since it ships in the same package as this module.  
-See the module for specific behaviour.
-
-=item B<accepts> an object instance.  This object instance will be used to do the 
-real work of the module.  This module will attempt to use two object methods from that 
-instance, L</before_method> and L</after_method>.  In general the before_method and after_method 
-are expected to receive and return a data reference from this module that includes 
-everything listed above.
-
-=item B<range> the object instance is only useful if it has at least one of two methods 
-L</before_method> or L</after_method>.  The object instance can be a Moose class but it is not required.
-
-=back
-
-=back
-
-=over
-
-=item B<key> 'level'
-
-=item B<value> - optional - discouraged
-
-=over
-
-=item B<default> 0 (the inital passed dataref is said to be at level 0)
-
-=item B<accepts> an integer, I<beware of messing with this default>
-
-=back
-
-=back
-
-=over
-
-=item B<key> 'branchref'
-
-=item B<value> - optional - discouraged
+=head4 branch_ref
 
 =over
 
 =item B<default> []
 
-=item B<accepts> an Array of Arrays, I<beware of messing with this default>
+=item B<accepts> an Array of Arrays, - B<Optional - discouraged>
+
+I<beware of messing with this since the module uses this for traceability>
 
 =back
+
+=head1 GLOBAL VARIABLES
+
+=over
+
+=item B<$ENV{Smart_Comments}>
+
+The module uses L<Smart::Comments> with the '-ENV' option so setting the variable 
+$ENV{Smart_Comments} will turn on smart comment reporting.  There are three levels 
+of 'Smartness' called in this module '### #### #####'.  See the L<Smart::Comments> 
+documentation for more information.
+
+=item B<$Carp::Verbose>
+
+The module uses L<Carp> to warn(carp) and die(croak) so the variable $Carp::Verbose 
+can be set for more detailed debugging.  
 
 =back
 
@@ -481,7 +716,7 @@ L</before_method> or L</after_method>.  The object instance can be a Moose class
 
 =over
 
-=item L<github|https://github.com/jandrewlund>
+=item L<Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
 
 =back
 
@@ -489,11 +724,12 @@ L</before_method> or L</after_method>.  The object instance can be a Moose class
 
 =over
 
-=item Use attributes as traffic flags with the current behavior preserved as default
-
 =item Support recursion through CodeRefs
 
 =item Support recursion through Objects
+
+=item Allow the sort_XXX attributes to recieve a 
+L<sort|http://perldoc.perl.org/functions/sort.html> subroutine
 
 =back
 
@@ -537,15 +773,15 @@ LICENSE file included with this module.
 
 =item L<MooseX::Types::Moose>
 
-=item L<Data::Walk::Extracted::Print> - or other action object
+=item L<Smart::Comments> -ENV option set
+
+=item L<Data::Walk::Print> - or other action object
 
 =back
 
 =head1 SEE ALSO
 
 =over
-
-=item L<Smart::Comments> - Commented out but built into the module
 
 =item L<Data::Walk>
 

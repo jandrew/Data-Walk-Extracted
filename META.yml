@@ -1,0 +1,27 @@
+---
+abstract: "An extracted dataref walker\r"
+author:
+  - 'Jed Lund <jandrew@cpan.org>'
+build_requires:
+  Test::Moose: 0
+  Test::Most: 0
+  YAML::Any: 0
+configure_requires:
+  ExtUtils::MakeMaker: 6.30
+dynamic_config: 0
+generated_by: 'Dist::Zilla version 4.300009, CPAN::Meta::Converter version 2.113640'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: Data-Walk-Extracted
+requires:
+  Carp: 0
+  Modern::Perl: 0
+  Moose: 0
+  Moose::Role: 0
+  Moose::Util: 0
+  MooseX::Types::Moose: 0
+  Smart::Comments: 0
+  version: 0
+version: v0.05_01

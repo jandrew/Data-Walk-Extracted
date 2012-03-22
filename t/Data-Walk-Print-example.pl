@@ -1,9 +1,10 @@
 #! C:/Perl/bin/perl
 use Modern::Perl;
 use YAML::Any;
+use Moose::Util qw( with_traits );
 use lib '../lib';
-use Data::Walk::Extracted v0.03;
-use Data::Walk::Extracted::Print v0.03;#Only required if explicitly called
+use Data::Walk::Extracted v0.05;
+use Data::Walk::Print v0.05;#Only required if explicitly called
 
 $| = 1;
 
@@ -43,12 +44,12 @@ my  $secondref = Load(
                     - bavalue1
                     - bavalue3'
 );
-Data::Walk::Extracted->walk_the_data(
+my $newclass = with_traits( 'Data::Walk::Extracted', ( 'Data::Walk::Print' ) );
+my $AT_ST = $newclass->new(
+        match_highlighting => 1,#This is the default
+        sort_HASH => 1,#To force order for demo purposes
+);
+$AT_ST->walk_the_data(
     primary_ref     =>  $firstref,
     secondary_ref   =>  $secondref,
-    #\/This is the default and does not need to be called(but will warn that the default is being used)
-    object          =>  Data::Walk::Extracted::Default::Print->new(
-                            #\/This is the default and can be turned off(#<-- messages)
-                            match_highlighting => 1,
-                        ),
 );

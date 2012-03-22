@@ -1,0 +1,16 @@
+Changes
+LICENSE
+MANIFEST
+META.json
+META.yml
+Makefile.PL
+README
+dist.ini
+lib/Data/Walk/Extracted.pm
+lib/Data/Walk/Print.pm
+lib/Data/Walk/Prune.pm
+t/001-load.t
+t/002-Data-Walk-Extracted.t
+t/003-Data-Walk-Prune.t
+t/Data-Walk-Print-example.pl
+t/Data-Walk-Prune-example.pl

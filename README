@@ -5,10 +5,10 @@ on a passed object instance with data from the current location of the node.
 This module is largely useless without that additional functionality provided by the 
 object instance.  If no instance is provided the module has a default that will 
 print the perlish version of the data stucture as it goes through.  Both 
-L<Data::Dumper> Dump and L<YAML> Dump functions are more mature than the default 
+Data::Dumper - Dump and YAML - Dump functions are more mature than the default 
 Data::Walk Printing function included here.
 
-The module uses L<Carp> to carp and croak so the variable $Carp::Verbose can be set 
+The module uses Carp to carp and croak so the variable $Carp::Verbose can be set 
 for debugging.  There are no attributes used to maintain data in this module so each
 recursive level creates its own view of itself.  B<Beware> Recursive parsing is not a 
 good fit for all data since very deep data structures will burn a fair amount of perl 
@@ -16,8 +16,8 @@ memory!  Meaning that as the module recursively parses through the levels perl l
 behind snapshots of the previous level that allow perl to keep track of it's location.
 
 This is an implementation of the concept of extracted data walking from 
-L<Higher-Order-Perl|http://hop.perl.plover.com/book/> Chapter 1 by Mark Jason Dominus.  
-I<The book is well worth the money!>  With that said this is object oriented 
+<A href="http://hop.perl.plover.com/book/">Higher-Order-Perl</A> Chapter 1 by Mark 
+Jason Dominus.  The book is well worth the money!  With that said this is object oriented 
 code not functional code and is both written in L<Moose> and the code expects an 
 object instance (does not have to be a Moose class) to be available at the appropriate 
 places for action.  The MJD equivalent is written in the functional style and expects 
@@ -47,9 +47,3 @@ Install from Source - (for example git)
 
 	>make clean
 	(use the windows make version as appropriate (nmake?))dir
-
-Build with cpanp L<https://metacpan.org/module/cpanp>
-
-download .tar.gz file
-
-cpanp i file:///{$dir_to_file}/{$filename}.tar.gz [--force] [--verbose]
