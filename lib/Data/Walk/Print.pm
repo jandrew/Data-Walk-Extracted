@@ -9,7 +9,7 @@ use MooseX::Types::Moose qw(
         Ref
     );######<------------------------------------------------------  ADD New types here
 use Carp;
-use version; our $VERSION = qv('0.05_01');
+use version; our $VERSION = qv('0.05.01');
 $| = 1;
 use Smart::Comments -ENV;
 requires '_has_secondary';

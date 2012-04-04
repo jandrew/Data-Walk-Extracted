@@ -2,7 +2,7 @@ package Data::Walk::Extracted;
 
 use Modern::Perl;
 use Moose;
-use version; our $VERSION = qv('0.05_01');
+use version; our $VERSION = qv('0.05_05');
 use Carp;
 use Smart::Comments -ENV;
 $| = 1;

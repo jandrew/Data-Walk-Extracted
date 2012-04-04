@@ -1,25 +1,15 @@
 #! C:/Perl/bin/perl
 #######  Test File for Data::Walk::Extracted  #######
-BEGIN{
-    # Comment out to turn off debug printing
-    #~ $ENV{Smart_Comments} = '###';# #### #####
-}
-
 use Modern::Perl;
 
 use Test::Most;
 use Test::Moose;
-use YAML::Any;
 use Moose::Util qw( with_traits );
 use lib '../lib', 'lib';
-use Smart::Comments -ENV;
-$| = 1;
-$Carp::Verbose = 1;
-### <where> - Smart-Comments turned on for Data-Walk-Extracted.t
 use Data::Walk::Extracted v0.05;
 use Data::Walk::Prune v0.01;
 
-my  ( $wait, $newclass, $edward_scissorhands, $firstref, $secondref, $topiary );
+my  ( $wait, $newclass, $edward_scissorhands, $treeref, $sliceref, $answerref );
 
 my  @methods = qw(
         new
@@ -44,100 +34,141 @@ map can_ok( $edward_scissorhands, $_ ), @methods;
 
 #Run the hard questions
 lives_ok{   
-    $firstref = Load(
-        '---
-        Someotherkey:
-            value
-        Parsing:
-            HashRef:
-                LOGGER:
-                    run: INFO
-        Helping:
-            - Somelevel
-            - MyKey:
-                MiddleKey:
-                    LowerKey1: lvalue1
-                    LowerKey2:
-                        BottomKey1: bvalue1
-                        BottomKey2: bvalue2'
-    );
-    $secondref = Load(
-        '---
-        Parsing:
-            Logger:
-                LOGGER:
-                    run: INFO'
-    );
-}                                                       'Build two HashRefs for testing';
+    $treeref = {
+        Someotherkey    => 'value',
+        Parsing         =>{
+            HashRef =>{
+                LOGGER =>{
+                    run => 'INFO',
+                },
+            },
+        },
+        Helping =>[
+            'Somelevel',
+            {
+                MyKey =>{
+                    MiddleKey =>{
+                        LowerKey1 => 'lvalue1',
+                        LowerKey2 => {
+                            BottomKey1 => 'bvalue1',
+                            BottomKey2 => 'bvalue2',
+                        },
+                    },
+                },
+            },
+        ],
+    };
+}                                                       'Build the $treeref for testing';
+lives_ok{   
+    $answerref =  {
+        Parsing         =>{
+            HashRef =>{
+                LOGGER =>{
+                    run => 'INFO',
+                },
+            },
+        },
+        Helping =>[
+            'Somelevel',
+            {
+                MyKey =>{
+                    MiddleKey =>{
+                        LowerKey1 => 'lvalue1',
+                        LowerKey2 => {
+                            BottomKey1 => 'bvalue1',
+                            BottomKey2 => 'bvalue2',
+                        },
+                    },
+                },
+            },
+        ],
+    };
+}                                                       'Build the $answerref for testing';
 is_deeply(  $edward_scissorhands->prune(
                 slice_ref => { Someotherkey => {} }, 
-                tree_ref  => $firstref,
+                tree_ref  => $treeref,
             ),
-            Load(
-                '---
-                Parsing:
-                    HashRef:
-                        LOGGER:
-                            run: INFO
-                Helping:
-                    - Somelevel
-                    - MyKey:
-                        MiddleKey:
-                            LowerKey1: lvalue1
-                            LowerKey2:
-                                BottomKey1: bvalue1
-                                BottomKey2: bvalue2'
-            ),                                          'Test pruning a top level key' );
+            $answerref,                                 'Test pruning a top level key' );
+lives_ok{   
+    $sliceref =  {
+        Helping =>[
+            '',
+            {
+                MyKey =>{
+                    MiddleKey =>{
+                        LowerKey2 => {},
+                    },
+                },
+            },
+        ],
+    };
+}                                                       'build a $sliceref for testing';
+lives_ok{   
+    $answerref =  {
+        Parsing         =>{
+            HashRef =>{
+                LOGGER =>{
+                    run => 'INFO',
+                },
+            },
+        },
+        Helping =>[
+            'Somelevel',
+            {
+                MyKey =>{
+                    MiddleKey =>{
+                        LowerKey1 => 'lvalue1',
+                    },
+                },
+            },
+        ],
+    };
+}                                                       '... change the $answerref for testing';
 is_deeply(  $edward_scissorhands->prune(
-                tree_ref    => $firstref, 
-                slice_ref   => Load(
-                    '---
-                    Helping:
-                    -
-                    - MyKey:
-                        MiddleKey:
-                            LowerKey2:
-                                BottomKey1: {}' 
-                ),
+                tree_ref    => $treeref, 
+                slice_ref   => $sliceref
             ), 
-            Load(
-                '---
-                Parsing:
-                    HashRef:
-                        LOGGER:
-                            run: INFO
-                Helping:
-                    - Somelevel
-                    - MyKey:
-                        MiddleKey:
-                            LowerKey1: lvalue1
-                            LowerKey2:
-                                BottomKey2: bvalue2'
-            ),                                          'Test pruning a low level key (through an arrayref level)' );
+            $answerref,
+                                                        'Test pruning a low level key (through an arrayref level)' );
 ok( $edward_scissorhands->change_splice_behavior( 1 ),  'Turn on splice removal of array elements');
+lives_ok{   
+    $sliceref =  {
+        Helping =>[
+            'Somelevel',
+            {
+                MyKey =>{
+                    MiddleKey =>{
+                        LowerKey1 => [],
+                    },
+                },
+            },
+        ],
+    };
+}                                                       '... change the $sliceref for testing';
+lives_ok{   
+    $answerref =  {
+        Parsing =>{
+            HashRef =>{
+                LOGGER =>{
+                    run => 'INFO',
+                },
+            },
+        },
+        Helping =>[
+            'Somelevel',
+            {
+                MyKey =>{
+                    MiddleKey =>{
+                    },
+                },
+            },
+        ],
+    };
+}                                                       '... change the $answerref for testing';
 is_deeply(  $edward_scissorhands->prune(
-                tree_ref    => $firstref, 
-                slice_ref   => Load(
-                    '---
-                    Helping:
-                    - Somelevel
-                    - MyKey:
-                        MiddleKey:
-                            LowerKey1: []' 
-                ),
+                tree_ref    => $treeref, 
+                slice_ref   => $sliceref,
             ), 
-            Load(
-                '---
-                Parsing:
-                    HashRef:
-                        LOGGER:
-                            run: INFO
-                Helping:
-                    - Somelevel
-                    - MyKey:
-                        MiddleKey:
-                            LowerKey2:
-                                BottomKey2: bvalue2'
-            ),                                          'Test pruning (by splice) an array element' );
+            $answerref,                                 'Test pruning (by splice) an array element' );
 done_testing;
 say ' Test Done';
