@@ -2,7 +2,7 @@ package Data::Walk::Extracted;
 
 use Modern::Perl;
 use Moose;
-use version; our $VERSION = qv('0.05_05');
+use version; our $VERSION = qv('0.05_07');
 use Carp;
 use Smart::Comments -ENV;
 $| = 1;
@@ -467,7 +467,7 @@ L<do not hassle MJD|/AUTHOR>!
 
 This module is does not do anything by itself but walk the data structure.
 Because I want the code to do something every time I call it a new instance will 
-append a default set of functionality L</Data::Walk::Print> during BUILD using 
+append a default set of functionality L<Data::Walk::Print> during BUILD using 
 'apply_all_roles' from L<Moose::Util>.  See L</Extending Data::Walk::Extracted> for 
 more details of extending this data walker.
 
@@ -511,7 +511,7 @@ One way to incorporate a role into this class and then use it is the method 'wit
 from L<Moose::Util>. B<Warning> When the Data::Walk::Extracted class is used to create a new 
 instance it will check (using L<Moose|https://metacpan.org/module/Moose::Manual::Construction> 
 BUILD) if the instance can( 'before_method' ) or can( 'after_method' ).  If neither method is 
-available the  L<Default Role|/Data::Walk::Print> will be added to the instance using L<Moose::Util> 
+available the  L<Default Role|Data::Walk::Print> will be added to the instance using L<Moose::Util> 
 'apply_all_roles' and then 'carp' a warning.
 
 =item B<what are the minimum requriements for use?>

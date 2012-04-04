@@ -400,6 +400,8 @@ LICENSE file included with this module.
 
 =item L<Data::Walker>
 
+=item L<Data::ModeMerge>
+
 =back
 
 =cut
