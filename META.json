@@ -35,11 +35,12 @@
          "requires" : {
             "Test::Moose" : 0,
             "Test::Most" : 0,
+            "Test::Output" : "v1.1.0",
             "YAML::Any" : 0
          }
       }
    },
    "release_status" : "testing",
-   "version" : "v0.05_01"
+   "version" : "v0.05_05"
 }
 

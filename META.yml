@@ -5,6 +5,7 @@ author:
 build_requires:
   Test::Moose: 0
   Test::Most: 0
+  Test::Output: v1.01
   YAML::Any: 0
 configure_requires:
   ExtUtils::MakeMaker: 6.30
@@ -24,4 +25,4 @@ requires:
   MooseX::Types::Moose: 0
   Smart::Comments: 0
   version: 0
-version: v0.05_01
+version: v0.05_05

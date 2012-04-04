@@ -14,6 +14,7 @@ my %WriteMakefileArgs = (
   "BUILD_REQUIRES" => {
     "Test::Moose" => 0,
     "Test::Most" => 0,
+    "Test::Output" => "v1.01",
     "YAML::Any" => 0
   },
   "CONFIGURE_REQUIRES" => {
@@ -33,7 +34,7 @@ my %WriteMakefileArgs = (
     "Smart::Comments" => 0,
     "version" => 0
   },
-  "VERSION" => "v0.05_01",
+  "VERSION" => "v0.05_05",
   "test" => {
     "TESTS" => "t/*.t"
   }
