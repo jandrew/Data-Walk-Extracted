@@ -1,32 +1,30 @@
 #! C:/Perl/bin/perl
-#######  Test File for Data::Walk::Extracted  #######
+#######  Test File for Data::Walk::Prune  #######
 use Modern::Perl;
 
 use Test::Most;
 use Test::Moose;
 use Moose::Util qw( with_traits );
 use lib '../lib', 'lib';
-use Data::Walk::Extracted v0.05;
-use Data::Walk::Prune v0.01;
+use Data::Walk::Extracted v0.007;
+use Data::Walk::Prune v0.003;
 
 my  ( $wait, $newclass, $edward_scissorhands, $treeref, $sliceref, $answerref );
 
 my  @methods = qw(
         new
-        prune
-        before_method
-        after_method
-        change_splice_behavior
+        prune_data
+        change_array_size_behavior
     );
 
 my  @attributes = qw(
-        splice_arrays
+        change_array_size
     );
     
 # basic questions
 lives_ok{
-    $newclass = with_traits( 'Data::Walk::Extracted', ( 'Data::Walk::Prune' ) );
-    $edward_scissorhands = $newclass->new;
+    $newclass = with_traits( 'Data::Walk::Extracted', ( 'Data::Walk::Prune', ) );
+    $edward_scissorhands = $newclass->new();
 }                                                       "Prep a new Prune instance";
 does_ok( $edward_scissorhands, 'Data::Walk::Prune',     "Check that 'with_traits' added the 'Data::Walk::Prune' Role to the instance");
 map has_attribute_ok( $edward_scissorhands, $_,         "Check that the new instance has the -$_- attribute"), @attributes;
@@ -84,7 +82,7 @@ lives_ok{
         ],
     };
 }                                                       'Build the $answerref for testing';
-is_deeply(  $edward_scissorhands->prune(
+is_deeply(  $edward_scissorhands->prune_data(
                 slice_ref => { Someotherkey => {} }, 
                 tree_ref  => $treeref,
             ),
@@ -124,13 +122,14 @@ lives_ok{
         ],
     };
 }                                                       '... change the $answerref for testing';
-is_deeply(  $edward_scissorhands->prune(
+is_deeply(  $edward_scissorhands->prune_data(
                 tree_ref    => $treeref, 
                 slice_ref   => $sliceref
             ), 
             $answerref,
                                                         'Test pruning a low level key (through an arrayref level)' );
-ok( $edward_scissorhands->change_splice_behavior( 1 ),  'Turn on splice removal of array elements');
+ok( $edward_scissorhands->change_array_size_behavior( 1 ),  
+                                                        'Turn on splice removal of array elements');
 lives_ok{   
     $sliceref =  {
         Helping =>[
@@ -165,7 +164,7 @@ lives_ok{
         ],
     };
 }                                                       '... change the $answerref for testing';
-is_deeply(  $edward_scissorhands->prune(
+is_deeply(  $edward_scissorhands->prune_data(
                 tree_ref    => $treeref, 
                 slice_ref   => $sliceref,
             ), 

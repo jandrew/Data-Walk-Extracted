@@ -1,6 +1,7 @@
 package Data::Walk::Print;
 
 use Moose::Role;
+requires '_has_secondary', '_process_the_data';
 use MooseX::Types::Moose qw(
         HashRef
         ArrayRef
@@ -8,12 +9,15 @@ use MooseX::Types::Moose qw(
         Str
         Ref
     );######<------------------------------------------------------  ADD New types here
-use Carp;
-use version; our $VERSION = qv('0.05.01');
+use version; our $VERSION = qv('0.007_001');
 $| = 1;
 use Smart::Comments -ENV;
-requires '_has_secondary';
 ### Smart-Comments turned on for Data-Walk-Print
+
+my $print_keys = {
+    primary_ref     => 'print_ref',
+    secondary_ref   => 'match_ref',
+};
 
 ###############  Public Attributes  ####################################
 
@@ -26,7 +30,48 @@ has 'match_highlighting' =>(
 
 ###############  Public Methods  #######################################
 
-sub before_method{
+sub print_data{
+    ### <where> - Made it to print
+    ##### <where> - Passed input  : @_
+    my  $self = $_[0];
+    my  $passed_ref = 
+            ( @_ == 2 and 
+                (   ( is_HashRef( $_[1] ) and !( exists $_[1]->{print_ref} ) ) or
+                    !is_HashRef( $_[1] )                                            ) ) ? 
+                { print_ref => $_[1] }  :
+            ( @_ == 2 and is_HashRef( $_[1] ) ) ? 
+                $_[1] : 
+                { @_[1 .. $#_] } ;
+    ##### <where> - Passed hashref: $passed_ref
+    @$passed_ref{ 'before_method', 'after_method' } = 
+        ( '_print_before_method', '_print_after_method' );
+    ##### <where> - Start recursive passing with  : $passed_ref
+    $passed_ref = $self->_process_the_data( $passed_ref, $print_keys );
+    ### <where> - End recursive passing with    : $passed_ref
+    return 1;
+}
+
+###############  Private Attributes  ###################################
+
+has '_pending_string' =>(
+    is          => 'ro',
+    isa         => Str,
+    writer      => '_set_pending_string',
+    clearer     => '_clear_pending_string',
+    predicate   => '_has_pending_string',
+);
+
+has '_match_string' =>(
+    is          => 'ro',
+    isa         => Str,
+    writer      => '_set_match_string',
+    clearer     => '_clear_match_string',
+    predicate   => '_has_match_string',
+);
+
+###############  Private Methods / Modifiers  ##########################
+
+sub _print_before_method{
     my ( $self, $passed_ref ) = @_;
     ### <where> - reached before_method
     #### <where> - received input: $passed_ref
@@ -103,7 +148,7 @@ sub before_method{
     return $passed_ref;
 }
 
-sub after_method{
+sub _print_after_method{
     my ( $self, $passed_ref ) = @_;
     my  $branch_ref = $passed_ref->{branch_ref}->[-1];
     my  $match_string =
@@ -144,26 +189,6 @@ sub after_method{
     return $passed_ref;
 }
 
-###############  Private Attributes  ###################################
-
-has '_pending_string' =>(
-    is          => 'ro',
-    isa         => Str,
-    writer      => '_set_pending_string',
-    clearer     => '_clear_pending_string',
-    predicate   => '_has_pending_string',
-);
-
-has '_match_string' =>(
-    is          => 'ro',
-    isa         => Str,
-    writer      => '_set_match_string',
-    clearer     => '_clear_match_string',
-    predicate   => '_has_match_string',
-);
-
-###############  Private Methods / Modifiers  ##########################
-
 sub _add_to_pending_string{
     my ( $self, $string ) = @_;
     ### <where> - reached add to pending string
@@ -171,7 +196,7 @@ sub _add_to_pending_string{
     $self->_set_pending_string( 
         (($self->_has_pending_string) ?
             $self->_pending_string : '') . 
-        $string
+        ( ( $string ) ? $string : '' )
     );
     return 1;
 }
@@ -218,12 +243,9 @@ Data::Walk::Print - A data printing function
     use Modern::Perl;
     use YAML::Any;
     use Moose::Util qw( with_traits );
-    use lib '../lib';
-    use Data::Walk::Extracted v0.05;
-    use Data::Walk::Print v0.05;
-    
+    use Data::Walk::Extracted v0.007;
+    use Data::Walk::Print v0.007;
     $| = 1;
-
     #Use YAML to compress writing the data ref
     my  $firstref = Load(
         '---
@@ -260,17 +282,14 @@ Data::Walk::Print - A data printing function
                         - bavalue1
                         - bavalue3'
     );
-    # Apply the role
     my $newclass = with_traits( 'Data::Walk::Extracted', ( 'Data::Walk::Print' ) );
-    # Use the combined class to build an instance
     my $AT_ST = $newclass->new(
             match_highlighting => 1,#This is the default
             sort_HASH => 1,#To force order for demo purposes
     );
-    # Walk the data with the Data walker
-    $AT_ST->walk_the_data(
-        primary_ref     =>  $firstref,
-        secondary_ref   =>  $secondref,
+    $AT_ST->print_data(
+        print_ref   =>  $firstref,
+        match_ref   =>  $secondref,
     );
     
     #######################################
@@ -308,15 +327,15 @@ Data::Walk::Print - A data printing function
     
 =head1 DESCRIPTION
 
-This L<Moose::Role> is the default behaviour for L<Data::Walk::Extracted>.  It provides the 
-methods L</before_method> and L</after_method> used by Data::Walk::Extracted.  Both 
+This L<Moose::Role> is mostly written for L<Data::Walk::Extracted>.  Both 
 L<Data::Dumper> - Dump and L<YAML> - Dump functions are more mature than the printing function 
 included here.  This is largely a demonstation module.
 
-If this Role is used with another Module it requires a '_has_secondary' Attribute in the class.  
-This attribute is currently implemented in L<Data::Walk::Extracted>
+If this Role is used with another Module it requires a '_has_secondary' 
+L<Attribute|https://metacpan.org/module/Moose::Manual::Attributes> in the class.  
+This attribute is already implemented in L<Data::Walk::Extracted>
 
-=head2 v0.05
+=head2 v0.007
 
 =over
 
@@ -327,15 +346,16 @@ The goal of future development will be focused on supporting additional branch t
 =item B<Included> ArrayRefs and HashRefs are supported nodes for printing.  Strings and Numbers 
 are all currently treated as base states and printed as strings.
 
-=item B<Excluded> Objects and CodeRefs are not currently handled and may cause the code to croak.
+=item B<Excluded> Objects and CodeRefs are not currently handled and may cause the code to die.
 
 =back
 
-=head1 Use
+=head2 Use
 
-This is an object oriented L<Moose> Role and generally behaves that way.
+One way to incorporate this role into L<Data::Walk::Extracted> and then use it is the method 
+'with_traits' from L<Moose::Util>.  Otherwise see L<Moose::Manual::Roles>.
 
-=head1 Attributes
+=head2 Attributes
 
 Data passed to ->new when creating an instance using a class.  For modification of these attributes 
 see L</Methods>.  The ->new function will either accept fat comma lists or a complete 
@@ -346,13 +366,17 @@ hash ref that has the possible appenders as the top keys.
 =over
 
 =item B<Definition:> this determines if a comments string is added after each printed row that 
-indicates how the primary_ref matches the secondary_ref (or not).
+indicates how the 'print_ref' matches the 'match_ref' (or not).
 
 =item B<Default> True (1)
 
 =item B<Range> This is a Boolean data type and generally accepts 1 or 0
     
 =back
+
+=head3 L<Attributes in Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm#Attributes> 
+
+also affect the output.
 
 =head1 Methods
 
@@ -368,37 +392,50 @@ indicates how the primary_ref matches the secondary_ref (or not).
 
 =back
 
-=head2 before_method( $passed_ref )
+=head2 print_data( $arg_ref|%args )
 
 =over
 
-=item B<Definition:> this performs actions based on the current data state and position 
-of the data walker prior to walking the current node.
+=item B<Definition:> this is the method used to print a data reference
 
-=item B<Accepts:> the standard passed ref defined in L<Data::Walk::Extracted>
+=item B<Accepts:> either a single variable or One or two named arguments
 
-=item B<Returns:> The $passed_ref intact
+=over
+
+=item B<single variable option> - if only one variable is sent and it fails the test 
+for "exists $variable->{print_ref}" then the program will attempt to name it as 
+print_ref => $variable
+
+=item B<named variable options> - if variables are named including one with 'print_ref' 
+then the following two named variables are accepted
+
+=over
+
+=item B<print_ref> - this is the data reference that should be printed in a perlish way 
+- Required
+
+=item B<match_ref> - this is a reference used to compare against the 'print_ref'
+- Optional
 
 =back
 
-=head2 after_method( $passed_ref )
+=back
 
-=over
-
-=item B<Definition:> this performs actions based on the current data state and position 
-of the data walker after walking the current node.
-
-=item B<Accepts:> the standard passed ref defined in L<Data::Walk::Extracted>
-
-=item B<Returns:> The the current instance of this package (not the full $passed_ref)
+=item B<Returns:> 1 (And prints out the data ref with matching assesment comments per 
+L</match_highlighting>)
 
 =back
 
-=head1 BUGS
+=head1 GLOBAL VARIABLES
 
 =over
 
-=item L<Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
+=item B<$ENV{Smart_Comments}>
+
+The module uses L<Smart::Comments> with the '-ENV' option so setting the variable 
+$ENV{Smart_Comments} will turn on smart comment reporting.  There are three levels 
+of 'Smartness' called in this module '### #### #####'.  See the L<Smart::Comments> 
+documentation for more information.
 
 =back
 
@@ -406,25 +443,28 @@ of the data walker after walking the current node.
 
 =over
 
-=item Support printing CodeRefs
+=item * Support printing CodeRefs
 
-=item Support printing Objects / Instances
+=item * Support printing Objects / Instances
+
+=item * possibly adding an attribute, setter_method, and after method to allow printing 
+output from other roles when they exit.  This falls in the "I'm not sure it's a good 
+idea yet" catagory.
 
 =back
+
 
 =head1 SUPPORT
 
 =over
 
-=item jandrew@cpan.org
+=item L<Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
 
 =back
 
 =head1 AUTHOR
 
 =over
-
-=item Jed Lund
 
 =item jandrew@cpan.org
 

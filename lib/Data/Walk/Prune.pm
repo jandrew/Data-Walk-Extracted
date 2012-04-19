@@ -12,47 +12,58 @@ use MooseX::Types::Moose qw(
         Item
     );######<------------------------------------------------------  ADD New types here
 use Carp;
-use version; our $VERSION = qv('0.01_01');
+use version; our $VERSION = qv('0.003_003');
 use Smart::Comments -ENV;
 $| = 1;
-### Smart-Comments turned on for Data-Walk-Pruning
+### Smart-Comments turned on for Data-Walk-Prune
 
 my $prune_keys = {
-    slice_ref   => 'primary_ref',
-    tree_ref    => 'secondary_ref',
+    primary_ref     => 'slice_ref',
+    secondary_ref   => 'tree_ref',
 };
 
-my $cut_dispatch = {######<------------------------------------------------------  ADD New types here
+my $prune_dispatch = {######<------------------------------------------------------  ADD New types here
     'HASH'  => \&_remove_hash_key,
     'ARRAY' => \&_clear_array_position,
 };
 
 ###############  Public Attributes  ####################################
 
-has 'splice_arrays' =>(
-    is      => 'ro',
-    isa     => Bool,
-    writer  => 'change_splice_behavior',
-    default => 1,
-);
-
 ###############  Public Methods  #######################################
 
-sub prune{#Used to convert names
-    ### <where> - Made it to prune
+sub prune_data{#Used to convert names
+    ### <where> - Made it to prune_data
     ##### <where> - Passed input  : @_
     my  $self = $_[0];
     my  $passed_ref = ( @_ == 2 and is_HashRef( $_[1] ) ) ? $_[1] : { @_[1 .. $#_] } ;
     ##### <where> - Passed hashref: $passed_ref
-    $passed_ref = $self->_review_required_inputs( $passed_ref );
+    @$passed_ref{ 'before_method', 'after_method' } = 
+        ( '_prune_before_method', '_prune_after_method' );
     ##### <where> - Start recursive passing with  : $passed_ref
-    $passed_ref = $self->_walk_the_data( $passed_ref );
+    $passed_ref = $self->_process_the_data( $passed_ref, $prune_keys );
     ### <where> - End recursive passing with    : $passed_ref
-    return $passed_ref->{secondary_ref};
+    return $passed_ref->{tree_ref};
 }
 
+###############  Private Attributes  ####################################
 
-sub before_method{
+has '_prune_list' =>(
+    is      => 'ro',
+    traits  => ['Array'],
+    isa     => ArrayRef[ArrayRef[Item]],
+    handles => {
+        _add_prune_item     => 'push',
+        _next_prune_item    => 'shift',
+    },
+    clearer     => '_clear_prune_list',
+    predicate   => '_has_prune_list',
+);
+
+
+###############  Private Methods / Modifiers  ##########################
+
+
+sub _prune_before_method{
     my ( $self, $passed_ref ) = @_;
     ### <where> - reached before_method
     #### <where> - received input: $passed_ref
@@ -68,12 +79,12 @@ sub before_method{
     }elsif( is_HashRef( $slice_ref ) and
         ( keys %$slice_ref ) == 0   ){
         ### <where> - Marking hash key for removal: $passed_ref->{branch_ref}->[-1]->[1]
-        $self->_remove_item( $passed_ref->{branch_ref}->[-1] );
+        $self->_add_prune_item( $passed_ref->{branch_ref}->[-1] );
         $passed_ref->{bounce} = 1;
     }elsif( is_ArrayRef( $slice_ref ) and
             @$slice_ref == 0                ){
         ### <where> - Marking array position for removal: $passed_ref->{branch_ref}->[-1]->[2]
-        $self->_remove_item( $passed_ref->{branch_ref}->[-1] );
+        $self->_add_prune_item( $passed_ref->{branch_ref}->[-1] );
         $passed_ref->{bounce} = 1;
     }else{######<------------------------------------------------------  ADD New types here
         ### <where> - no action required - continue on
@@ -81,7 +92,7 @@ sub before_method{
     return $passed_ref;
 }
 
-sub after_method{
+sub _prune_after_method{
     my ( $self, $passed_ref ) = @_;
     ### <where> - reached after_method
     #### <where> - received input: $passed_ref
@@ -90,72 +101,30 @@ sub after_method{
             $passed_ref->{secondary_ref} : undef ;
     my  $ref_type = $self->_extracted_ref_type( $passed_ref->{primary_ref} );
     ### <where> - tree_ref   : $tree_ref
-    ### <where> - Slice state: $self->_has_cut_list
-    if( $tree_ref and $self->_has_cut_list ){
-        while( my $item = $self->_next_item ){
-            $tree_ref = $self->_cut_the_item( $item, $tree_ref );
+    ### <where> - Slice state: $self->_has_prune_list
+    if( $tree_ref and $self->_has_prune_list ){
+        while( my $item = $self->_next_prune_item ){
+            $tree_ref = $self->_prune_the_item( $item, $tree_ref );
         }
         $passed_ref->{secondary_ref} = $tree_ref;
     }
     ### <where> - finished pruning at this node - clear the prune list
-    $self->_clear_cut_list;
+    $self->_clear_prune_list;
     return $passed_ref;
 }
 
-###############  Private Attributes  ####################################
-
-has '_cut_list' =>(
-    is      => 'ro',
-    traits  => ['Array'],
-    isa     => ArrayRef[ArrayRef[Item]],
-    handles => {
-        _remove_item    => 'push',
-        _next_item      => 'shift',
-    },
-    clearer     => '_clear_cut_list',
-    predicate   => '_has_cut_list',
-);
-
-
-###############  Private Methods / Modifiers  ##########################
-
-sub _review_required_inputs{
-    my ( $self, $passed_ref ) = @_;
-    ### <where> - Made it to _has_required_inputs
-    ##### <where> - Passed ref    : $passed_ref
-    for my $key ( keys %$prune_keys ){
-        if( $passed_ref->{$key} ){
-            ### <where> - Required value exists for: $key
-        }else{
-            croak "The key -$key- is a required value and cannot be undefined";
-        }
-    }
-    for my $key ( keys %$passed_ref ){
-        if( $prune_keys->{$key} ){
-            ### <where> - passed value is approved: $key
-            $passed_ref->{$prune_keys->{$key}} = $passed_ref->{$key};
-            delete $passed_ref->{$key};
-        }else{
-            croak "The key -$key- is not a supported parameter";
-        }
-    }
-    $self->_has_secondary( 1 );
-    ##### <where> - Passed ref    : $passed_ref
-    return $passed_ref;
-}
-
-sub _cut_the_item{
+sub _prune_the_item{
     my ( $self, $item_ref, $tree_ref ) = @_;
-    ### <where> - Made it to _cut_the_item
+    ### <where> - Made it to _prune_the_item
     ### <where> - item ref  : $item_ref
     ##### <where> - tree ref  : $tree_ref
-    if( exists $cut_dispatch->{$item_ref->[0]} ){
-        my $action  = $cut_dispatch->{$item_ref->[0]};
+    if( exists $prune_dispatch->{$item_ref->[0]} ){
+        my $action  = $prune_dispatch->{$item_ref->[0]};
         ##### <where> - the action is: $action
         $tree_ref   = $self->$action( $item_ref, $tree_ref );
         ##### <where> - new tree ref : $tree_ref
     }else{
-        croak "Currently the 'prune' function cannot be performed the " . 
+        croak "Currently the 'prune' function cannot be performed on the " . 
             $item_ref->[0] . '-ref node for position ' . $item_ref->[2];
     }
     ### <where> - cut completed succesfully
@@ -178,9 +147,11 @@ sub _clear_array_position{
     ### <where> - Made it to _clear_array_position
     ### <where> - item ref  : $item_ref
     ##### <where> - tree ref  : $tree_ref
-    if( $self->splice_arrays ){
+    if( $self->change_array_size ){
+        ### <where> - splicing out position: $item_ref->[2]
         splice( @$tree_ref, $item_ref->[2]);
     }else{
+        ### <where> - Setting undef at position: $item_ref->[2]
         $tree_ref->[$item_ref->[2]] = undef;
     }
     ##### <where> - tree ref  : $tree_ref
@@ -204,68 +175,77 @@ Data::Walk::Prune - A way to say what should be removed
 
 =head1 SYNOPSIS
     
-   #! C:/Perl/bin/perl
+    #! C:/Perl/bin/perl
     use Modern::Perl;
-    use YAML::Any;
     use Moose::Util qw( with_traits );
-    use lib '../lib';
-
     $| = 1;
+    use Data::Walk::Extracted v0.007;
+    use Data::Walk::Prune v0.003;
+    use Data::Walk::Print v0.007;
 
-    use Data::Walk::Extracted v0.05;
-    use Data::Walk::Prune v0.01;
-
-    my  $newclass = with_traits( 'Data::Walk::Extracted', ( 'Data::Walk::Prune' ) );
-    my  $edward_scissorhands = $newclass->new( splice_arrays => 1, );
-    my  $firstref = Load(
-            '---
-            Helping:
-                - Somelevel
-                - MyKey:
-                    MiddleKey:
-                        LowerKey1: lvalue1
-                        LowerKey2:
-                            BottomKey1: bvalue1
-                            BottomKey2: bvalue2'
-        );
-    $edward_scissorhands->prune(
+    my  $newclass = with_traits( 'Data::Walk::Extracted', ( 'Data::Walk::Prune', 'Data::Walk::Print' ) );
+    my  $edward_scissorhands = $newclass->new( change_array_size => 1, );#Default
+    my  $firstref = {
+            Helping => [
+                'Somelevel',
+                {
+                    MyKey => {
+                        MiddleKey => {
+                            LowerKey1 => 'low_value1',
+                            LowerKey2 => {
+                                BottomKey1 => 'bvalue1',
+                                BottomKey2 => 'bvalue2',
+                            },
+                        },
+                    },
+                },
+            ],
+        };
+    $edward_scissorhands->prune_data(
             tree_ref    => $firstref, 
-            slice_ref   => Load(
-                '---
-                Helping:
-                - Somelevel
-                - MyKey:
-                    MiddleKey:
-                        LowerKey1: []' 
-            ),
+            slice_ref   => {
+                Helping => [
+                    {
+                        MyKey => {
+                            MiddleKey => {
+                                LowerKey1 => {},
+                            },
+                        },
+                    },
+                ],
+            },
         );
-    say Dump( $firstref );
+    $edward_scissorhands->print_data( $firstref );
     
     #######################################
     #     Output of SYNOPSIS
-    # 01 ---
-    # 02 Helping:
-    # 03 - Somelevel
-    # 04 - MyKey:
-    # 05     MiddleKey:
-    # 06       LowerKey2:
-    # 07         BottomKey1: bvalue1
-    # 08         BottomKey2: bvalue2
-    # 09     
+    # 01 {
+    # 02 	Helping => [
+    # 03 		'Somelevel',
+    # 04 		{
+    # 05 			MyKey => {
+    # 06 				MiddleKey => {
+    # 07 					LowerKey2 => {
+    # 08 						BottomKey1 => 'bvalue1',
+    # 09 						BottomKey2 => 'bvalue2',
+    # 10 					},
+    # 11 					LowerKey1 => 'low_value1',
+    # 12 				},
+    # 13 			},
+    # 14 		},
+    # 15 	],
+    # 16 },
     #######################################
     
 =head1 DESCRIPTION
 
-This L<Moose::Role> contains methods for implementing the method L</prune> using 
-L<Data::Walk::Extracted>.  By sending a prune data ref that terminates in an empty 
+This L<Moose::Role> contains methods for implementing the method L</prune_data> using 
+L<Data::Walk::Extracted>.  By sending a 'slice_ref' that terminates in an empty 
 hash_ref (no keys) or an empty array_ref (no positions) for the relevant data node 
-reference type then the tree ref will be pruned at that spot.
+reference type then the 'tree_ref' will be pruned at that spot.  L</prune_data> returns 
+the resulting 'tree_ref' after pruning.
 
-The 'slice_ref' is passed to the 'primary_ref' in L<Data::Walk::Extracted> and the 
-'tree_ref' is passed to the 'secondary_ref' in that class.  All additional attributes 
-and methods for the class work as described in the documentation.
-
-=head2 v0.01
+=head2 v0.003
 
 =over
 
@@ -279,62 +259,55 @@ The goal of future development will be focused on supporting additional branch t
 
 =back
 
-=head1 Use
+=head2 Use
 
-This is an object oriented L<Moose> Role and generally behaves that way.
+One way to incorporate this role into L<Data::Walk::Extracted> and then use it is the method 
+'with_traits' from L<Moose::Util>.  Otherwise see L<Moose::Manual::Roles>.
 
-=head1 Attributes
+=head2 Attributes
 
-Data passed to ->new when creating an instance using a class.  For modification of these attributes 
-see L</Methods>.  The ->new function will either accept fat comma lists or a complete 
-hash ref that has the possible appenders as the top keys.
+=head3 L<Attributes in Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm#Attributes> 
 
-=head3 splice_arrays
+affect the output.
 
-=over
+=head2 Methods
 
-=item B<Definition:> when an array element is removed the position can remain as undef or be 
-spliced out of the array.  This flag will determine that behavior (1 = splice).
-
-=item B<Default> True (1)
-
-=item B<Range> This is a Boolean data type and generally accepts 1 or 0
-    
-=back
-
-=head1 Methods
-
-=head2 change_splice_behavior( $bool )
+=head3 prune_data( %args )
 
 =over
 
-=item B<Definition:> this is a way to change the splice_arrays flag
+=item B<Definition:> This will take a 'slice_ref' and use it to prune a 'tree_ref'.  
+The code looks for empty hash refs or array refs to show where to cut.  If a key 
+has an empty ref value then the key is deleted.  If the array position has an empty 
+ref then the array position is 
+L<deleted/cleared|http://search.cpan.org/~jandrew/Data-Walk-Extracted-v0.05_07/lib/Data/Walk/Extracted.pm#change_array_size>
 
-=item B<Accepts:> a Boolean value
-
-=item B<Returns:> 1
-
-=back
-
-=head2 prune( $passed_ref )
-
-=over
-
-=item B<Definition:> This will take a L</slice_ref> and use it to prune a L</tree_ref>
-
-=item B<Accepts:> a hash ref with the keys slice_ref and tree_ref (both required).  
-The data_refs can contain array_ref nodes, hash_ref nodes, strings, and Numbers.  
+=item B<Accepts:> a hash ref with the keys 'slice_ref' and 'tree_ref' (both required).  
+The data_refs can contain array_ref nodes, hash_ref nodes, strings, and numbers.  
 See L<Data::Walk::Extracted/TODO> for future support.
 
 =item B<Returns:> The $tree_ref with any changes
 
 =back
 
-=head1 BUGS
+=head2 GLOBAL VARIABLES
 
 =over
 
-=item L<Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
+=item B<$ENV{Smart_Comments}>
+
+The module uses L<Smart::Comments> with the '-ENV' option so setting the variable 
+$ENV{Smart_Comments} will turn on smart comment reporting.  There are three levels 
+of 'Smartness' called in this module '### #### #####'.  See the L<Smart::Comments> 
+documentation for more information.
+
+=back
+
+=head1 SUPPORT
+
+=over
+
+=item L<github Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
 
 =back
 
@@ -348,19 +321,9 @@ See L<Data::Walk::Extracted/TODO> for future support.
 
 =back
 
-=head1 SUPPORT
-
-=over
-
-=item jandrew@cpan.org
-
-=back
-
 =head1 AUTHOR
 
 =over
-
-=item Jed Lund
 
 =item jandrew@cpan.org
 

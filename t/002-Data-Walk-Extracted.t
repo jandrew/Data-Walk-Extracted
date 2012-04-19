@@ -1,26 +1,51 @@
 #! C:/Perl/bin/perl
 #######  Test File for Data::Walk::Extracted  #######
+BEGIN{
+    $| = 1;
+    #~ $ENV{Smart_Comments} = '###';# #### #####
+    $Carp::Verbose = 1;
+}
 use Modern::Perl;
 
 use Test::Most;
-use Test::Output v1.01 qw( 
-        stderr_like
-        stderr_unlike 
-        stdout_from
-);
+use Test::Moose;
+use Smart::Comments -ENV;
 use Moose::Util qw( with_traits );
+use Test::And::Output v0.003;
 use lib '../lib', 'lib';
-use Data::Walk::Extracted v0.05;
-use Data::Walk::Print v0.05;
+use Data::Walk::Extracted v0.007;
+use Data::Walk::Print v0.007;
 
-my  ( $firstref, $secondref, $newclass, $AT_ST, $AT_AT, $result, $stdout );
-my $test_case = 0;
-my  @methods = qw(
+my  ( $firstref, $secondref, $newclass, $gutenberg, $test_inst, $wait );#
+my $test_case = 1;
+my  @extracted_attributes = qw(
+        sort_HASH
+        sort_ARRAY
+        skip_HASH_ref
+        skip_ARRAY_ref
+        skip_TERMINATOR_ref
+        change_array_size
+    );
+my  @extracted_methods = qw(
         new
-        walk_the_data
+        change_array_size_behavior
+    );
+my  @joint_attributes = qw(
+        sort_HASH
+        sort_ARRAY
+        skip_HASH_ref
+        skip_ARRAY_ref
+        skip_TERMINATOR_ref
+        change_array_size
+        match_highlighting
+    );
+my  @instance_methods = qw(
+        print_data
+        change_array_size_behavior
+        set_match_highlighting
     );
 my  $answer_ref = [
-    qr/The composed class passed to 'new' does not have either a 'before_method' or an 'after_method' the Role 'Data::Walk::Print' will be added/,
+    '',#qr/The composed class passed to 'new' does not have either a 'before_method' or an 'after_method' the Role 'Data::Walk::Print' will be added/,
     [
         "{", "\tHelping => [", "\t\t{", "\t\t\tMyKey => {", "\t\t\t\tMiddleKey => {",
         "\t\t\t\t\tLowerKey1 => 'lvalue1',", "\t\t\t\t\tLowerKey2 => {", 
@@ -74,16 +99,34 @@ my  $answer_ref = [
     ],
 ];
 ### <where> - easy questions
+map has_attribute_ok( 
+    'Data::Walk::Extracted', 
+    $_,                                                 "Check that Data::Walk::Extracted has the -$_- attribute"
+), @extracted_attributes;
 map can_ok( 
     'Data::Walk::Extracted',
-    $_ 
-), @methods;
+    $_,
+), @extracted_methods;
 
-### <where> - hard questions
+### <where> - harder questions
+lives_ok{
+    $newclass = with_traits( 'Data::Walk::Extracted', ( 'Data::Walk::Print' ) );
+    $gutenberg = $newclass->new( sort_HASH => 1, );#To ensure test passes
+}                                                       "Prep a new Print instance";
+map has_attribute_ok( 
+    $newclass, 
+    $_,                                                 "Check that the new class has the -$_- attribute"
+), @joint_attributes;
+map can_ok( 
+    $gutenberg,
+    $_,
+), @instance_methods;
+
+### <where> - hardest questions
 lives_ok{   
     $firstref = {
-        Someotherkey    => 'value',
-        Parsing         =>{
+        Someotherkey => 'value',
+        Parsing =>{
             HashRef =>{
                 LOGGER =>{
                     run => 'INFO',
@@ -111,28 +154,33 @@ lives_ok{
             },
         ],
     };
-}                                                       'Build the $first for testing';
-stderr_like{
-    $AT_ST = Data::Walk::Extracted->new( sort_HASH => 1, );#To force order for testing purposes
-} $answer_ref->[$test_case],                            "Testing for the warning from test case: $test_case (while creating a new instance)";
+}                                                       'Build the $firstref for testing';
+#### $firstref
+lives_ok{
+    $test_inst = Test::And::Output->new();
+}                                                       'Test getting an instance of the test class';
+$test_inst->capture_output( 'STDOUT',                   "Begin capture of 'STDOUT'");
+ok  $gutenberg->print_data( print_ref => $firstref, ),  'Test sending the data structure for test case: ' . $test_case;
+my  $x = 0;
+for my $line ( @{$answer_ref->[$test_case]} ){
+    $test_inst->match_output( 'STDOUT', $line,          'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case" );
+}
 $test_case++;
-$stdout = stdout_from{
-lives_ok{ $result = $AT_ST->walk_the_data( primary_ref => $firstref, ) }
-                                                        'Test sending the data structure for test case: ' . $test_case;
-};
-is_deeply( [ split /\n/, $stdout ], $answer_ref->[$test_case],
-                                                        "Testing the output from test case: $test_case");
+lives_ok{ $gutenberg->skip_ARRAY_ref( 1 ); }            "... set 'skip = yes' for future parsed ARRAY refs (test case: $test_case)";
+#~ $test_inst->capture_output( 'STDOUT',                   "Begin capture of 'STDOUT'");
+lives_ok{
+    $gutenberg->print_data( print_ref => $firstref, );
+}                                                       'Test running the same array with the skip_ARRAY_ref set positive (capturing the output)';
+#~ map{ warn "$_\n" } $test_inst->get_buffer( 'STDOUT' );
+$x = 0;
+for my $line ( @{$answer_ref->[$test_case]} ){
+    $test_inst->match_output( 'STDOUT', $line,          'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case" );
+}
+#~ $test_inst->return_to_screen( 'STDOUT',                 "... Checking 'STDOUT' buffer" );
+#~ map{ print "$_\n" } $test_inst->get_buffer( 'STDOUT' );
+$test_inst->capture_output( 'STDOUT',                   "Begin capture of 'STDOUT'");
 $test_case++;
-lives_ok{ $AT_ST->skip_ARRAY_ref( 1 ); }                "... set 'skip = yes' for future parsed ARRAY refs (test case: $test_case)";
-$stdout = stdout_from{
-    $result = $AT_ST->walk_the_data( primary_ref => $firstref, );
-};
-is_deeply( [ split /\n/, $stdout ], $answer_ref->[$test_case],
-                                                        "Testing the STDOUT output from test case: $test_case");
-is_deeply(  $result,
-            { primary_ref => $firstref },               "Testing the value output from test case: $test_case");
-$test_case++;
-lives_ok{ $AT_ST->skip_ARRAY_ref( 0 ); }                "... set 'skip = NO' for future parsed ARRAY refs (test case: $test_case)";
+lives_ok{ $gutenberg->skip_ARRAY_ref( 0 ); }                "... set 'skip = NO' for future parsed ARRAY refs (test case: $test_case)";
 lives_ok{   
     $secondref = {
         Someotherkey => 'value',
@@ -167,43 +215,47 @@ lives_ok{
         ],
     };
 }                                                       "Build a second ref for testing (test case $test_case)";
-$stdout = stdout_from{
-    $result = $AT_ST->walk_the_data(
-        primary_ref     => $firstref,
-        secondary_ref   => $secondref,
-    );
-};
-is_deeply( [ split /\n/, $stdout ], $answer_ref->[$test_case],
-                                                        "Testing the STDOUT output from test case: $test_case");
-is_deeply(  $result,
-            {
-                primary_ref     => $firstref,
-                secondary_ref   => $secondref,
-            },                                          "Testing the value output from test case: $test_case");
-$test_case++;
+$test_inst->capture_output( 'STDERR',                   "Turn on error message capture" );
+dies_ok{ $gutenberg->print_data( data_ref => $firstref, ) }
+                                                        "Test sending the data with a bad key";
+ok warn( @$ ),                                          "Load failure to the buffer";
+$test_inst->return_to_screen( 'STDERR',                 "Turn off error message caputure" );
+$test_inst->match_output( 'STDERR', qr/The key -print_ref- is required and must have a value/,
+                                                        "Check that the code caught the wrong failure");
+$test_inst->capture_output( 'STDOUT',                   "Begin capture of 'STDOUT'");
 lives_ok{
-    $newclass = with_traits( 'Data::Walk::Extracted', ( 'Data::Walk::Print' ) );
-}                                                       "Prep a new class with the Print Role intentionally added and the match text turned off (test case: $test_case)";
-stderr_unlike{
-    $AT_AT = $newclass->new(
-        match_highlighting => 0,
-        sort_HASH => 1,#To force order for testing purposes
+    $gutenberg->print_data( 
+        print_ref => $firstref,
+        match_ref => $secondref,
     );
-} $answer_ref->[0],                                     "Check that the error message from teste case 0 is not given when the instance is created";
-#Test with the matching flag turned off
-$stdout = stdout_from{
-    $result = $AT_AT->walk_the_data(
-        primary_ref     =>  $firstref,
-        secondary_ref   =>  $secondref,
+}                                                       "Test the non matching state with a match ref sent";
+$x = 0;
+for my $line ( @{$answer_ref->[$test_case]} ){
+    $test_inst->match_output( 'STDOUT', $line,          'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case" );
+}
+$test_case++;
+lives_ok{ $gutenberg->set_match_highlighting( 0 ); }    "... set 'match_highlighting = NO' for future parsed refs (test case: $test_case)";
+$test_inst->capture_output( 'STDERR',                   "Capture error messages in preparation for a failed run" );
+dies_ok{
+    $gutenberg->print_data(
+        primary_ref    =>  $firstref,
+        match_ref   =>  $secondref,
     ) 
-};
-is_deeply( [ split /\n/, $stdout ], $answer_ref->[$test_case],
-                                                        "Testing the STDOUT output from test case: $test_case");
-is_deeply(  $result,
-            {
-                primary_ref     => $firstref,
-                secondary_ref   => $secondref,
-            },                                          "Testing the value output from test case: $test_case");
+}                                                       "Send a bad reference (actually the underlying method reference) with a new request to print";
+ok warn( @$ ),                                          "Load any error message to 'STDERR'";
+$test_inst->return_to_screen( 'STDERR',                 "...turn off error message caputure" );
+$test_inst->match_output( 'STDERR', qr/The key -print_ref- is required and must have a value/,
+                                                        "Test that the error message was found" );
+lives_ok{
+    $gutenberg->print_data(
+        print_ref    =>  $firstref,
+        match_ref   =>  $secondref,
+    ) 
+}                                                       "Send the same request with the reference fixed";#~ $x = 0;
+$x = 0;
+for my $line ( @{$answer_ref->[$test_case]} ){
+    $test_inst->match_output( 'STDOUT', $line,          'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case" );
+}
 $test_case++;
 done_testing();
 say '...Test Done';

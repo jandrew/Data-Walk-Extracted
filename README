@@ -3,10 +3,8 @@ Where the two references diverge the walker follows the primary data reference.
 At the beginning and end of each branching node the code will attempt to call a 
 method on a passed object instance with data from the current location of the node.  
 This module is largely useless without that additional functionality provided by the 
-object instance.  If no instance is provided the module has a default that will 
-print the perlish version of the data stucture as it goes through.  Both 
-Data::Dumper - Dump and YAML - Dump functions are more mature than the default 
-Data::Walk Printing function included here.
+object instance.  Both Data::Dumper - Dump and YAML - Dump functions are more mature 
+than Data::Walk::Print function included here.
 
 The module uses Carp to carp and croak so the variable $Carp::Verbose can be set 
 for debugging.  There are no attributes used to maintain data in this module so each
