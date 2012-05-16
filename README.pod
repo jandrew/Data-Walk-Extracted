@@ -32,8 +32,8 @@ oriented code not functional code and is both written in Moose and the code expe
 
 Then
 
-	>perl Makefile.PL
-	>make
-	>make test
-	>make install
-	>make clean
+	perl Makefile.PL
+	make
+	make test
+	make install
+	make clean
