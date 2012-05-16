@@ -1,3 +1,9 @@
+=head1 Data::Walk::Extracted
+
+An extracted dataref walker
+
+=head1 Purpose
+
 This module takes a data reference (or two) and recursivly travels through it(them).  Where the two references diverge the walker follows the primary data reference.  At the beginning and end of each branching node the code will attempt to call a method on a passed object instance with data from the current location of the node.  This module is largely useless without that additional functionality provided by the object instance.  Both L<Data::Dumper> - Dump and L<YAML> - Dump functions are more mature than Data::Walk::Print function included here.
 
 The module uses Carp to carp and croak so the variable $Carp::Verbose can be set 
