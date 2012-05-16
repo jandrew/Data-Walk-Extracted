@@ -1,9 +1,8 @@
 package Data::Walk::Extracted;
 
-use Modern::Perl;
 use Moose;
 use MooseX::StrictConstructor;
-use version; our $VERSION = qv('0.007_001');
+use version; our $VERSION = qv('0.007_005');
 use Carp;
 use Smart::Comments -ENV;
 $| = 1;
@@ -33,10 +32,10 @@ my $walk_the_data_keys = {
 #Add type here and then Search on ARRAY or HASH and is_ArrayRef 
 # or is_HashRef to find locations to update
 my $supported_types = {######<------------------------------------------------------  ADD New types here
-    'HASH'          => 'is_HashRef',
+    'HASH'			=> 'is_HashRef',
     'ARRAY'         => 'is_ArrayRef',
-    'TERMINATOR'    => 'is_Str',
-    'END'           => 1,
+    'TERMINATOR'	=> 'is_Str',
+    'END'           	=> 1,
 };
 
 ###############  Public Attributes  ####################################
@@ -44,23 +43,23 @@ my $supported_types = {######<--------------------------------------------------
 for my $type ( keys %$supported_types ){
     my $sort_attribute = 'sort_' . $type;
     has $sort_attribute =>(
-        is      => 'ro',
-        isa     => Bool,#TODO Add other sort type support
-        default => 0,
+        is			=> 'ro',
+        isa    	=> Bool,#TODO Add other sort type support
+        default 	=> 0,
     );
     my $skip_attribute = 'skip_' . $type . '_ref';
     has $skip_attribute =>(
-        is      => 'rw',
-        isa     => Bool,
-        default => 0,
+        is      	=> 'rw',
+        isa     	=> Bool,
+        default 	=> 0,
     );
 }
 
 has 'change_array_size' =>(
-    is      => 'ro',
-    isa     => Bool,
-    writer  => 'change_array_size_behavior',
-    default => 1,
+    is      	=> 'ro',
+    isa     	=> Bool,
+    writer  	=> 'change_array_size_behavior',
+    default 	=> 1,
 );
 
 ###############  Public Methods  #######################################
@@ -284,14 +283,20 @@ sub _has_required_inputs{
         }
     }
     my @message;
+	#### $fail_ref
+	### $lookup_ref
+	### $passed_ref
     for my $item ( keys %$fail_ref ){
+		### $item
         my $list = join '- or -', @{$fail_ref->{$item}};
+		### $list
         if( @{$fail_ref->{$item}} == 1 ){
             push @message, "The key -$list- is required and must have a value";
         }else{
             push @message, "One or more of the keys -$list- must be passed with a value";
         }
     }
+	### @message
     croak (join "\n", @message) if @message;
     ### <where> - Made it to _test_inputs
     my %ref_lookup = reverse %$lookup_ref;
@@ -479,12 +484,12 @@ This is an implementation of the concept of extracted data walking from
 L<Higher-Order-Perl|http://hop.perl.plover.com/book/> Chapter 1 by 
 L<Mark Jason Dominus|https://metacpan.org/author/MJD>.  I<The book is well worth the 
 money!>  With that said I diverged from MJD purity in two ways. This is object oriented 
-code not functional code and moreover it is written in L<Moose>. :) Second, the code uses 
-methods L<that are not included|/Extending Data::Walk::Extracted> in the class, to provide 
-add-on functionality at the appropriate places for action.  The MJD equivalent expects to 
-use a passed CodeRef at the action points.  There is clearly some overhead associated with 
-both of these differences.  I made those choices consciously and if that upsets you 
-L<do not hassle MJD|/AUTHOR>!
+code not functional code and moreover it is written in L<Moose>. :) Second, like the MJD 
+equivalent, the code does L<nothing on its own|/Extending Data::Walk::Extracted>.   
+Unlike the MJD equivalent it looks for methods provided in a role or class extention at the 
+appropriate places for action.  The MJD equivalent expects to use a passed CodeRef at 
+the action points.  There is clearly some overhead associated with both of these differences.  
+I made those choices consciously and if that upsets you L<do not hassle MJD|/AUTHOR>!
 
 =head2 Default Functionality
 
@@ -581,10 +586,12 @@ First start by creating the 'action' method for the role.  This would preferably
 something descriptive like 'mangle_data'.  This method should build a $passed_ref and 
 possibly a $conversion_ref.  The L<$passed_ref|/An Example> can include up to two data 
 references, a call to either a 'before_method' or an 'after_method' or both, and possibly 
-a 'branch_ref'.  The $conversion_ref should contain key / value pairs that repsesent the 
-translation of the $passed_ref keys used in the Role to the names used by the class.  This 
+a 'branch_ref'.  The L</$conversion_ref> should contain key / value pairs that repsesent the 
+translation of the $passed_ref keys used in the Role to the names used by this class.  This 
 allows for generic handling of walking but still allowing multiple roles to coexist in the 
-class when built.
+class when built.  These two values are used as follows
+
+	$result = $self->_process_the_data( $passed_ref, $conversion_ref );
 
 Then build one or both of B<before_method> and B<after_method> for use when walking the 
 data.  For examples review the code in L<Data::Walk::Print>
@@ -636,7 +643,7 @@ exists $passed_ref->{after_method}.  If the test passes then the sequence
 $method = $passed_ref->{after_method}; $passed_ref = $self->$method( $passed_ref ); is 
 run.
 
-=item B<Seventh> the $passed_ref is passed back up to the next level.  (with changes)
+=item B<Sixth> the $passed_ref is passed back up to the next level.  (with changes)
 
 =back
 
@@ -763,7 +770,7 @@ can be set for more detailed debugging.
 
 =back
 
-=head1 BUGS
+=head1 SUPPORT
 
 =over
 
@@ -788,19 +795,11 @@ L<sort|http://perldoc.perl.org/functions/sort.html> subroutine
 
 =back
 
-=head1 SUPPORT
-
-=over
-
-=item jandrew@cpan.org
-
-=back
-
 =head1 AUTHOR
 
 =over
 
-=item Jed Lund
+=item Jed
 
 =item jandrew@cpan.org
 
@@ -817,8 +816,6 @@ LICENSE file included with this module.
 =head1 Dependancies
 
 =over
-
-=item L<Modern::Perl>
 
 =item L<version>
 

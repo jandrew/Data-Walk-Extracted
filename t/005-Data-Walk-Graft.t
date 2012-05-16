@@ -1,6 +1,5 @@
 #! C:/Perl/bin/perl
 #######  Test File for Data::Walk::Graft  #######
-use Modern::Perl;
 use Test::Most;
 use Test::Moose;
 use Moose::Util qw( with_traits );
@@ -406,4 +405,4 @@ is_deeply(  $tree_ref = $gardener->graft_data(
             ),
             $answer_ref,                                 'Test the result without a tree_ref' );
 done_testing;
-say 'Test Done';
+print "Test Done\n";

@@ -1,6 +1,5 @@
 #! C:/Perl/bin/perl
 #######  Test File for Data::Walk::Prune  #######
-use Modern::Perl;
 
 use Test::Most;
 use Test::Moose;
@@ -170,4 +169,4 @@ is_deeply(  $edward_scissorhands->prune_data(
             ), 
             $answerref,                                 'Test pruning (by splice) an array element' );
 done_testing;
-say ' Test Done';
+print "Test Done\n";

@@ -9,7 +9,7 @@ use MooseX::Types::Moose qw(
         Str
         Ref
     );######<------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.007_001');
+use version; our $VERSION = qv('0.007_003');
 $| = 1;
 use Smart::Comments -ENV;
 ### Smart-Comments turned on for Data-Walk-Print
@@ -439,26 +439,21 @@ documentation for more information.
 
 =back
 
-=head1 TODO
-
-=over
-
-=item * Support printing CodeRefs
-
-=item * Support printing Objects / Instances
-
-=item * possibly adding an attribute, setter_method, and after method to allow printing 
-output from other roles when they exit.  This falls in the "I'm not sure it's a good 
-idea yet" catagory.
-
-=back
-
-
 =head1 SUPPORT
 
 =over
 
 =item L<Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
+
+=back
+
+=head1 TODO
+
+=over
+
+=item Support printing CodeRefs
+
+=item Support printing Objects / Instances
 
 =back
 

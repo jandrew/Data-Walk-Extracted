@@ -1,6 +1,7 @@
 package Data::Walk::Graft;
 
 use Moose::Role;
+requires '_process_the_data';
 use MooseX::Types::Moose qw(
         HashRef
         ArrayRef
@@ -12,7 +13,7 @@ use MooseX::Types::Moose qw(
         Item
     );######<------------------------------------------------------  ADD New types here
 use Carp;
-use version; our $VERSION = qv('0.001_001');
+use version; our $VERSION = qv('0.001_003');
 use Smart::Comments -ENV;
 $| = 1;
 ### Smart-Comments turned on for Data-Walk-Graft
@@ -184,7 +185,7 @@ The goal of future development will be focused on supporting additional branch t
 
 =head2 Use
 
-One way to incorporate this role into L<Data::Walk::Extracted> and then use it is the method 
+One way to join this role with L<Data::Walk::Extracted> is the method 
 'with_traits' from L<Moose::Util>.  Otherwise see L<Moose::Manual::Roles>.
 
 =head2 Attributes

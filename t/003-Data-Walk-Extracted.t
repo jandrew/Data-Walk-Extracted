@@ -1,22 +1,24 @@
 #! C:/Perl/bin/perl
 #######  Test File for Data::Walk::Extracted  #######
 BEGIN{
-    $| = 1;
-    #~ $ENV{Smart_Comments} = '###';# #### #####
-    $Carp::Verbose = 1;
+    #~ $ENV{Smart_Comments} = '### #### #####';#
+    #~ $| = 1;
+    #~ $Carp::Verbose = 1;
 }
-use Modern::Perl;
 
 use Test::Most;
 use Test::Moose;
+use Capture::Tiny qw( 
+	capture_stdout 
+);
+	#~ capture_stderr 
 use Smart::Comments -ENV;
 use Moose::Util qw( with_traits );
-use Test::And::Output v0.003;
 use lib '../lib', 'lib';
 use Data::Walk::Extracted v0.007;
 use Data::Walk::Print v0.007;
 
-my  ( $firstref, $secondref, $newclass, $gutenberg, $test_inst, $wait );#
+my  ( $firstref, $secondref, $newclass, $gutenberg, $test_inst, $capture, $wait );#
 my $test_case = 1;
 my  @extracted_attributes = qw(
         sort_HASH
@@ -156,31 +158,30 @@ lives_ok{
     };
 }                                                       'Build the $firstref for testing';
 #### $firstref
-lives_ok{
-    $test_inst = Test::And::Output->new();
-}                                                       'Test getting an instance of the test class';
-$test_inst->capture_output( 'STDOUT',                   "Begin capture of 'STDOUT'");
-ok  $gutenberg->print_data( print_ref => $firstref, ),  'Test sending the data structure for test case: ' . $test_case;
+ok( $capture = capture_stdout{ $gutenberg->print_data( print_ref => $firstref, ) },
+														'Test sending the data structure for test case: ' . $test_case );
 my  $x = 0;
+my  @answer = split "\n", $capture;
 for my $line ( @{$answer_ref->[$test_case]} ){
-    $test_inst->match_output( 'STDOUT', $line,          'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case" );
+    is( $line, $answer[$x],						'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case" );
 }
 $test_case++;
-lives_ok{ $gutenberg->skip_ARRAY_ref( 1 ); }            "... set 'skip = yes' for future parsed ARRAY refs (test case: $test_case)";
+ok( $gutenberg->skip_ARRAY_ref( 1 ),	"... set 'skip = yes' for future parsed ARRAY refs (test case: $test_case)");
 #~ $test_inst->capture_output( 'STDOUT',                   "Begin capture of 'STDOUT'");
 lives_ok{
-    $gutenberg->print_data( print_ref => $firstref, );
+     $capture = capture_stdout{ $gutenberg->print_data( print_ref => $firstref, ); }
 }                                                       'Test running the same array with the skip_ARRAY_ref set positive (capturing the output)';
 #~ map{ warn "$_\n" } $test_inst->get_buffer( 'STDOUT' );
 $x = 0;
+@answer = split "\n", $capture;
 for my $line ( @{$answer_ref->[$test_case]} ){
-    $test_inst->match_output( 'STDOUT', $line,          'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case" );
+    is( $line, $answer[$x],          			'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case" );
 }
 #~ $test_inst->return_to_screen( 'STDOUT',                 "... Checking 'STDOUT' buffer" );
 #~ map{ print "$_\n" } $test_inst->get_buffer( 'STDOUT' );
-$test_inst->capture_output( 'STDOUT',                   "Begin capture of 'STDOUT'");
 $test_case++;
-lives_ok{ $gutenberg->skip_ARRAY_ref( 0 ); }                "... set 'skip = NO' for future parsed ARRAY refs (test case: $test_case)";
+lives_ok{ $gutenberg->skip_ARRAY_ref( 0 ); }
+														"... set 'skip = NO' for future parsed ARRAY refs (test case: $test_case)";
 lives_ok{   
     $secondref = {
         Someotherkey => 'value',
@@ -214,48 +215,45 @@ lives_ok{
             },
         ],
     };
-}                                                       "Build a second ref for testing (test case $test_case)";
-$test_inst->capture_output( 'STDERR',                   "Turn on error message capture" );
-dies_ok{ $gutenberg->print_data( data_ref => $firstref, ) }
-                                                        "Test sending the data with a bad key";
-ok warn( @$ ),                                          "Load failure to the buffer";
-$test_inst->return_to_screen( 'STDERR',                 "Turn off error message caputure" );
-$test_inst->match_output( 'STDERR', qr/The key -print_ref- is required and must have a value/,
+}                                            			"Build a second ref for testing (test case $test_case)";
+dies_ok{ 
+		$gutenberg->print_data( data_ref => $firstref, );
+}														"Test sending the data with a bad key";
+like( $@, qr/The key -print_ref- is required and must have a value/,
                                                         "Check that the code caught the wrong failure");
-$test_inst->capture_output( 'STDOUT',                   "Begin capture of 'STDOUT'");
 lives_ok{
-    $gutenberg->print_data( 
+    $capture = capture_stdout{ $gutenberg->print_data( 
         print_ref => $firstref,
         match_ref => $secondref,
-    );
+    ); }
 }                                                       "Test the non matching state with a match ref sent";
 $x = 0;
+@answer = split "\n", $capture;
 for my $line ( @{$answer_ref->[$test_case]} ){
-    $test_inst->match_output( 'STDOUT', $line,          'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case" );
+   is( $line, $answer[$x],          				'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case" );
 }
 $test_case++;
-lives_ok{ $gutenberg->set_match_highlighting( 0 ); }    "... set 'match_highlighting = NO' for future parsed refs (test case: $test_case)";
-$test_inst->capture_output( 'STDERR',                   "Capture error messages in preparation for a failed run" );
+lives_ok{ $gutenberg->set_match_highlighting( 0 ); }
+														"... set 'match_highlighting = NO' for future parsed refs (test case: $test_case)";
 dies_ok{
     $gutenberg->print_data(
         primary_ref    =>  $firstref,
         match_ref   =>  $secondref,
     ) 
 }                                                       "Send a bad reference (actually the underlying method reference) with a new request to print";
-ok warn( @$ ),                                          "Load any error message to 'STDERR'";
-$test_inst->return_to_screen( 'STDERR',                 "...turn off error message caputure" );
-$test_inst->match_output( 'STDERR', qr/The key -print_ref- is required and must have a value/,
+like( $@, qr/The key -print_ref- is required and must have a value/,
                                                         "Test that the error message was found" );
 lives_ok{
-    $gutenberg->print_data(
+     $capture = capture_stdout{ $gutenberg->print_data(
         print_ref    =>  $firstref,
         match_ref   =>  $secondref,
-    ) 
+    ) }
 }                                                       "Send the same request with the reference fixed";#~ $x = 0;
 $x = 0;
+@answer = split "\n", $capture;
 for my $line ( @{$answer_ref->[$test_case]} ){
-    $test_inst->match_output( 'STDOUT', $line,          'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case" );
+	is( $line, $answer[$x],          			'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case" );
 }
 $test_case++;
 done_testing();
-say '...Test Done';
+explain "...Test Done";
