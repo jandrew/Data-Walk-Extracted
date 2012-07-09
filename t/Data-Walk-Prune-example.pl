@@ -2,15 +2,17 @@
 use Modern::Perl;
 use Moose::Util qw( with_traits );
 use lib '../lib';
+use Data::Walk::Extracted v0.011;
+use Data::Walk::Prune v0.007;
+use Data::Walk::Print v0.009;
 
-$| = 1;
-
-use Data::Walk::Extracted v0.007;
-use Data::Walk::Prune v0.003;
-use Data::Walk::Print v0.007;
-
-my  $newclass = with_traits( 'Data::Walk::Extracted', ( 'Data::Walk::Prune', 'Data::Walk::Print' ) );
-my  $edward_scissorhands = $newclass->new( change_array_size => 1, );#Default
+my  $edward_scissorhands = with_traits(
+		'Data::Walk::Extracted',
+		( 
+			'Data::Walk::Prune', 
+			'Data::Walk::Print',
+		),
+	)->new( change_array_size => 1, );#Default
 my  $firstref = {
         Helping => [
             'Somelevel',
@@ -27,10 +29,11 @@ my  $firstref = {
             },
         ],
     };
-$edward_scissorhands->prune_data(
+my	$result = $edward_scissorhands->prune_data(
         tree_ref    => $firstref, 
         slice_ref   => {
             Helping => [
+				undef,
                 {
                     MyKey => {
                         MiddleKey => {
@@ -41,4 +44,4 @@ $edward_scissorhands->prune_data(
             ],
         },
     );
-$edward_scissorhands->print_data( $firstref );
+$edward_scissorhands->print_data( $result );

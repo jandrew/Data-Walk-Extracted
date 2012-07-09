@@ -2,15 +2,74 @@
 
 An extracted dataref walker
 
-=head1 Purpose
+=head1 DESCRIPTION
 
-This module takes a data reference (or two) and recursivly travels through it(them).  Where the two references diverge the walker follows the primary data reference.  At the beginning and end of each branching node the code will attempt to call a method on a passed object instance with data from the current location of the node.  This module is largely useless without that additional functionality provided by the object instance.  Both L<Data::Dumper> - Dump and L<YAML> - Dump functions are more mature than L<Data::Walk::Print> function included here.
+This module takes a data reference (or two) and L<recursivly|/Recursive Parsing Flow> 
+travels through it(them).  Where the two references diverge the walker follows the 
+primary data reference.  At the beginning and end of each node the code will attempt 
+to call a L<method|/Extending Data::Walk::Extracted> using data from the current 
+location of the node.
 
-The module uses L<Carp> to carp and croak so the variable $Carp::Verbose can be set for debugging.  There are no attributes used to maintain data in this module so each recursive level creates its own view of itself.  Beware! recursive parsing is not a good fit for all data since very deep data structures will burn a fair amount of perl memory!  Meaning that as the module recursively parses through the levels perl leaves behind snapshots of the previous level that allow perl to keep track of it's location.
+=head2 Caveat utilitor
 
-This is an implementation of the concept of extracted data walking from L<Higher-Order-Perl|http://hop.perl.plover.com/book/> Chapter 1 by Mark 
-Jason Dominus.  The book is well worth the money!  With that said this is object 
-oriented code not functional code and is both written in Moose and the code expects an object instance (does not have to be a Moose class) to be available at the appropriate places for action.  The MJD equivalent is written in the functional style and expects a passed CodeRef at the action points.  There is clearly some overhead associated with both Moose and the object oriented style choices.  Those choices are intentional on my side and should not be attributed to MJD. 
+This is not an extention of L<Data::Walk>
+
+This is a L<Moose> based data handling class.  Many coders will tell you L<Moose> and 
+data manipulation don't belong together.  They are most certainly right in speed intensive 
+circumstances.
+
+Recursive parsing is not a good fit for all data since very deep data 
+structures will burn a fair amount of perl memory!  Meaning that as the module 
+recursively parses through the levels perl leaves behind snapshots of the previous 
+level that allow perl to keep track of it's location.
+
+L<This class has no external effect!|/Extending Data::Walk::Extracted>  all output 
+ L<above|/SYNOPSIS> is from L<Data::Walk::Print>.
+ 
+The L</COPYRIGHT> is down lower.
+
+=head2 What is the unique value of this module?
+
+With the recursive part of data walking extracted the various functionalities desired 
+when walking the data can be modularized without copying this code.  This also allows 
+diverse and targeted data parsing without dragging along a 
+L<Kitchen sink|/http://en.wiktionary.org/wiki/everything_but_the_kitchen_sink> API.
+
+=head2 Acknowledgement of MJD
+
+This is an implementation of the concept of extracted data walking from 
+L<Higher-Order-Perl|http://hop.perl.plover.com/book/> Chapter 1 by 
+L<Mark Jason Dominus|https://metacpan.org/author/MJD>.  I<The book is well worth the 
+money!>  With that said I diverged from MJD purity in two ways. This is object oriented 
+code not functional code. Second, like the MJD equivalent, the code does 
+L<nothing on its own|/Extending Data::Walk::Extracted>.   Unlike the MJD equivalent it 
+looks for methods provided in a role or class extention at the appropriate places for action.  
+The MJD equivalent expects to use a passed CodeRef at the action points.  There is clearly 
+some overhead associated with both of these differences.  I made those choices consciously 
+and if that upsets you L<do not hassle MJD|/AUTHOR>!
+
+=head2 Extending Data::Walk::Extracted
+
+All action taken during the data walking must be initiated by implementation of action methods 
+that do not exist in this Class.  They can be added with a 
+L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> or by L<extending the 
+class|https://metacpan.org/module/Moose::Manual::Classes>, or joined to the class later with 
+the method 'with_traits' from L<Moose::Util>.
+
+=head2 What is the reccomended way to build a role that uses this class?
+
+First build a method to be used when the Class reaches a data node and another to be used 
+when the Class leaves a data node (as needed).   Then create the 'action' method for the role.  
+This would preferably be named something descriptive like 'mangle_data'.  This method should 
+L<compose|/An Example> required node action methods and data references into a $passed_ref and 
+possibly a $conversion_ref to be used by L</_process_the_data>.  Then the 'action method should 
+call;
+
+	$passed_ref = $self->_process_the_data( $passed_ref, $conversion_ref );
+
+Then return anything from the $passed_ref of interest.
+
+Finally, L<Write some tests for your role!|http://www.perlmonks.org/?node_id=918837>
  
 =head1 Install from Source
 

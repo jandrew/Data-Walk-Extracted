@@ -1,7 +1,7 @@
 package Data::Walk::Print;
 
 use Moose::Role;
-requires '_has_secondary', '_process_the_data';
+requires '_had_secondary', '_process_the_data';
 use MooseX::Types::Moose qw(
         HashRef
         ArrayRef
@@ -9,26 +9,34 @@ use MooseX::Types::Moose qw(
         Str
         Ref
     );######<------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.007_003');
-$| = 1;
+use version; our $VERSION = qv('0.009_001');
 use Smart::Comments -ENV;
 ### Smart-Comments turned on for Data-Walk-Print
 
+###############  Package Variables  #####################################################
+
+$| = 1;
 my $print_keys = {
     primary_ref     => 'print_ref',
     secondary_ref   => 'match_ref',
 };
 
-###############  Public Attributes  ####################################
+###############  Dispatch Tables  #######################################################
+
+
+###############  Public Attributes  #####################################################
 
 has 'match_highlighting' =>(
-    is      => 'ro',
-    isa     => Bool,
-    writer  => 'set_match_highlighting',
-    default => 1,
+    is      	=> 'ro',
+    isa     	=> Bool,
+    writer  	=> 'set_match_highlighting',
+	predicate	=> 'has_match_highlighting',
+	reader		=> 'get_match_highlighting',
+	clearer		=> 'clear_match_highlighting',
+    default 	=> 1,
 );
 
-###############  Public Methods  #######################################
+###############  Public Methods  ########################################################
 
 sub print_data{
     ### <where> - Made it to print
@@ -51,7 +59,7 @@ sub print_data{
     return 1;
 }
 
-###############  Private Attributes  ###################################
+###############  Private Attributes  ####################################################
 
 has '_pending_string' =>(
     is          => 'ro',
@@ -69,7 +77,7 @@ has '_match_string' =>(
     predicate   => '_has_match_string',
 );
 
-###############  Private Methods / Modifiers  ##########################
+###############  Private Methods / Modifiers  ###########################################
 
 sub _print_before_method{
     my ( $self, $passed_ref ) = @_;
@@ -82,13 +90,13 @@ sub _print_before_method{
                 '#<--- ' ;
     my  $branch_ref = $passed_ref->{branch_ref}->[-1];
     ### <where> - branch values             : $branch_ref
-    ### <where> - current match highlighting: $self->match_highlighting
+    ### <where> - current match highlighting: $self->get_match_highlighting
     my $should_print = 0;
     if( $branch_ref ){
-        if( $branch_ref->[3] and $branch_ref->[0] ne 'TERMINATOR' ){
+        if( $branch_ref->[3] and $branch_ref->[0] ne 'SCALAR' ){
             $self->_add_to_pending_string( ("\t" x ($branch_ref->[3])) );
         }
-        if( $branch_ref->[0] ne 'TERMINATOR' ){
+        if( $branch_ref->[0] ne 'SCALAR' ){
             $self->_add_to_pending_string( $branch_ref->[1] );
         }
         if( $branch_ref->[0] eq 'HASH' ){######<------------------------------------------------------  ADD New types here
@@ -121,22 +129,24 @@ sub _print_before_method{
             is_ArrayRef( $passed_ref->{secondary_ref} ) ) ?
                 'Ref Type Match' : 'Ref Type Mismatch' ;
         $should_print = 1;
-    }elsif( $branch_ref and $branch_ref->[0] eq 'TERMINATOR' ){
+    }elsif( $branch_ref and $branch_ref->[0] eq 'SCALAR' ){
         $self->_add_to_pending_string( "'$branch_ref->[1]'," );
-        $match_string .= 
-            ( exists $passed_ref->{secondary_ref} ) ?
-                'Secondary Value Matches' : 
-                'Secondary Value Does NOT Match' ;
+		### <where> - checking for scalar match with: $passed_ref
+		$match_string .= 
+			( exists $passed_ref->{secondary_ref} ) ?
+				'Secondary Value Matches' : 
+				'Secondary Value Does NOT Match' ;
+		### <where> - current match string: $match_string
         $should_print = 1;
     }
     if( ref $passed_ref->{primary_ref} ){
-        my $skip_method = 'skip_' . (ref $passed_ref->{primary_ref}) . '_ref';
+        my $skip_method = 'get_skip_' . (ref $passed_ref->{primary_ref}) . '_ref';
         if( $self->$skip_method ){
             $self->_add_to_pending_string( '# !!! SKIPPED !!!' );
         }
     }
     ### <where> - match string is   : $match_string
-    ### <where> - match highlighting: $self->match_highlighting
+    ### <where> - match highlighting: $self->get_match_highlighting
     ### <where> - secondary prexist : $self->_had_secondary
     $self->_set_match_string( $match_string ) if $match_string;
     if( $should_print ){
@@ -169,7 +179,7 @@ sub _print_after_method{
         }
     }
     if( is_HashRef( $passed_ref->{primary_ref} ) ){######<------------------------------------------------------  ADD New types here
-        ### <where> - a HASH ref is just completed
+        ### <where> - a HASH ref has just closed ...
         $self->_add_to_pending_string( '}' );
         $match_string .=
             ( exists $passed_ref->{secondary_ref} and
@@ -207,7 +217,8 @@ sub _print_pending_string{
     if( $self->_has_pending_string ){
         my  $new_string = $self->_pending_string;
             $new_string .= $string if $string;
-            if( $self->match_highlighting and
+            if(	$self->has_match_highlighting and
+                $self->get_match_highlighting and
                 $self->_had_secondary and
                 $self->_has_match_string        ){
                 ### <where> - match_highlighting on - adding match string
@@ -222,14 +233,14 @@ sub _print_pending_string{
     return 1;
 }
 
-#################### Phinish with a Phlourish ##########################
+#################### Phinish with a Phlourish ###########################################
 
 no Moose::Role;
 
 1;
 # The preceding line will help the module return a true value
 
-#################### main pod documentation begin ######################
+#################### main pod documentation begin #######################################
 
 __END__
 
@@ -239,60 +250,64 @@ Data::Walk::Print - A data printing function
 
 =head1 SYNOPSIS
     
-    #! C:/Perl/bin/perl
-    use Modern::Perl;
-    use YAML::Any;
-    use Moose::Util qw( with_traits );
-    use Data::Walk::Extracted v0.007;
-    use Data::Walk::Print v0.007;
-    $| = 1;
-    #Use YAML to compress writing the data ref
-    my  $firstref = Load(
-        '---
-        Someotherkey:
-            value
-        Parsing:
-            HashRef:
-                LOGGER:
-                    run: INFO
-        Helping:
-            - Somelevel
-            - MyKey:
-                MiddleKey:
-                    LowerKey1: lvalue1
-                    LowerKey2:
-                        BottomKey1: 12345
-                        BottomKey2:
-                        - bavalue1
-                        - bavalue2
-                        - bavalue3'
-    );
-    my  $secondref = Load(
-        '---
-        Someotherkey:
-            value
-        Helping:
-            - Somelevel
-            - MyKey:
-                MiddleKey:
-                    LowerKey1: lvalue1
-                    LowerKey2:
-                        BottomKey1: 12346
-                        BottomKey2:
-                        - bavalue1
-                        - bavalue3'
-    );
-    my $newclass = with_traits( 'Data::Walk::Extracted', ( 'Data::Walk::Print' ) );
-    my $AT_ST = $newclass->new(
-            match_highlighting => 1,#This is the default
-            sort_HASH => 1,#To force order for demo purposes
-    );
-    $AT_ST->print_data(
-        print_ref   =>  $firstref,
-        match_ref   =>  $secondref,
-    );
+    #!perl
+	use Modern::Perl;
+	use YAML::Any;
+	use Moose::Util qw( with_traits );
+	use Data::Walk::Extracted v0.011;
+	use Data::Walk::Print v0.009;
+
+	$| = 1;
+
+	#Use YAML to compress writing the data ref
+	my  $firstref = Load(
+		'---
+		Someotherkey:
+			value
+		Parsing:
+			HashRef:
+				LOGGER:
+					run: INFO
+		Helping:
+			- Somelevel
+			- MyKey:
+				MiddleKey:
+					LowerKey1: lvalue1
+					LowerKey2:
+						BottomKey1: 12345
+						BottomKey2:
+						- bavalue1
+						- bavalue2
+						- bavalue3'
+	);
+	my  $secondref = Load(
+		'---
+		Someotherkey:
+			value
+		Helping:
+			- Somelevel
+			- MyKey:
+				MiddleKey:
+					LowerKey1: lvalue1
+					LowerKey2:
+						BottomKey2:
+						- bavalue1
+						- bavalue2
+						BottomKey1: 12354'
+	);
+	my $AT_ST = with_traits( 
+			'Data::Walk::Extracted', 
+			( 'Data::Walk::Print' ),
+		)->new(
+			match_highlighting => 1,#This is the default
+		);
+	$AT_ST->print_data(
+		print_ref	=>  $firstref,
+		match_ref	=>  $secondref,
+		sort_HASH	=> 1,#To force order for demo purposes
+	);
     
-    #######################################
+    #####################################################################################
     #     Output of SYNOPSIS
     # 01:{#<--- Ref Type Match
     # 02:	Helping => [#<--- Secondary Key Match - Ref Type Match
@@ -322,51 +337,63 @@ Data::Walk::Print - A data printing function
     # 26:	},
     # 27:	Someotherkey => 'value',#<--- Secondary Key Match - Secondary Value Matches
     # 28:},
-    #######################################
+    #####################################################################################
 
-    
+ 
 =head1 DESCRIPTION
 
-This L<Moose::Role> is mostly written for L<Data::Walk::Extracted>.  Both 
-L<Data::Dumper> - Dump and L<YAML> - Dump functions are more mature than the printing function 
-included here.  This is largely a demonstation module.
+This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> is mostly written 
+as a demonstration module for 
+L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>.  
+Both L<Data::Dumper|https://metacpan.org/module/Data::Dumper> - Dump and 
+L<YAML|https://metacpan.org/module/YAML::Any> - Dump functions are more mature than 
+the printing function included here.
 
-If this Role is used with another Module it requires a '_has_secondary' 
-L<Attribute|https://metacpan.org/module/Moose::Manual::Attributes> in the class.  
-This attribute is already implemented in L<Data::Walk::Extracted>
+=head2 Caveat utilitor
 
-=head2 v0.007
+=head3 Supported Node types
 
 =over
 
-=item B<State> This code is still in Beta state and therefore is subject to change.  
-I like the basics and will try to add rather than modify whenever possible in the future.  
-The goal of future development will be focused on supporting additional branch types.
+=item B<ARRAY>
 
-=item B<Included> ArrayRefs and HashRefs are supported nodes for printing.  Strings and Numbers 
-are all currently treated as base states and printed as strings.
+=item B<HASH>
 
-=item B<Excluded> Objects and CodeRefs are not currently handled and may cause the code to die.
+=item B<SCALAR>
 
 =back
 
-=head2 Use
+=head3 Supported one shot L</Attributes>
 
-One way to incorporate this role into L<Data::Walk::Extracted> and then use it is the method 
-'with_traits' from L<Moose::Util>.  Otherwise see L<Moose::Manual::Roles>.
+=over
+
+=item match_highlighting
+
+=back
+
+=head2 USE
+
+This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> and can be 
+used as such.  One way to incorporate this role into L<Data::Walk::Extracted> and then 
+use it is the method 'with_traits' from 
+L<Moose::Util|https://metacpan.org/module/Moose::Util>.  Otherwise see 
+L<Moose::Manual::Roles|https://metacpan.org/module/Moose::Manual::Roles>.
 
 =head2 Attributes
 
-Data passed to ->new when creating an instance using a class.  For modification of these attributes 
-see L</Methods>.  The ->new function will either accept fat comma lists or a complete 
-hash ref that has the possible appenders as the top keys.
+Data passed to ->new when creating an instance using a class.  For modification of 
+these attributes see L</Methods>.  The ->new function will either accept fat comma 
+lists or a complete hash ref that has the possible appenders as the top keys.  
+Additionally some attributes that meet the necessary criteria can be passed to 
+L<print_data|/Supported one shot > and will be adjusted for just the run of that 
+method call.
 
 =head3 match_highlighting
 
 =over
 
-=item B<Definition:> this determines if a comments string is added after each printed row that 
-indicates how the 'print_ref' matches the 'match_ref' (or not).
+=item B<Definition:> this determines if a comments string is added after each printed 
+row that indicates how the 'print_ref' matches the 'match_ref' (or not).
 
 =item B<Default> True (1)
 
@@ -380,25 +407,14 @@ also affect the output.
 
 =head1 Methods
 
-=head2 set_match_highlighting( $bool )
-
-=over
-
-=item B<Definition:> this is a way to change the match_highlighting attribute
-
-=item B<Accepts:> a Boolean value
-
-=item B<Returns:> 1
-
-=back
-
 =head2 print_data( $arg_ref|%args )
 
 =over
 
 =item B<Definition:> this is the method used to print a data reference
 
-=item B<Accepts:> either a single variable or One or two named arguments
+=item B<Accepts:> either a single data reference or One or two named arguments 
+in a fat comma list or hashref
 
 =over
 
@@ -423,6 +439,18 @@ then the following two named variables are accepted
 
 =item B<Returns:> 1 (And prints out the data ref with matching assesment comments per 
 L</match_highlighting>)
+
+=back
+
+=head2 set_match_highlighting( $bool )
+
+=over
+
+=item B<Definition:> this is a way to change the match_highlighting attribute
+
+=item B<Accepts:> a Boolean value
+
+=item B<Returns:> ''
 
 =back
 
@@ -455,11 +483,15 @@ documentation for more information.
 
 =item Support printing Objects / Instances
 
+=item Find better print parsing logic - Complex Dispatch Tables?
+
 =back
 
 =head1 AUTHOR
 
 =over
+
+=item Jed Lund
 
 =item jandrew@cpan.org
 
@@ -505,4 +537,4 @@ LICENSE file included with this module.
 
 =cut
 
-#################### main pod documentation end #####################
+#################### main pod documentation end #########################################

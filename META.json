@@ -4,7 +4,7 @@
       "Jed Lund <jandrew@cpan.org>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Dist::Zilla version 4.300009, CPAN::Meta::Converter version 2.113640",
+   "generated_by" : "Dist::Zilla version 4.300016, CPAN::Meta::Converter version 2.120921",
    "license" : [
       "perl_5"
    ],
@@ -21,28 +21,28 @@
       },
       "runtime" : {
          "requires" : {
-            "Carp" : 0,
-            "Modern::Perl" : 0,
-            "Moose" : 0,
-            "Moose::Role" : 0,
-            "MooseX::StrictConstructor" : 0,
-            "MooseX::Types::Moose" : 0,
-            "Smart::Comments" : 0,
-            "version" : 0
+            "Carp" : "0",
+            "Moose" : "0",
+            "Moose::Role" : "0",
+            "MooseX::StrictConstructor" : "0",
+            "MooseX::Types::Moose" : "0",
+            "Smart::Comments" : "0",
+            "YAML::Any" : "0",
+            "perl" : "5.010",
+            "version" : "0"
          }
       },
       "test" : {
          "requires" : {
-            "Moose::Util" : 0,
-            "Test::And::Output" : "v0.3.0",
-            "Test::Moose" : 0,
-            "Test::More" : 0,
-            "Test::Most" : 0,
-            "YAML::Any" : 0
+            "Capture::Tiny" : "0",
+            "Modern::Perl" : "0",
+            "Moose::Util" : "0",
+            "Test::Moose" : "0",
+            "Test::Most" : "0"
          }
       }
    },
    "release_status" : "testing",
-   "version" : "v0.007_001"
+   "version" : "v0.011_001"
 }
 

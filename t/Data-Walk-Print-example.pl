@@ -1,10 +1,10 @@
-#! C:/Perl/bin/perl
+#!perl
 use Modern::Perl;
 use YAML::Any;
 use Moose::Util qw( with_traits );
 use lib '../lib';
-use Data::Walk::Extracted v0.007;
-use Data::Walk::Print v0.007;
+use Data::Walk::Extracted v0.011;
+use Data::Walk::Print v0.009;
 
 $| = 1;
 
@@ -39,17 +39,19 @@ my  $secondref = Load(
             MiddleKey:
                 LowerKey1: lvalue1
                 LowerKey2:
-                    BottomKey1: 12346
                     BottomKey2:
                     - bavalue1
-                    - bavalue3'
+                    - bavalue3
+                    BottomKey1: 12354'
 );
-my $newclass = with_traits( 'Data::Walk::Extracted', ( 'Data::Walk::Print' ) );
-my $AT_ST = $newclass->new(
-        match_highlighting => 1,#This is the default
-        sort_HASH => 1,#To force order for demo purposes
-);
+my $AT_ST = with_traits( 
+		'Data::Walk::Extracted', 
+		( 'Data::Walk::Print' ),
+	)->new(
+		match_highlighting => 1,#This is the default
+    );
 $AT_ST->print_data(
-    print_ref     =>  $firstref,
-    match_ref   =>  $secondref,
+    print_ref	=>  $firstref,
+    match_ref	=>  $secondref,
+	sort_HASH	=> 1,#To force order for demo purposes
 );

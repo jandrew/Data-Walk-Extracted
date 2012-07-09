@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-
+use 5.010;
 
 use ExtUtils::MakeMaker 6.30;
 
@@ -12,12 +12,11 @@ my %WriteMakefileArgs = (
   "ABSTRACT" => "An extracted dataref walker\r",
   "AUTHOR" => "Jed Lund <jandrew\@cpan.org>",
   "BUILD_REQUIRES" => {
+    "Capture::Tiny" => 0,
+    "Modern::Perl" => 0,
     "Moose::Util" => 0,
-    "Test::And::Output" => "v0.003",
     "Test::Moose" => 0,
-    "Test::More" => 0,
-    "Test::Most" => 0,
-    "YAML::Any" => 0
+    "Test::Most" => 0
   },
   "CONFIGURE_REQUIRES" => {
     "ExtUtils::MakeMaker" => "6.30"
@@ -28,15 +27,15 @@ my %WriteMakefileArgs = (
   "NAME" => "Data::Walk::Extracted",
   "PREREQ_PM" => {
     "Carp" => 0,
-    "Modern::Perl" => 0,
     "Moose" => 0,
     "Moose::Role" => 0,
     "MooseX::StrictConstructor" => 0,
     "MooseX::Types::Moose" => 0,
     "Smart::Comments" => 0,
+    "YAML::Any" => 0,
     "version" => 0
   },
-  "VERSION" => "v0.007_001",
+  "VERSION" => "v0.011_001",
   "test" => {
     "TESTS" => "t/*.t"
   }
