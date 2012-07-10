@@ -67,12 +67,12 @@ call;
 
 Then return anything from the $passed_ref of interest.
 
+Finally, L<Write some tests for your role!|http://www.perlmonks.org/?node_id=918837>
+
+
 =head2 Further Documentation
 
-L<CPAN Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>
-
-Finally, L<Write some tests for your role!|http://www.perlmonks.org/?node_id=918837>
- 
+L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm> on CPAN
 =head1 Install from Source
 
 (for example git)
