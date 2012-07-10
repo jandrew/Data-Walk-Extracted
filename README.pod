@@ -72,7 +72,8 @@ Finally, L<Write some tests for your role!|http://www.perlmonks.org/?node_id=918
 
 =head2 Further Documentation
 
-L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm> on CPAN
+L<Data::Walk::Extracted> on CPAN
+
 =head1 Install from Source
 
 (for example git)
