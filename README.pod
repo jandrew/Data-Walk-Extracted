@@ -67,7 +67,7 @@ call;
 
 Then return anything from the $passed_ref of interest.
 
-Finally, L<Write some tests for your role!|http://www.perlmonks.org/?node_id=918837>
+Finally, Write some tests for your role! [http://www.perlmonks.org/?node_id=918837]
 
 
 =head2 Further Documentation
