@@ -4,64 +4,36 @@ An extracted dataref walker
 
 =head1 DESCRIPTION
 
-This module takes a data reference (or two) and L<recursivly|/Recursive Parsing Flow> 
-travels through it(them).  Where the two references diverge the walker follows the 
-primary data reference.  At the beginning and end of each node the code will attempt 
-to call a L<method|/Extending Data::Walk::Extracted> using data from the current 
-location of the node.
+This module takes a data reference (or two) and recursivly travels through it(them).  Where the two references diverge the walker follows the primary data reference.  At the beginning and end of each node the code will attempt to call a method using data from the current location of the node.
 
 =head2 Caveat utilitor
 
 This is not an extention of L<Data::Walk>
 
-This is a L<Moose> based data handling class.  Many coders will tell you L<Moose> and 
-data manipulation don't belong together.  They are most certainly right in speed intensive 
-circumstances.
+This is a L<Moose> based data handling class.  Many coders will tell you Moose and data manipulation don't belong together.  They are most certainly right in speed intensive circumstances.
 
-Recursive parsing is not a good fit for all data since very deep data 
-structures will burn a fair amount of perl memory!  Meaning that as the module 
-recursively parses through the levels perl leaves behind snapshots of the previous 
-level that allow perl to keep track of it's location.
+Recursive parsing is not a good fit for all data since very deep data structures will burn a fair amount of perl memory!  Meaning that as the module recursively parses through the levels perl leaves behind snapshots of the previous level that allow perl to keep track of it's location.
 
-L<This class has no external effect!|/Extending Data::Walk::Extracted>  all output 
- L<above|/SYNOPSIS> is from L<Data::Walk::Print>.
+This class has no external effect all output comes from the Roles in the package.  See L<Data::Walk::Print> for example.
 
 =head2 What is the unique value of this module?
 
-With the recursive part of data walking extracted the various functionalities desired 
-when walking the data can be modularized without copying this code.  This also allows 
-diverse and targeted data parsing without dragging along a 
-L<Kitchen sink|/http://en.wiktionary.org/wiki/everything_but_the_kitchen_sink> API.
+With the recursive part of data walking extracted the various functionalities desired when walking the data can be modularized without copying this code.  This also allows diverse and targeted data parsing without dragging along a 
+Kitchen sink [http://en.wiktionary.org/wiki/everything_but_the_kitchen_sink] API.
 
 =head2 Acknowledgement of MJD
 
 This is an implementation of the concept of extracted data walking from 
-L<Higher-Order-Perl|http://hop.perl.plover.com/book/> Chapter 1 by 
-L<Mark Jason Dominus|https://metacpan.org/author/MJD>.  I<The book is well worth the 
-money!>  With that said I diverged from MJD purity in two ways. This is object oriented 
-code not functional code. Second, like the MJD equivalent, the code does 
-L<nothing on its own|/Extending Data::Walk::Extracted>.   Unlike the MJD equivalent it 
-looks for methods provided in a role or class extention at the appropriate places for action.  
-The MJD equivalent expects to use a passed CodeRef at the action points.  There is clearly 
-some overhead associated with both of these differences.  I made those choices consciously 
-and if that upsets you L<do not hassle MJD|/AUTHOR>!
+Higher-Order-Perl [http://hop.perl.plover.com/book/] Chapter 1 by Mark Jason Dominus.  I<The book is well worth the money!>  With that said I diverged from MJD purity in two ways. This is object oriented code not functional code. Second, like the MJD equivalent, the code does nothing on its own.  Unlike the MJD equivalent it looks for methods provided in a role or class extention at the appropriate places for action.  The MJD equivalent expects to use a passed CodeRef at the action points.  There is clearly some overhead associated with both of these differences.  I made those choices consciously and if that upsets you do not hassle MJD!
 
 =head2 Extending Data::Walk::Extracted
 
-All action taken during the data walking must be initiated by implementation of action methods 
-that do not exist in this Class.  They can be added with a 
-L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> or by L<extending the 
-class|https://metacpan.org/module/Moose::Manual::Classes>, or joined to the class later with 
-the method 'with_traits' from L<Moose::Util>.
+All action taken during the data walking must be initiated by implementation of action methods that do not exist in this Class.  They can be added with a 
+L<Moose::Role> or by extending the class [https://metacpan.org/module/Moose::Manual::Classes], or joined to the class later with the method 'with_traits' from L<Moose::Util>.
 
 =head2 What is the reccomended way to build a role that uses this class?
 
-First build a method to be used when the Class reaches a data node and another to be used 
-when the Class leaves a data node (as needed).   Then create the 'action' method for the role.  
-This would preferably be named something descriptive like 'mangle_data'.  This method should 
-L<compose|/An Example> required node action methods and data references into a $passed_ref and 
-possibly a $conversion_ref to be used by L</_process_the_data>.  Then the 'action method should 
-call;
+First build a method to be used when the Class reaches a data node and another to be used when the Class leaves a data node (as needed).   Then create the 'action' method for the role.  This would preferably be named something descriptive like 'mangle_data'.  This method should compose required node action methods and data references into a $passed_ref and possibly a $conversion_ref to be used by '_process_the_data'.  Then the 'action method should call;
 
 	$passed_ref = $self->_process_the_data( $passed_ref, $conversion_ref );
 
