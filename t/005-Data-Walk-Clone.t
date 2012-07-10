@@ -51,9 +51,9 @@ my  		@methods = qw(
 lives_ok{
 			$victor_frankenstein = with_traits( 
 				'Data::Walk::Extracted', 
-					( 
-						'Data::Walk::Clone', 
-					) 
+				( 
+					'Data::Walk::Clone', 
+				) 
 			)->new();
 }										"Prep a new cloner instance";
 does_ok		$victor_frankenstein, 'Data::Walk::Clone',
