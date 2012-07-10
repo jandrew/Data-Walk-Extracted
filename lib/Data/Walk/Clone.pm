@@ -16,7 +16,7 @@ use MooseX::Types::Moose qw(
         Int
         Item
     );######<--------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.003_003');
+use version; our $VERSION = qv('0.005_001');
 use Smart::Comments -ENV;
 ### Smart-Comments turned on for Data-Walk-Clone
 
@@ -30,9 +30,34 @@ my $clone_keys = {
 
 ###############  Dispatch Tables  #######################################################
 
-my $skip_clone_test_dispatch ={######<------------------------------  ADD New types here
+my 	$skip_clone_test_dispatch ={######<------------------------------  ADD New types here
 		ARRAY	=> \&_array_skip_clone_test,
 		HASH	=> \&_hash_skip_clone_test,
+		name => 'skip_clone_test_dispatch',#Meta data
+	};
+
+my 	$seed_clone_dispatch ={
+		ARRAY => sub{
+			unless( exists $_[1]->{secondary_ref} ){
+				$_[1]->{secondary_ref} = [];
+			}
+			return $_[1];
+		},
+		HASH => sub{
+			unless( exists $_[1]->{secondary_ref} ){
+				$_[1]->{secondary_ref} = {};
+			}
+			return $_[1];
+		},
+		SCALAR => sub{ 
+			$_[1]->{secondary_ref} = $_[1]->{primary_ref};
+			return $_[1];
+		},
+		END => sub{ 
+			$_[1]->{secondary_ref} = undef;
+			return $_[1];
+		},
+		name => 'seed_clone_dispatch',#Meta data
 	};
 
 ###############  Public Attributes  #####################################################
@@ -152,11 +177,16 @@ sub _clone_after_method{
     #### <where> - received input: $passed_ref
 	### <where> - current item: $passed_ref->{branch_ref}->[-1]
 	### <where> - should clone?: $self->get_should_clone
-	if( $self->get_should_clone and
-		$self->_extracted_ref_type( 
-			$passed_ref->{primary_ref} ) eq 'END' ){
-		### <where> - seeding the clone as needed ...
-		$passed_ref->{secondary_ref} = undef;
+	if( $self->get_should_clone ){
+		my 	$next_ref = $self->_extracted_ref_type( 
+				$passed_ref->{primary_ref} 
+			);
+		### <where> - seeding the clone as needed for: $next_ref
+		$passed_ref = $self->_dispatch_method(
+			$seed_clone_dispatch,
+			$next_ref,
+			$passed_ref,
+		);
 	}
     #### <where> - the new passed_ref is: $passed_ref
     return $passed_ref;

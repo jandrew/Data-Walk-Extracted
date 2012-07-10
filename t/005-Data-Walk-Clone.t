@@ -1,11 +1,16 @@
 #!perl
 #######  Test File for Data::Walk::Clone  #######
+BEGIN{
+	#~ $ENV{ Smart_Comments } = '### #### #####';
+}
 use Test::Most;
 use Test::Moose;
 use Moose::Util qw( with_traits );
+use Smart::Comments -ENV;
+### Smart-Comments turned on for 005-Data-Walk-Clone.t ...
 use lib '../lib', 'lib';
 use Data::Walk::Extracted v0.011;
-use Data::Walk::Clone v0.003;
+use Data::Walk::Clone v0.005;
 
 my  ( 
 			$wait,
@@ -160,15 +165,32 @@ lives_ok{
 				donor_ref 	=> $donor_ref,
 				clone_level => 3,
 			)
-}										'Test cloning the donor ref with a boundary called out (as a one time method change';
+}										'Test cloning the donor ref with a boundary called out (as a one time method change)';
 is_deeply	$injaz_ref, $donor_ref,		'Confirm that the new clone matches deeply';
 isnt 		$injaz_ref, $donor_ref,		'... and the new clone does not match the donor ref at the top level';
 is			$injaz_ref->{Helping}->[1]->{MyKey}, 
 			$donor_ref->{Helping}->[1]->{MyKey},
-										'... but it should match at the bondary level';
+										'... but it should match at the boundary level';
 isnt		$injaz_ref->{Helping}->[1], $donor_ref->{Helping}->[1],
 										'... and it should not match one level up from the boundary level';
 lives_ok{ 	$victor_frankenstein->clear_clone_level }
 										'clear the boundary to ensure it is possible';
+lives_ok{
+			$donor_ref = {
+				test =>{
+					empty_hash => {},
+					empty_array => [],
+				},
+			};
+}										'Build a data ref to test the empty reference bug';
+### <where> - donor_ref: $donor_ref
+lives_ok{
+			$injaz_ref = $victor_frankenstein->deep_clone(
+				$donor_ref,
+			)
+}										'Test cloning the empty reference bug test donor ref';
+is_deeply	$injaz_ref, $donor_ref,		'Confirm that the new clone matches deeply';
+### <where> - donor_ref: $donor_ref
+### <where> - injaz_ref: $injaz_ref
 explain 								"... Test Done\n";
 done_testing;

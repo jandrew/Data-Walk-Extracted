@@ -1,9 +1,5 @@
 #! C:/Perl/bin/perl
 #######  Test File for Data::Walk::Prune  #######
-BEGIN{
-	#~ $ENV{Smart_Comments} = '### #### #####';
-}
-
 use Test::Most;
 use Test::Moose;
 use Moose::Util qw( with_traits );

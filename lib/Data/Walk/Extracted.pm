@@ -2,7 +2,7 @@ package Data::Walk::Extracted;
 use 5.010;
 use Moose;
 use MooseX::StrictConstructor;
-use version; our $VERSION = qv('0.011_001');
+use version; our $VERSION = qv('0.013_001');
 use Carp qw( carp croak confess cluck );
 use Smart::Comments -ENV;
 use YAML::Any;
@@ -24,76 +24,82 @@ use MooseX::Types::Moose qw(
 ###############  Package Variables  #####################################################
 
 $| = 1;
-my $wait;
-my $attribute_backup = {};
+my 	$wait;
+my 	$attribute_backup = {};
+my 	$walk_the_data_keys = {
+		primary_ref		=> 1,#Required
+		secondary_ref   => 0,#Optional
+		before_method	=> 2,#One or the other of two required
+		after_method	=> 2,#One or the other of two required
+		branch_ref		=> 0,#Don't generally use
+	};
 
 ###############  Dispatch Tables  #######################################################
 	
-my $walk_the_data_keys = {
-    primary_ref		=> 1,#Required
-    secondary_ref   => 0,#Optional
-    before_method	=> 2,#One or the other of two required
-    after_method	=> 2,#One or the other of two required
-    branch_ref		=> 0,#Don't generally use
-};
-
-my $supported_types = {######<--------------------------------------  ADD New types here
-    'HASH'		=> 'is_HashRef',
-    'ARRAY'		=> 'is_ArrayRef',
-    'SCALAR'	=> 'is_Str',
-    'END'		=> 1,
-};
+my 	$supported_types = {######<-------------------------------------  ADD New types here
+		name 	=> 'supported_types',#Meta data
+		HASH	=> 'is_HashRef',
+		ARRAY	=> 'is_ArrayRef',
+		SCALAR	=> 'is_Str',
+		END		=> 1,
+	};
 
 my  $reconstruction_dispatch = {######<-----------------------------  ADD New types here
-    'HASH'	=> \&_rebuild_hash_level,
-    'ARRAY' => \&_rebuild_array_level,
-};
+		name 	=> 'reconstruction_dispatch',#Meta data
+		HASH	=> \&_rebuild_hash_level,
+		ARRAY 	=> \&_rebuild_array_level,
+	};
 
 my  $node_list_dispatch = {######<----------------------------------  ADD New types here
-    'HASH'		=> sub{ [ keys %{$_[1]} ] },
-    'ARRAY'		=> sub{
-						my $list;
-						map{ push @$list, 1 } @{$_[1]};
-						return $list;
-					},
-    'SCALAR'	=> sub{ [ $_[1] ] },
-    'END'		=> sub{ return [] },
-};
+		name 	=> 'node_list_dispatch',#Meta data
+		HASH	=> sub{ [ keys %{$_[1]} ] },
+		ARRAY	=> sub{
+							my $list;
+							map{ push @$list, 1 } @{$_[1]};
+							return $list;
+						},
+		SCALAR	=> sub{ [ $_[1] ] },
+		END		=> sub{ return [] },
+	};
 
 my  $sub_ref_dispatch = {######<------------------------------------  ADD New types here
-    'HASH'		=> sub{ $_[1]->{$_[2]->[1]} },
-    'ARRAY'		=> sub{ $_[1]->[$_[2]->[2]] },
-    'SCALAR'	=> sub{ return undef; },
+    name	=> 'sub_ref_dispatch',#Meta data
+    HASH	=> sub{ $_[1]->{$_[2]->[1]} },
+    ARRAY	=> sub{ $_[1]->[$_[2]->[2]] },
+    SCALAR	=> sub{ return undef; },
 };
 
 my $branch_ref_item_dispatch = {######<-----------------------------  ADD New types here
-    'HASH'		=> sub{ return $_[1]; },
-    'ARRAY'		=> sub{ return undef; },
-    'SCALAR'	=> sub{ return $_[1]; },
+    name 	=> 'branch_ref_item_dispatch',#Meta data
+    HASH	=> sub{ return $_[1]; },
+    ARRAY	=> sub{ return undef; },
+    SCALAR	=> sub{ return $_[1]; },
 };
 
 my $secondary_match_dispatch = {######<-----------------------------  ADD New types here
-	'HASH'		=> 	sub{
-						return (
-							( exists $_[1]->{$_[4]->[$_[3]]} ) and
-							( exists $_[2]->{$_[4]->[$_[3]]} )
-						) ?	1 : 0 ;
-					},
-    'ARRAY'		=> sub{
-						return (
-							( exists $_[1]->[$_[3]] ) and
-							( exists $_[2]->[$_[3]] )
-						) ?	1 : 0 ;
-					},
-    'SCALAR'	=> sub{
-						return (
-							$_[1] eq $_[2]
-						) ?	1 : 0 ;
-					},
+	name	=> 'secondary_match_dispatch',#Meta data
+    HASH	=> 	sub{
+		return (
+			( exists $_[1]->{$_[4]->[$_[3]]} ) and
+			( exists $_[2]->{$_[4]->[$_[3]]} )
+		) ?	1 : 0 ;
+	},
+    ARRAY	=> sub{
+		return (
+			( exists $_[1]->[$_[3]] ) and
+			( exists $_[2]->[$_[3]] )
+		) ?	1 : 0 ;
+	},
+    SCALAR	=> sub{
+		return (
+			$_[1] eq $_[2]
+		) ?	1 : 0 ;
+	},
 };
 
 my $up_ref_dispatch = {######<--------------------------------------  ADD New types here
-	HASH	=> \&_load_hash_up,
+	name 	=> 'up_ref_dispatch',#Meta data
+    HASH	=> \&_load_hash_up,
     ARRAY 	=> \&_load_array_up,
 	SCALAR	=> sub{
 		### <where> - made it to SCALAR ref upload ...
@@ -559,7 +565,12 @@ sub _dispatch_method{
         ##### <where> - the action is: $call
         return $self->$action( @arg_list );
     }else{
-        confess "Failed to find the '$call' dispatch";
+		my 	$dispatch_name = 
+				( exists $dispatch_ref->{name} ) ?
+					$dispatch_ref->{name} : undef ;
+		my	$string = "Failed to find the '$call' dispatch";
+			$string .= " in the $dispatch_name" if $dispatch_name;
+        confess $string;
     }
 }
 

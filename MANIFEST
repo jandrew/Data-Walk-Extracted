@@ -3,8 +3,15 @@ LICENSE
 MANIFEST
 META.json
 META.yml
+Makefile
 Makefile.PL
 README.pod
+blib/lib/Data/Walk/Clone.pm
+blib/lib/Data/Walk/Extracted.pm
+blib/lib/Data/Walk/Graft.pm
+blib/lib/Data/Walk/Print.pm
+blib/lib/Data/Walk/Prune.pm
+blib/lib/Data/Walk/README.pod
 dist.ini
 lib/Data/Walk/Clone.pm
 lib/Data/Walk/Extracted.pm

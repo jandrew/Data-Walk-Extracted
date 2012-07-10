@@ -25,8 +25,6 @@ level that allow perl to keep track of it's location.
 
 L<This class has no external effect!|/Extending Data::Walk::Extracted>  all output 
  L<above|/SYNOPSIS> is from L<Data::Walk::Print>.
- 
-The L</COPYRIGHT> is down lower.
 
 =head2 What is the unique value of this module?
 
@@ -68,6 +66,10 @@ call;
 	$passed_ref = $self->_process_the_data( $passed_ref, $conversion_ref );
 
 Then return anything from the $passed_ref of interest.
+
+=head2 Further Documentation
+
+L<CPAN Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>
 
 Finally, L<Write some tests for your role!|http://www.perlmonks.org/?node_id=918837>
  
