@@ -16,9 +16,13 @@ use MooseX::Types::Moose qw(
         Int
         Item
     );######<-------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.007_001');
-use Smart::Comments -ENV;
-### Smart-Comments turned on for Data-Walk-Prune
+use version; our $VERSION = qv('0.007_003');
+BEGIN{
+	if( $ENV{ Smart_Comments } ){
+		use Smart::Comments -ENV;
+		### Smart-Comments turned on for Data-Walk-Prune
+	}
+}
 
 ###############  Package Variables  #####################################################
 
@@ -27,6 +31,7 @@ my $prune_keys = {
     primary_ref		=> 'slice_ref',
     secondary_ref	=> 'tree_ref',
 };
+my ( $wait );
 
 ###############  Dispatch Tables  #######################################################
 
@@ -72,6 +77,7 @@ sub prune_data{#Used to convert names
     ##### <where> - Start recursive parsing with: $passed_ref
     $passed_ref = $self->_process_the_data( $passed_ref, $prune_keys );
     ### <where> - End recursive parsing with: $passed_ref
+	##### <where> - self: $self
     return $passed_ref->{tree_ref};
 }
 
@@ -155,17 +161,16 @@ sub _prune_after_method{
 						$item_ref->[0],
 						$item_ref,
 				);
-				if( exists $passed_ref->{branch_ref} ){
-					###  <where> - current branch ref is: $passed_ref->{branch_ref}
-					$rememberance_ref = $self->_build_branch( 
-						$rememberance_ref, 
-						@{ $passed_ref->{branch_ref}},
-					);
-				}
+				###  <where> - current branch ref is: $passed_ref->{branch_ref}
+				$rememberance_ref = $self->_build_branch( 
+					$rememberance_ref, 
+					@{ $passed_ref->{branch_ref}},
+				);
 				###  <where> - rememberance ref: $rememberance_ref
 				$self->_remember_prune_item( $rememberance_ref );
 				#### <where> - prune memory: $self->get_pruned_positions
 			}
+			#~ $wait = <> if $ENV{ special_variable };
         }
         $passed_ref->{secondary_ref} = $tree_ref;
     }
@@ -279,10 +284,11 @@ Data::Walk::Prune - A way to say what should be removed
 
 =head1 SYNOPSIS
     
-	#! C:/Perl/bin/perl
+	#!perl
 	use Modern::Perl;
 	use Moose::Util qw( with_traits );
-	use Data::Walk::Extracted v0.011;
+	use lib '../lib';
+	use Data::Walk::Extracted v0.015;
 	use Data::Walk::Prune v0.007;
 	use Data::Walk::Print v0.009;
 
@@ -290,7 +296,7 @@ Data::Walk::Prune - A way to say what should be removed
 			'Data::Walk::Extracted',
 			( 
 				'Data::Walk::Prune', 
-				'Data::Walk::Print', 
+				'Data::Walk::Print',
 			),
 		)->new( change_array_size => 1, );#Default
 	my  $firstref = {
@@ -348,9 +354,8 @@ Data::Walk::Prune - A way to say what should be removed
 =head1 DESCRIPTION
 
 This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> contains methods for 
-implementing the method L</prune_data> using 
-L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>.  
-By sending a L<slice_ref|/This will take a 'slice_ref'> that terminates in an empty 
+implementing the method L</prune_data> using L<Data::Walk::Extracted>.  By sending a 
+L<slice_ref|/This will take a 'slice_ref'> that terminates in an empty 
 hash_ref (no keys) or an empty array_ref (no positions) then the 
 L<tree_ref|/use it to prune a 'tree_ref'.> will be pruned at that spot.  'prune_data' 
 returns a deep cloned data ref that matches the 'tree_ref' with the 'slice_ref' bits 
@@ -358,8 +363,8 @@ taken off.
 
 =head2 Caveat utilitor
 
-Because this uses Data::Walk::Extracted the $result is a deep cloned ref with no data 
-pointers matching the original $tree_ref.
+Because this uses Data::Walk::Extracted the final $tree_ref is a deep cloned ref with no 
+data pointers matching the original $tree_ref.
 
 =head3 Supported Node types
 
@@ -384,11 +389,9 @@ pointers matching the original $tree_ref.
 =head2 USE
 
 This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> and can be 
-used as such.  One way to use this role with  
-L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>, 
-is the method 'with_traits' from 
-L<Moose::Util|https://metacpan.org/module/Moose::Util>.  Otherwise see 
-L<Moose::Manual::Roles|https://metacpan.org/module/Moose::Manual::Roles>.
+used as such.  One way to use this role with L<Data::Walk::Extracted>, is the method 
+'with_traits' from L<Moose::Util|https://metacpan.org/module/Moose::Util#EXPORTED-FUNCTIONS>.  
+Otherwise see L<Moose::Manual::Roles|https://metacpan.org/module/Moose::Manual::Roles>.
 
 =head2 Methods
 
@@ -396,17 +399,40 @@ L<Moose::Manual::Roles|https://metacpan.org/module/Moose::Manual::Roles>.
 
 =over
 
-=item B<Definition:> This will take a 'slice_ref' and use it to prune a 'tree_ref'.  
-The code looks for empty hash refs or array refs to show where to cut.  The cut is 
-signaled by the location an empty hash ref or an empty node ref.  If the terminator 
-is the value in a key => value pair of a hash node then the key is also deleted.  If 
-the terminator is in a position in an array then the array position is 
-L<deleted/cleared|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm#change_array_size>.  
-If the slice ref terminator is not a match for a node on the tree ref then no cutting 
-occurs!
+=item B<Definition:> This is a method used to remove targeted parts of a data reference.
 
 =item B<Accepts:> a hash ref with the keys 'slice_ref' and 'tree_ref' (both required).  
-The slice ref can contain more than one terminator location in the data reference.
+The slice ref can contain more than one 'slice' location in the data reference.
+
+=over
+
+=item B<tree_ref> This is the primary data ref that will be manipulated and returned 
+changed.
+
+=item B<slice_ref> This is a data ref that will be used to prune the 'tree_ref'.  
+In general the slice_ref should match the tree_ref for positions that should remain 
+unchanged.  Where the tree_ref should be trimmed insert either an empty array ref 
+or an empty hash ref.  If this position represents a value in a hash key => value 
+pair then the hash key is deleted.  If this position represents a value in an array 
+then the position is deleted/cleared depending on the attribute 'change_array_size' 
+in L<Data::Walk::Extracted>.  If the slice ref diverges from the tree ref then no 
+action is taken past the divergence, even if there is a mandated slice. (no defacto 
+grafting occurs!)
+
+=item B<[attribute name]> - attribute names are accepted with temporary attribute settings.  
+These settings are temporarily set for a single "prune_data" call and then the original 
+attribute values are restored.  For this to work the the attribute must meet the 
+L<necessary criteria|/Supported one shot >.
+
+=back
+
+=item B<Example>
+
+	$pruned_tree_ref = $self->prune_data(
+		tree_ref => $tree_data,
+		slice_ref => $slice_data,
+		prune_memory => 0,
+	);
 
 =item B<Returns:> The $tree_ref with any changes (Deep cloned)
 
@@ -503,6 +529,14 @@ original data ref.
 
 =head2 Attributes
 
+Data passed to ->new when creating an instance using a class.  For modification of 
+these attributes see L</Methods>.  The ->new function will either accept fat comma 
+lists or a complete hash ref that has the possible appenders as the top keys.  
+Additionally L<some attributes|/Supported one shot > that have all the following 
+methods; get_$attribute, set_$attribute, has_$attribute, and clear_$attribute,
+can be passed to L<prune_data|/prune_data( %args )> and will be adjusted for 
+just the run of that method call.  These are called 'one shot' attributes.
+
 =head3 prune_memory
 
 =over
@@ -527,10 +561,11 @@ L<Attributes in Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-
 
 =item B<$ENV{Smart_Comments}>
 
-The module uses L<Smart::Comments> with the '-ENV' option so setting the variable 
-$ENV{Smart_Comments} will turn on smart comment reporting.  There are three levels 
-of 'Smartness' called in this module '### #### #####'.  See the L<Smart::Comments> 
-documentation for more information.
+The module uses L<Smart::Comments> if the '-ENV' option is set.  The 'use' is 
+encapsulated in a BEGIN block triggered by the environmental variable for 
+non-believers.  Setting the variable $ENV{Smart_Comments} will load and turn 
+on smart comment reporting.  There are three levels of 'Smartness' available 
+in this module '### #### #####'.
 
 =back
 
@@ -570,7 +605,7 @@ it and/or modify it under the same terms as Perl itself.
 The full text of the license can be found in the
 LICENSE file included with this module.
 
-=head1 Dependancies
+=head1 Dependencies
 
 =over
 
@@ -582,13 +617,13 @@ LICENSE file included with this module.
 
 =item L<MooseX::Types::Moose>
 
-=item L<Smart::Comments> - With the -ENV variable set
-
 =back
 
 =head1 SEE ALSO
 
 =over
+
+=item L<Smart::Comments> - is used if the -ENV option is set
 
 =item L<Data::Walk>
 

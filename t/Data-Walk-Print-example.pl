@@ -3,7 +3,7 @@ use Modern::Perl;
 use YAML::Any;
 use Moose::Util qw( with_traits );
 use lib '../lib';
-use Data::Walk::Extracted v0.011;
+use Data::Walk::Extracted v0.015;
 use Data::Walk::Print v0.009;
 
 $| = 1;

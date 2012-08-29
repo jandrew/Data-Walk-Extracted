@@ -1,17 +1,23 @@
 package Data::Walk::Print;
 
 use Moose::Role;
-requires '_had_secondary', '_process_the_data';
+requires 
+	'_get_had_secondary', 
+	'_process_the_data';
 use MooseX::Types::Moose qw(
         HashRef
         ArrayRef
         Bool
         Str
         Ref
-    );######<------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.009_001');
-use Smart::Comments -ENV;
-### Smart-Comments turned on for Data-Walk-Print
+    );######<-------------------------------------------------------  ADD New types here
+use version; our $VERSION = qv('0.009_003');
+BEGIN{
+	if( $ENV{ Smart_Comments } ){
+		use Smart::Comments -ENV;
+		### Smart-Comments turned on for Data-Walk-Print
+	}
+}
 
 ###############  Package Variables  #####################################################
 
@@ -20,8 +26,35 @@ my $print_keys = {
     primary_ref     => 'print_ref',
     secondary_ref   => 'match_ref',
 };
+my $wait;
 
 ###############  Dispatch Tables  #######################################################
+
+my	$item_dispatch ={######<-----------------------------------------  ADD New types here
+		SCALAR 	=> sub{ return ''; },
+		DEFAULT	=> sub{ return $_[1]; },
+	};
+
+my	$inter_ref_dispatch ={######<------------------------------------  ADD New types here
+		HASH 	=> sub{ return ' => '; },
+		DEFAULT	=> sub{ return ''; },
+	};
+
+my	$initial_match_statement_dispatch ={######<----------------------  ADD New types here
+		HASH => sub{ 
+			return (	
+				$_[1] ? 
+					'Secondary Key Match - ' :
+                    'Secondary Key Mismatch - ' 
+			); },
+		ARRAY => sub{ 
+			return (	
+				$_[1] ? 
+					'Secondary Position Exists - ' :
+                    'Secondary Position Does NOT Exist - ' 
+			); },
+		DEFAULT	=> sub{ return ''; },
+	};
 
 
 ###############  Public Attributes  #####################################################
@@ -67,6 +100,7 @@ has '_pending_string' =>(
     writer      => '_set_pending_string',
     clearer     => '_clear_pending_string',
     predicate   => '_has_pending_string',
+	reader		=> '_get_pending_string',
 );
 
 has '_match_string' =>(
@@ -92,28 +126,38 @@ sub _print_before_method{
     ### <where> - branch values             : $branch_ref
     ### <where> - current match highlighting: $self->get_match_highlighting
     my $should_print = 0;
-    if( $branch_ref ){
-        if( $branch_ref->[3] and $branch_ref->[0] ne 'SCALAR' ){
-            $self->_add_to_pending_string( ("\t" x ($branch_ref->[3])) );
-        }
-        if( $branch_ref->[0] ne 'SCALAR' ){
-            $self->_add_to_pending_string( $branch_ref->[1] );
-        }
-        if( $branch_ref->[0] eq 'HASH' ){######<------------------------------------------------------  ADD New types here
-            $self->_add_to_pending_string( ' => ' );
-            $match_string .=
-                ( exists $passed_ref->{secondary_ref} ) ?
-                    'Secondary Key Match - ' :
-                    'Secondary Key Mismatch - ' ;
-        }elsif( $branch_ref->[0] eq 'ARRAY' ){
-            $match_string .=
-                ( exists $passed_ref->{secondary_ref} ) ?
-                    'Secondary Position Exists - ' :
-                    'Secondary Position Does NOT Exist - ' ;
-        }
+    if( $branch_ref->[3] ){
+		### <where> - adding secondary levels ...
+		### <where> - add tabs ...
+		if( !$self->_has_pending_string or
+			( 	$self->_has_pending_string and
+				($self->_get_pending_string !~ /^\t/) ) ){
+			$self->_add_to_pending_string( ("\t" x ($branch_ref->[3])) );
+		}
+		### <where> - add item ...
+		$self->_add_to_pending_string(
+			$self->_dispatch_method(
+				$item_dispatch,
+				$branch_ref->[0],
+				$branch_ref->[1],
+			)
+		);
+		### <where> - add inter reference markers ...
+		$self->_add_to_pending_string(
+			$self->_dispatch_method(
+				$inter_ref_dispatch,
+				$branch_ref->[0],
+			)
+		);
+		### <where> - add to match string as needed
+		$match_string .= $self->_dispatch_method(
+			$initial_match_statement_dispatch,
+			$branch_ref->[0],
+			( exists $passed_ref->{secondary_ref} ),
+		);
     }
     ### <where> - match string is: $match_string
-    if( is_HashRef( $passed_ref->{primary_ref} ) ){######<------------------------------------------------------  ADD New types here
+    if( is_HashRef( $passed_ref->{primary_ref} ) ){######<----------  ADD New types here
         ### <where> - a HASH ref is next
         $self->_add_to_pending_string( '{' );
         $match_string .=
@@ -147,15 +191,15 @@ sub _print_before_method{
     }
     ### <where> - match string is   : $match_string
     ### <where> - match highlighting: $self->get_match_highlighting
-    ### <where> - secondary prexist : $self->_had_secondary
+    ### <where> - secondary prexist : $self->_get_had_secondary
     $self->_set_match_string( $match_string ) if $match_string;
     if( $should_print ){
         $self->_print_pending_string;
     }
-    ### <where> - current string      : $self->_pending_string
+    ### <where> - current string      : $self->_get_pending_string
     ### <where> - current match string: $self->_match_string
     ### <where> - leaving before_method
-    return $passed_ref;
+	return $passed_ref;
 }
 
 sub _print_after_method{
@@ -178,7 +222,7 @@ sub _print_after_method{
             }
         }
     }
-    if( is_HashRef( $passed_ref->{primary_ref} ) ){######<------------------------------------------------------  ADD New types here
+    if( is_HashRef( $passed_ref->{primary_ref} ) ){######<----------  ADD New types here
         ### <where> - a HASH ref has just closed ...
         $self->_add_to_pending_string( '}' );
         $match_string .=
@@ -205,7 +249,7 @@ sub _add_to_pending_string{
     ### <where> - adding: $string
     $self->_set_pending_string( 
         (($self->_has_pending_string) ?
-            $self->_pending_string : '') . 
+            $self->_get_pending_string : '') . 
         ( ( $string ) ? $string : '' )
     );
     return 1;
@@ -213,13 +257,17 @@ sub _add_to_pending_string{
 
 sub _print_pending_string{
     my ( $self, $string ) = @_;
-    ### <where> - reached print pending string
+    ### <where> - reached print pending string ...
+	#### <where> - match_highlighting called: $self->has_match_highlighting
+	#### <where> - match_highlighting on: $self->get_match_highlighting
+	#### <where> - secondary_ref exists: $self->_get_had_secondary
+	#### <where> - has pending match string: $self->_has_match_string
     if( $self->_has_pending_string ){
-        my  $new_string = $self->_pending_string;
+        my  $new_string = $self->_get_pending_string;
             $new_string .= $string if $string;
             if(	$self->has_match_highlighting and
                 $self->get_match_highlighting and
-                $self->_had_secondary and
+                $self->_get_had_secondary and
                 $self->_has_match_string        ){
                 ### <where> - match_highlighting on - adding match string
                 $new_string .= $self->_match_string;
@@ -250,11 +298,11 @@ Data::Walk::Print - A data printing function
 
 =head1 SYNOPSIS
     
-    #!perl
+	#!perl
 	use Modern::Perl;
 	use YAML::Any;
 	use Moose::Util qw( with_traits );
-	use Data::Walk::Extracted v0.011;
+	use Data::Walk::Extracted v0.015;
 	use Data::Walk::Print v0.009;
 
 	$| = 1;
@@ -343,10 +391,9 @@ Data::Walk::Print - A data printing function
 =head1 DESCRIPTION
 
 This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> is mostly written 
-as a demonstration module for 
-L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>.  
-Both L<Data::Dumper|https://metacpan.org/module/Data::Dumper> - Dump and 
-L<YAML|https://metacpan.org/module/YAML::Any> - Dump functions are more mature than 
+as a demonstration module for L<Data::Walk::Extracted>.  
+Both L<Data::Dumper|https://metacpan.org/module/Data::Dumper#Functions> - Dumper and 
+L<YAML|https://metacpan.org/module/YAML::Any#SUBROUTINES> - Dump functions are more mature than 
 the printing function included here.
 
 =head2 Caveat utilitor
@@ -374,19 +421,19 @@ the printing function included here.
 =head2 USE
 
 This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> and can be 
-used as such.  One way to incorporate this role into L<Data::Walk::Extracted> and then 
-use it is the method 'with_traits' from 
-L<Moose::Util|https://metacpan.org/module/Moose::Util>.  Otherwise see 
-L<Moose::Manual::Roles|https://metacpan.org/module/Moose::Manual::Roles>.
+used as such.  One way to incorporate this role into L<Data::Walk::Extracted> is the 
+method 'with_traits' from L<Moose::Util|https://metacpan.org/module/Moose::Util#EXPORTED-FUNCTIONS>.  
+Otherwise see L<Moose::Manual::Roles|https://metacpan.org/module/Moose::Manual::Roles>.
 
 =head2 Attributes
 
 Data passed to ->new when creating an instance using a class.  For modification of 
 these attributes see L</Methods>.  The ->new function will either accept fat comma 
 lists or a complete hash ref that has the possible appenders as the top keys.  
-Additionally some attributes that meet the necessary criteria can be passed to 
-L<print_data|/Supported one shot > and will be adjusted for just the run of that 
-method call.
+Additionally L<some attributes|/Supported one shot > that have all the following 
+methods; get_$attribute, set_$attribute, has_$attribute, and clear_$attribute,
+can be passed to L<print_data|/print_data( $arg_ref|%args )> and will be adjusted for 
+just the run of that method call.  These are called 'one shot' attributes.
 
 =head3 match_highlighting
 
@@ -401,9 +448,8 @@ row that indicates how the 'print_ref' matches the 'match_ref' (or not).
     
 =back
 
-=head3 L<Attributes in Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm#Attributes> 
-
-also affect the output.
+L<Attributes in Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm#Attributes> 
+ - also affect the output.
 
 =head1 Methods
 
@@ -413,17 +459,13 @@ also affect the output.
 
 =item B<Definition:> this is the method used to print a data reference
 
-=item B<Accepts:> either a single data reference or One or two named arguments 
+=item B<Accepts:> either a single data reference or named arguments 
 in a fat comma list or hashref
 
 =over
 
-=item B<single variable option> - if only one variable is sent and it fails the test 
-for "exists $variable->{print_ref}" then the program will attempt to name it as 
-print_ref => $variable
-
-=item B<named variable options> - if variables are named including one with 'print_ref' 
-then the following two named variables are accepted
+=item B<named variable option> - if data comes in a fat comma list or as a hash ref 
+and the keys include a 'print_ref' key then the list is processed as such.
 
 =over
 
@@ -433,7 +475,16 @@ then the following two named variables are accepted
 =item B<match_ref> - this is a reference used to compare against the 'print_ref'
 - Optional
 
+=item B<[attribute name]> - attribute names are accepted with temporary attribute settings.  
+These settings are temporarily set for a single "print_data" call and then the original 
+attribute values are restored.  For this to work the the attribute must meet the 
+L<necessary criteria|/Supported one shot >.
+
 =back
+
+=item B<single variable option> - if only one data_ref is sent and it fails the test 
+for "exists $data_ref->{print_ref}" then the program will attempt to name it as 
+print_ref => $data_ref and then process the data as a fat comma list.
 
 =back
 
@@ -460,10 +511,11 @@ L</match_highlighting>)
 
 =item B<$ENV{Smart_Comments}>
 
-The module uses L<Smart::Comments> with the '-ENV' option so setting the variable 
-$ENV{Smart_Comments} will turn on smart comment reporting.  There are three levels 
-of 'Smartness' called in this module '### #### #####'.  See the L<Smart::Comments> 
-documentation for more information.
+The module uses L<Smart::Comments> if the '-ENV' option is set.  The 'use' is 
+encapsulated in a BEGIN block triggered by the environmental variable to comfort 
+non-believers.  Setting the variable $ENV{Smart_Comments} will load and turn 
+on smart comment reporting.  There are three levels of 'Smartness' available 
+in this module '### #### #####'.
 
 =back
 
@@ -479,11 +531,11 @@ documentation for more information.
 
 =over
 
-=item Support printing CodeRefs
+=item * Support printing CodeRefs
 
-=item Support printing Objects / Instances
+=item * Support printing Objects / Instances
 
-=item Find better print parsing logic - Complex Dispatch Tables?
+=item * print the data address if the node is skipped
 
 =back
 
@@ -505,7 +557,7 @@ it and/or modify it under the same terms as Perl itself.
 The full text of the license can be found in the
 LICENSE file included with this module.
 
-=head1 Dependancies
+=head1 Dependencies
 
 =over
 
@@ -517,19 +569,19 @@ LICENSE file included with this module.
 
 =item L<MooseX::Types::Moose>
 
-=item L<Smart::Comments> - With the -ENV variable set
-
 =back
 
 =head1 SEE ALSO
 
 =over
 
+=item L<Smart::Comments> - is used if the -ENV option is set
+
 =item L<Data::Walk>
 
 =item L<Data::Walker>
 
-=item L<Data::Dumper> - Dump
+=item L<Data::Dumper> - Dumper
 
 =item L<YAML> - Dump
 

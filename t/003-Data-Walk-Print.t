@@ -1,7 +1,7 @@
 #!perl
 #######  Test File for Data::Walk::Extracted  #######
 BEGIN{
-	#~ $ENV{ Smart_Comments } = '### #### #####';
+	#~ $ENV{ Smart_Comments } = '###'; #### #####
 }
 
 use Test::Most;
@@ -12,12 +12,12 @@ use Capture::Tiny qw(
 use Smart::Comments -ENV;#'###'
 use Moose::Util qw( with_traits );
 use lib '../lib', 'lib';
-use Data::Walk::Extracted v0.011;
+use Data::Walk::Extracted v0.015;
 use Data::Walk::Print v0.009;
 
 my  ( 
 			$first_ref, $second_ref, $newclass, $gutenberg, 
-			$test_inst, $capture, $wait 
+			$test_inst, $capture, $wait, $x, @answer,
 );#
 my 			$test_case = 1;
 my 			@class_attributes = qw(
@@ -234,13 +234,14 @@ lives_ok{
 ok			$capture = capture_stdout{ 
 				$gutenberg->print_data( print_ref => $first_ref, ) 
 			},							'Test sending the data structure for test case: ' . $test_case;
-my  		$x = 0;
-my  		@answer = split "\n", $capture;
+			$x = 0;
+			@answer = split "\n", $capture;
 ### <where> - checking the answers for test: $test_case
 map{
 is			$answer[$x], $_, 			'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case";
 }			@{$answer_ref->[$test_case]};
 			$test_case++;
+$ENV{ special_variable } = 1;
 ok			$gutenberg->set_skip_ARRAY_ref( 1 ),
 										"... set 'skip = yes' for future parsed ARRAY refs (test case: $test_case)";
 lives_ok{
@@ -297,6 +298,7 @@ dies_ok{
 }										"Test sending the data with a bad key";
 like		$@, qr/The key -print_ref- is required and must have a value/,
 										"Check that the code caught the wrong failure";
+#~ $ENV{ special_variable } = 1;
 lives_ok{
 			$capture = capture_stdout{ $gutenberg->print_data( 
 				print_ref => $first_ref,
@@ -310,6 +312,7 @@ map{
 is			$answer[$x], $_, 			'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case";
 }			@{$answer_ref->[$test_case]};
 			$test_case++;
+#~ exit 1;
 lives_ok{ 
 			$gutenberg->set_match_highlighting( 0 ); 
 }										"... set 'match_highlighting = NO' for future parsed refs (test case: $test_case)";

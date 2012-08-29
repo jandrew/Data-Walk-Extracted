@@ -4,7 +4,7 @@ use Moose::Role;
 requires 
 	'_process_the_data', 
 	'_dispatch_method', 
-	'_has_secondary';
+	'_get_had_secondary';
 use MooseX::Types::Moose qw(
         HashRef
         ArrayRef
@@ -15,10 +15,15 @@ use MooseX::Types::Moose qw(
         Ref
         Int
         Item
+		Num
     );######<--------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.005_001');
-use Smart::Comments -ENV;
-### Smart-Comments turned on for Data-Walk-Clone
+use version; our $VERSION = qv('0.005_005');
+BEGIN{
+	if( $ENV{ Smart_Comments } ){
+		use Smart::Comments -ENV;
+		### Smart-Comments turned on for Data-Walk-Clone
+	}
+}
 
 ###############  Package Variables  #####################################################
 
@@ -26,14 +31,15 @@ $| = 1;
 my $clone_keys = {
     primary_ref		=> 'donor_ref',
 };
-
+my ( $wait );
 
 ###############  Dispatch Tables  #######################################################
 
 my 	$skip_clone_test_dispatch ={######<------------------------------  ADD New types here
 		ARRAY	=> \&_array_skip_clone_test,
-		HASH	=> \&_hash_skip_clone_test,
-		name => 'skip_clone_test_dispatch',#Meta data
+		HASH	=> \&_general_skip_clone_test,
+		OBJECT	=> \&_general_skip_clone_test,
+		name 	=> 'skip_clone_test_dispatch',#Meta data
 	};
 
 my 	$seed_clone_dispatch ={
@@ -63,7 +69,7 @@ my 	$seed_clone_dispatch ={
 ###############  Public Attributes  #####################################################
 
 has 'clone_level' =>(
-	is				=> 'ro',
+	is			=> 'ro',
 	isa			=> Int,
 	predicate	=> 'has_clone_level',
 	reader		=> 'get_clone_level',
@@ -71,8 +77,22 @@ has 'clone_level' =>(
 	clearer		=> 'clear_clone_level',
 );
 
+has 'dont_clone_node_types' =>(
+	is		=> 'ro',
+	isa		=> ArrayRef,
+	traits	=> ['Array'],
+	reader	=> 'get_dont_clone_node_types',
+	writer	=> 'set_dont_clone_node_types',
+	default	=> sub{ [] },
+    handles => {
+        add_dont_clone_node_type	=> 'push',
+		has_dont_clone_node_types	=> 'count',
+		clear_dont_clone_node_types	=> 'clear',
+    },
+);
+
 has 'skip_clone_tests' =>(
-	is			=> 'ro',
+	is		=> 'ro',
 	isa		=> ArrayRef[ArrayRef],
 	traits	=> ['Array'],
 	reader	=> 'get_skip_clone_tests',
@@ -86,7 +106,7 @@ has 'skip_clone_tests' =>(
 );
 
 has 'should_clone' =>(
-	is				=> 'ro',
+	is			=> 'ro',
 	isa			=> Bool,
 	writer		=> 'set_should_clone',
 	reader		=> 'get_should_clone',
@@ -146,12 +166,13 @@ sub _clone_before_method{
     ### <where> - reached _clone_before_method
     #### <where> - received input: $passed_ref
     ### <where> - doner_ref: $donor_ref
-	##### $self
+	##### <where> - self: $self
 	if( exists $passed_ref->{branch_ref} and
 		@{$passed_ref->{branch_ref}}			){
 		### <where> - testing for a bounce condition ...
-		if(  	$self->_went_too_deep( $passed_ref ) or 
-				$self->_dont_clone_here( $passed_ref )	){
+		if(  	$self->_went_too_deep( $passed_ref ) or
+				$self->_dont_clone_node( $passed_ref ) or
+				$self->_dont_clone_here( $passed_ref )		){
 			### <where> - attaching the uncloned portion to the secondary_ref and then bouncing ...
 			$passed_ref->{secondary_ref} =  $passed_ref->{primary_ref};
 			$passed_ref->{bounce} = 1;
@@ -165,7 +186,7 @@ sub _clone_before_method{
 			$passed_ref->{secondary_ref} =  $passed_ref->{primary_ref};
 		}else{
 			### <where> - turn on one element of cloning ...
-			$self->_has_secondary( 1 );
+			$self->_get_had_secondary( 1 );
 		}
 	}
     return $passed_ref;
@@ -207,6 +228,28 @@ sub _went_too_deep{
 	return $answer;
 }
 
+sub _dont_clone_node{
+    my ( $self, $passed_ref ) = @_;
+	my ( $answer, $current_branch ) = (0, $passed_ref->{branch_ref}->[-1]);
+    ### <where> - reached _dont_clone_node ...
+	### <where> - current item: $current_branch
+    #### <where> - received input: $passed_ref
+	if( $self->has_dont_clone_node_types ){
+		### <where> - found node skip list: $self->get_dont_clone_node_types
+		my $ref_type = $self->_extracted_ref_type( $passed_ref->{primary_ref} );
+		for my $test ( @{$self->get_dont_clone_node_types} ){
+			### <where> - running test: $test
+			if( $test eq $ref_type ){
+				### <where> - Never on a sunday! ...
+				$answer = 1;
+				last;
+			}
+		}
+	}
+	### <where> - answer: $answer
+	return $answer;
+}
+
 sub _dont_clone_here{
     my ( $self, $passed_ref ) = @_;
 	my ( $answer, $current_branch ) = (0, $passed_ref->{branch_ref}->[-1]);
@@ -233,62 +276,71 @@ sub _dont_clone_here{
 	return $answer;
 }
 
-sub _hash_skip_clone_test{
+sub _array_skip_clone_test{
     my ( $self, $test_ref, $branch_ref ) = @_;
-	my ( $answer, ) = (0, );
-    ### <where> - reached _hash_skip_clone_test ...
+	my ( $answer, $match_level ) = ( 0, 0 );
+    ### <where> - reached _array_skip_clone_test ...
 	### <where> - test_ref: $test_ref
 	### <where> - branch_ref: $branch_ref
-	#~ $wait = <>;
-	if(	$branch_ref and
-		$test_ref->[0] eq $branch_ref->[0] and
-		$branch_ref->[1]									){
-		### <where> - checking for test type ...
-		if( is_RegexpRef( $test_ref->[1] ) ){
-			if( $branch_ref->[1] =~ $test_ref->[1] ){
-				### <where> - found a regex match to: $test_ref->[1]
-				$answer = 1;
-			}
-		}else{
-			if( $test_ref->[1] eq $branch_ref->[1] ){
-				### <where> - found a keyword string match for: $test_ref->[1]
-				$answer = 1;
-			}
-		}
+	if( $branch_ref ){
+		$match_level++ if
+			(	$test_ref->[0] eq $branch_ref->[0] );
+		$match_level++ if
+			(	$test_ref->[2] =~ /^(any|all)$/i or
+				$test_ref->[2] == $branch_ref->[2]);
+		$match_level++ if
+			(	$test_ref->[3] =~ /^(any|all)$/i or
+				$test_ref->[3] == $branch_ref->[3] );
+		### <where> - match level: $match_level
 	}
-	if( is_Int( $test_ref->[3] ) ){
-		### <where> - found a level requirment ...
-		if( $test_ref->[3] ne $branch_ref->[3] ){
-			### <where> - level requirement does not match - clearing any keyword matches ...
-			$answer = 0;
-		}
-	}
+	$answer = ( $match_level == 3 ) ? 1 : 0 ;
+	### <where> - answer: $answer
 	return $answer;
 }
 
-sub _array_skip_clone_test{
+sub _general_skip_clone_test{
     my ( $self, $test_ref, $branch_ref ) = @_;
-	my ( $answer, ) = (0, );
-    ### <where> - reached _hash_skip_clone_test ...
+	my ( $answer, $match_level ) = ( 0, 0 );
+    ### <where> - reached _general_skip_clone_test ...
 	### <where> - test_ref: $test_ref
 	### <where> - branch_ref: $branch_ref
-	#~ $wait = <>;
-	if(	$branch_ref and
-		$test_ref->[0] eq $branch_ref->[0] and
-		$branch_ref->[2] and
-		$test_ref->[2] eq $branch_ref->[2]		){
-		### <where> - found a position match for position: $test_ref->[2]
-		$answer = 1;
+	$wait = <> if $ENV{ special_variable };
+	if( $branch_ref ){
+		my $item = $branch_ref->[1];
+		### <where> - item: $item
+		$match_level++ if
+			(	$test_ref->[0] eq $branch_ref->[0] );
+		### <where> - match level after type match: $match_level
+		$match_level++ if
+			( 
+				( 
+					$test_ref->[1] =~ /^(any|all)$/i	
+				) or
+				( 
+					$item and
+					( 	
+						$test_ref->[1] eq $item or
+						$test_ref->[1] =~ /$item/		
+					) 	
+				)
+			);
+		### <where> - match level after item match: $match_level
+		$match_level++ if
+			(	$test_ref->[2] =~ /^(any|all)$/i or
+				( 	is_Num( $test_ref->[2] ) and 
+					$test_ref->[2] == $branch_ref->[2] ) );
+		### <where> - match level after position match: $match_level
+		$match_level++ if
+			(	$test_ref->[3] =~ /^(any|all)$/i or
+				( 	is_Num( $test_ref->[3] ) and 
+					$test_ref->[3] == $branch_ref->[3] ) );
+		### <where> - match level after depth match: $match_level
 	}
-	if( is_Int( $test_ref->[3] ) ){
-		### <where> - found a level requirment ...
-		if( $test_ref->[3] ne $branch_ref->[3] ){
-			### <where> - level requirement does not match - clearing any keyword matches ...
-			$answer = 0;
-		}
-	}
+	$answer = ( $match_level == 4 ) ? 1 : 0 ;
+	### <where> - answer: $answer
 	return $answer;
 }
+	
 
 #################### Phinish with a Phlourish ###########################################
 
@@ -310,8 +362,8 @@ Data::Walk::Clone - deep data cloning with boundaries
 	#!perl
 	use Modern::Perl;
 	use Moose::Util qw( with_traits );
-	use Data::Walk::Extracted v0.011;
-	use Data::Walk::Clone v0.003;
+	use Data::Walk::Extracted v0.015;
+	use Data::Walk::Clone v0.005;
 
 	my  $dr_nisar_ahmad_wani = with_traits( 
 			'Data::Walk::Extracted', 
@@ -369,15 +421,16 @@ Data::Walk::Clone - deep data cloning with boundaries
 This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> contains 
 methods for implementing the method L<deep_clone|/deep_clone( %args )> using 
 L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>.  
-This method is used to deep clone a data ref.  Cloning is accomplished by sending a 
-'donor_ref' that has data that you want copied into a different memory location.  In 
-general Data::Walk::Extracted already deep clones any output as part of its data walking 
-so the primary value of this Role is to define deep cloning boundaries. It 
-may be that some portion of the data should maintain common memory location 
-pointers to the original memory locations and so L<two ways|/clone_level> of 
-defining where to stop deep cloning are provided.  First a level callout where deep 
-cloning can stop at a common level.  Second a matching tool where key or node 
-type matching can be done across multiple levels or only at targeted levels.
+This method is used to deep clone (clone many/all) levels of a data ref.  Deep cloning 
+is accomplished by sending a 'donor_ref' that has data that you want copied into a 
+different memory location.  In general Data::Walk::Extracted already deep clones any 
+output as part of its data walking so the primary value of this role is to define 
+deep cloning boundaries. It may be that some portion of the data should maintain common 
+memory location pointers to the original memory locations and so two ways of defining 
+where to stop deep cloning are provided.  First a L<level callout|/clone_level> where 
+deep cloning can stop at a common level.  Second a L<matching tool|/skip_clone_tests> 
+where key or node type matching can be done across multiple levels or only at targeted 
+levels.
 
 =head2 Caveat utilitor
 
@@ -407,31 +460,43 @@ type matching can be done across multiple levels or only at targeted levels.
 
 =head2 USE
 
-One way to join this role with 
-L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm> 
-is the method 'with_traits' from 
-L<Moose::Util|https://metacpan.org/module/Moose::Util>.  Otherwise see 
-L<Moose::Manual::Roles|https://metacpan.org/module/Moose::Manual::Roles>.
+This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> and can be 
+used as such.  One way to use this role with L<Data::Walk::Extracted>, is the method 
+'with_traits' from L<Moose::Util|https://metacpan.org/module/Moose::Util#EXPORTED-FUNCTIONS>.  
+Otherwise see L<Moose::Manual::Roles|https://metacpan.org/module/Moose::Manual::Roles>.
 
 =head2 Methods
 
-=head3 deep_clone( %args )
+=head3 deep_clone( $arg_ref|%args )
 
 =over
 
 =item B<Definition:> This takes a 'donor_ref' and deep clones it.
 
-=item B<Accepts:> This method accepts data in three ways.  A list, a hashref, or a single data 
-reference.  If a list is passed then it is assumed to be a fat comma list and is passed to _process_the_data in 
-L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm> 
-as a hash ref.  If a hashref is passed then it is checked for a 'donor_ref' key and then passed to 
-'_process_the_data' directly if the key exists.  If the key doesnt exist or the single passed value is not a 
-hashref then then the data is added as a value to the key donor_ref and passed through as a hashref to 
-'_process_the_data'.  The donor_ref can contain any of the L<accepted|/Supported Node types> data nodes.  
-L<Some|/Supported one shot> attributes can also be changed for the duration of this method by using the 
-attribute name as a key in %args.  See 
-L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm> 
-Attributes for more explanation.
+=item B<Accepts:> either a single data reference or named arguments 
+in a fat comma list or hashref
+
+=over
+
+=item B<named variable option> - if data comes in a fat comma list or as a hash ref 
+and the keys include a 'donor_ref' key then the list is processed as such.
+
+=over
+
+=item B<donor_ref> - this is the data reference that should be deep cloned - required
+
+=item B<[attribute name]> - attribute names are accepted with temporary attribute settings.  
+These settings are temporarily set for a single "deep_clone" call and then the original 
+attribute values are restored.  For this to work the the attribute must meet the 
+L<necessary criteria|/get_$attribute, set_$attribute>.
+
+=back
+
+=item B<single variable option> - if only one data_ref is sent and it fails the test 
+for "exists $data_ref->{donor_ref}" then the program will attempt to name it as 
+donor_ref => $data_ref and then process the data as a fat comma list.
+
+=back
 
 =item B<Returns:> The deep cloned data reference
 
@@ -441,7 +506,7 @@ Attributes for more explanation.
 
 =over
 
-=item B<Definition:> This will indicate if the attribute L<clone_level|/clone_level( $int )> is set
+=item B<Definition:> This will indicate if the attribute L<clone_level|/clone_level> is set
 
 =item B<Accepts:> nothing
 
@@ -453,7 +518,7 @@ Attributes for more explanation.
 
 =over
 
-=item B<Definition:> This will return the currently set L<clone_level|/clone_level( $int )> attribute value
+=item B<Definition:> This will return the currently set L<clone_level|/clone_level> attribute value
 
 =item B<Accepts:> nothing
 
@@ -461,11 +526,11 @@ Attributes for more explanation.
 
 =back
 
-=head3 set_clone_level
+=head3 set_clone_level( $int )
 
 =over
 
-=item B<Definition:> This will set the L<clone_level|/clone_level( $int )> attribute
+=item B<Definition:> This will set the L<clone_level|/clone_level> attribute
 
 =item B<Accepts:> a positive integer
 
@@ -477,7 +542,7 @@ Attributes for more explanation.
 
 =over
 
-=item B<Definition:> This will clear the L<clone_level|/clone_level( $int )> attribute
+=item B<Definition:> This will clear the L<clone_level|/clone_level> attribute
 
 =item B<Accepts:> nothing
 
@@ -490,8 +555,7 @@ Attributes for more explanation.
 =over
 
 =item B<Definition:> This will return an ArrayRef[ArrayRef] with all skip tests for 
-the L<skip_clone_tests|/skip_clone_tests( [ [ $type, $key, $position, $level ], ] )> 
-attribute
+the L<skip_clone_tests|/skip_clone_tests> attribute
 
 =item B<Accepts:> nothing
 
@@ -499,13 +563,13 @@ attribute
 
 =back
 
-=head3 set_skip_clone_tests
+=head3 set_skip_clone_tests( [ [ $type, $key, $position, $level ], ] )
 
 =over
 
 =item B<Definition:> This will take an ArrayRef[ArrayRef] with all skip tests for 
-the L<skip_clone_tests|/skip_clone_tests( [ [ $type, $key, $position, $level ], ] )> 
-attribute and replace any existing tests with the new list.
+the L<skip_clone_tests|/skip_clone_tests> attribute and replace any existing 
+tests with the new list.
 
 =item B<Accepts:>  ArrayRef[ArrayRef]
 
@@ -513,13 +577,12 @@ attribute and replace any existing tests with the new list.
 
 =back
 
-=head3 add_skip_clone_test
+=head3 add_skip_clone_test( [ $type, $key, $position, $level ] )
 
 =over
 
 =item B<Definition:> This will add one array ref skip test callout to the 
-L<skip_clone_tests|/skip_clone_tests( [ [ $type, $key, $position, $level ], ] )> 
-attribute list
+L<skip_clone_tests|/skip_clone_tests> attribute list
 
 =item B<Accepts:> [ $type, $key, $position, $level ]
 
@@ -532,8 +595,7 @@ attribute list
 =over
 
 =item B<Definition:> This will return the number of skip tests called out in 
-the L<skip_clone_tests|/skip_clone_tests( [ [ $type, $key, $position, $level ], ] )> 
-attribute list
+the L<skip_clone_tests|/skip_clone_tests> attribute list
 
 =item B<Accepts:> nothing
 
@@ -545,8 +607,7 @@ attribute list
 
 =over
 
-=item B<Definition:> This will clear the the 
-L<skip_clone_tests|/skip_clone_tests( [ [ $type, $key, $position, $level ], ] )> 
+=item B<Definition:> This will clear the the L<skip_clone_tests|/skip_clone_tests> 
 attribute list
 
 =item B<Accepts:> nothing
@@ -560,7 +621,7 @@ attribute list
 =over
 
 =item B<Definition:> This will get the current value of the attribute 
-L<should_clone|/should_clone( $Bool )> 
+L<should_clone|/should_clone> 
 
 =item B<Accepts:>  nothing
 
@@ -572,7 +633,7 @@ L<should_clone|/should_clone( $Bool )>
 
 =over
 
-=item B<Definition:> This will set the attribute L<should_clone|/should_clone( $Bool )> 
+=item B<Definition:> This will set the attribute L<should_clone|/should_clone> 
 
 =item B<Accepts:> a boolean value
 
@@ -584,7 +645,7 @@ L<should_clone|/should_clone( $Bool )>
 
 =over
 
-=item B<Definition:> This will return true if the attribute L<should_clone|/should_clone( $Bool )>
+=item B<Definition:> This will return true if the attribute L<should_clone|/should_clone>
 is active
 
 =item B<Accepts:> nothing
@@ -597,7 +658,7 @@ is active
 
 =over
 
-=item B<Definition:> This will set the attribute L<should_clone|/should_clone( $Bool )> 
+=item B<Definition:> This will set the attribute L<should_clone|/should_clone> 
 to on ( 1 ).  I<The name is awkward to accomodate one shot attribute changes.>
 
 =item B<Accepts:> nothing
@@ -608,11 +669,13 @@ to on ( 1 ).  I<The name is awkward to accomodate one shot attribute changes.>
 
 =head2 Attributes
 
-Data passed to ->new when creating an instance.  For modification of these attributes 
-see L</Methods>.  The ->new function will either accept fat comma lists or a complete 
-hash ref that has the possible appenders as the top keys.  Additionally 
-L<some attributes|/Supported one shot > that meet the criteria can be passed to 
-L<deep_clone|/deep_clone( %args )> and will be adjusted for just that run of the method.
+Data passed to ->new when creating an instance using a class.  For modification of 
+these attributes see L</Methods>.  The ->new function will either accept fat comma 
+lists or a complete hash ref that has the possible appenders as the top keys.  
+Additionally L<some attributes|/Supported one shot > that have all the following 
+methods; get_$attribute, set_$attribute, has_$attribute, and clear_$attribute,
+can be passed to L<deep_clone|/deep_clone( $arg_ref|%args )> and will be adjusted for 
+just the run of that method call.  These are called 'one shot' attributes.
 
 =head3 clone_level
 
@@ -650,10 +713,10 @@ types
 =item B<$position> - this is used to match an array position can be an integer or 'ANY'
 
 =item B<$level> - this restricts the skipping test usage to a specific level only or 'ANY'
-    
-=back
 
-	example:
+=back
+    
+=item B<Example>
 	
 	[ 
 		[ 'HASH', 'KeyWord', 'ANY', 'ANY'], 
@@ -672,17 +735,15 @@ types
 
 =over
 
-=item B<Definition:> There are times when the cloning is built into code by adding the Role 
+=item B<Definition:> There are times when the cloning is built into code by adding the role 
 to a class but you want to turn it off.  This attribute will cause the deep_clone function 
-to return the donor_ref pointer as the cloned_ref.  This can be set for each run.
+to return the donor_ref pointer as the cloned_ref.
 
 =item B<Default> 1 = cloning occurs
 
 =item B<Range> 1 | 0 = no cloning
     
 =back
-
-=head3 See also 
 
 Attributes in 
 L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm#Attributes> 
@@ -694,10 +755,11 @@ can affect the output.
 
 =item B<$ENV{Smart_Comments}>
 
-The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> 
-with the '-ENV' option so setting the variable $ENV{Smart_Comments} will turn on smart 
-comment reporting.  There are three levels of 'Smartness' called in this module 
-'### #### #####'.  See the Smart::Comments documentation for more information.
+The module uses L<Smart::Comments> if the '-ENV' option is set.  The 'use' is 
+encapsulated in a BEGIN block triggered by the environmental variable to comfort 
+non-believers.  Setting the variable $ENV{Smart_Comments} will load and turn 
+on smart comment reporting.  There are three levels of 'Smartness' available 
+in this module '### #### #####'.
 
 =back
 
@@ -723,6 +785,8 @@ comment reporting.  There are three levels of 'Smartness' called in this module
 
 =over
 
+=item Jed Lund
+
 =item jandrew@cpan.org
 
 =back
@@ -735,7 +799,7 @@ it and/or modify it under the same terms as Perl itself.
 The full text of the license can be found in the
 LICENSE file included with this module.
 
-=head1 Dependancies
+=head1 Dependencies
 
 =over
 
@@ -747,13 +811,13 @@ LICENSE file included with this module.
 
 =item L<MooseX::Types::Moose|https://metacpan.org/module/MooseX::Types::Moose>
 
-=item L<Smart::Comments|https://metacpan.org/module/Smart::Comments> - With the -ENV variable set
-
 =back
 
 =head1 SEE ALSO
 
 =over
+
+=item L<Smart::Comments> - is used if the -ENV option is set
 
 =item L<Data::Walk|https://metacpan.org/module/Data::Walk>
 

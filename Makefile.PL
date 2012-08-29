@@ -16,7 +16,8 @@ my %WriteMakefileArgs = (
     "Modern::Perl" => 0,
     "Moose::Util" => 0,
     "Test::Moose" => 0,
-    "Test::Most" => 0
+    "Test::Most" => 0,
+    "YAML::Any" => 0
   },
   "CONFIGURE_REQUIRES" => {
     "ExtUtils::MakeMaker" => "6.30"
@@ -27,15 +28,16 @@ my %WriteMakefileArgs = (
   "NAME" => "Data::Walk::Extracted",
   "PREREQ_PM" => {
     "Carp" => 0,
+    "Class::Inspector" => 0,
     "Moose" => 0,
     "Moose::Role" => 0,
     "MooseX::StrictConstructor" => 0,
     "MooseX::Types::Moose" => 0,
+    "Scalar::Util" => 0,
     "Smart::Comments" => 0,
-    "YAML::Any" => 0,
     "version" => 0
   },
-  "VERSION" => "v0.013_001",
+  "VERSION" => "v0.015_003",
   "test" => {
     "TESTS" => "t/*.t"
   }

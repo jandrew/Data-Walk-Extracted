@@ -8,6 +8,7 @@ build_requires:
   Moose::Util: 0
   Test::Moose: 0
   Test::Most: 0
+  YAML::Any: 0
 configure_requires:
   ExtUtils::MakeMaker: 6.30
 dynamic_config: 0
@@ -19,12 +20,13 @@ meta-spec:
 name: Data-Walk-Extracted
 requires:
   Carp: 0
+  Class::Inspector: 0
   Moose: 0
   Moose::Role: 0
   MooseX::StrictConstructor: 0
   MooseX::Types::Moose: 0
+  Scalar::Util: 0
   Smart::Comments: 0
-  YAML::Any: 0
   perl: 5.010
   version: 0
-version: v0.013_001
+version: v0.015_003

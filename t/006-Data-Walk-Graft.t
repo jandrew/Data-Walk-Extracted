@@ -1,15 +1,19 @@
-#! C:/Perl/bin/perl
+#!perl
 #######  Test File for Data::Walk::Graft  #######
+BEGIN{
+	#~ $ENV{ Smart_Comments } = '###';
+}
 use Test::Most;
 use Test::Moose;
 use Moose::Util qw( with_traits );
 use lib '../lib', 'lib';
-use Data::Walk::Extracted v0.011;
-use Data::Walk::Graft v0.007;
+use Data::Walk::Extracted v0.015;
+use Data::Walk::Graft v0.009;
+use YAML::Any;
 
 my( 
 			$wait, $new_class, $gardener, 
-			$tree_ref, $scion_ref, $answer_ref 
+			$tree_ref, $scion_ref, $answer_ref, $answer_two,
 );
 
 my  		@methods = qw(
@@ -35,6 +39,7 @@ lives_ok{
 				( 
 					'Data::Walk::Clone',
 					'Data::Walk::Graft',
+					'Data::Walk::Print',
 				), 
 			)->new();
 }										"Prep a new Graft instance";
@@ -430,5 +435,78 @@ is_deeply	$gardener->graft_data(
                 },
             ),
             $answer_ref,				'Test the result without a tree_ref';
+lives_ok{   
+			$tree_ref ={
+				branch1 => undef,
+				branch2 => {
+						subbranch => [],
+				},
+			};
+			$scion_ref ={
+				branch1 => [ Test1->new, ],
+				branch2 => {
+						subbranch => [ bless( [], 'Test2' ), ],
+				},
+			};
+}										'Build multi-layer one shot attribute test';
+lives_ok{
+			$gardener->set_graft_memory( 1 );
+		}								'Set graft memory for the next run';
+lives_ok{
+			$tree_ref = $gardener->graft_data(
+				tree_ref => $tree_ref,
+				scion_ref => $scion_ref,
+				dont_clone_node_types => [ 'OBJECT',  ],
+			);
+}										'Run the graft operation to test multi-layer one shot attributes';
+is_deeply	$tree_ref, $scion_ref,		'Check for deep matching on the multi-layer test';
+isnt		$tree_ref->{branch1}, $scion_ref->{branch1},
+										'Check that the separate variables are separate for the multi-layer test';
+is			$tree_ref->{branch1}->[0],
+			$scion_ref->{branch1}->[0],'Check that the graft did not clone at the first Object in the multi-layer test';
+is			$tree_ref->{branch1}->[0],
+			$scion_ref->{branch1}->[0],'Check that the graft did not clone at the second Object in the multi-layer test(most critical)';
+is_deeply	$gardener->get_grafted_positions, 
+			[
+				{
+					branch2 =>{
+						subbranch =>[ bless( [], 'Test2' ), ],
+					}
+				},
+				{
+					branch1 => [ Test1->new, ],
+				},
+			],							'Check to see if the graft memory worked';
+lives_ok{   
+			$tree_ref ={
+				branch2 => {
+						subbranch => [ { key => 'value', }, ],
+				},
+			};
+			$scion_ref ={};
+			$answer_two = $gardener->deep_clone( $tree_ref );
+}										'Build a defacto pruning operation test';
+lives_ok{
+			$answer_ref = $gardener->graft_data(
+				tree_ref => $tree_ref,
+				scion_ref => $scion_ref,
+			);
+}										'Run the graft operation to ensure no defacto pruning occurs';
+is_deeply	$answer_ref, $answer_two,	'Check for deep matching on the (excluded) defacto pruning test';
 explain 								"...Test Done";
 done_testing;
+
+package Test1;
+use Moose;
+
+sub new{ 
+	return bless {
+		attribute_key => 'value',
+	}, __PACKAGE__;
+}
+
+sub print_something{
+	print "something";
+}
+
+1;

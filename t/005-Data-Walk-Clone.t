@@ -9,7 +9,7 @@ use Moose::Util qw( with_traits );
 use Smart::Comments -ENV;
 ### Smart-Comments turned on for 005-Data-Walk-Clone.t ...
 use lib '../lib', 'lib';
-use Data::Walk::Extracted v0.011;
+use Data::Walk::Extracted v0.015;
 use Data::Walk::Clone v0.005;
 
 my  ( 
@@ -21,6 +21,7 @@ my  (
 			$masha_ref, 
 			$little_nicky_ref,
 			$injaz_ref,
+			$test_instance,
 );
 
 my  		@attributes = qw(
@@ -183,14 +184,27 @@ lives_ok{
 				},
 			};
 }										'Build a data ref to test the empty reference bug';
-### <where> - donor_ref: $donor_ref
 lives_ok{
 			$injaz_ref = $victor_frankenstein->deep_clone(
 				$donor_ref,
 			)
 }										'Test cloning the empty reference bug test donor ref';
 is_deeply	$injaz_ref, $donor_ref,		'Confirm that the new clone matches deeply';
-### <where> - donor_ref: $donor_ref
-### <where> - injaz_ref: $injaz_ref
+lives_ok{
+			$test_instance = bless {}, 'TestClass';
+			$donor_ref = {
+				test =>[
+					$test_instance,
+				],
+};
+}										'Build a data ref to test the array bounce issue';
+lives_ok{
+			$injaz_ref = $victor_frankenstein->deep_clone(
+				donor_ref =>$donor_ref,
+				skip_clone_tests => [ [ 'ARRAY', 'ANY', 'ANY', 'ANY', ], ],
+			)
+}										'Test cloning the array bounce issue test donor ref';
+is			$injaz_ref->{test}->[0], 
+			$donor_ref->{test}->[0],	'Confirm that the clone bounced at the correct point';
 explain 								"... Test Done\n";
 done_testing;

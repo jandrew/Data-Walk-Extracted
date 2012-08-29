@@ -1,11 +1,14 @@
 #! C:/Perl/bin/perl
 #######  Test File for Data::Walk::Prune  #######
+BEGIN{
+	#~ $ENV{ Smart_Comments } = '### #### #####';
+}
 use Test::Most;
 use Test::Moose;
 use Moose::Util qw( with_traits );
 use lib '../lib', 'lib';
-use Data::Walk::Extracted v0.009;
-use Data::Walk::Prune v0.005;
+use Data::Walk::Extracted v0.015;
+use Data::Walk::Prune v0.007;
 
 my  ( $wait, $newclass, $edward_scissorhands, $treeref, $sliceref, $answerref );
 
@@ -176,6 +179,7 @@ lives_ok{
 }										'... change the $answerref for testing';
 ok 			$edward_scissorhands->set_prune_memory( 1 ),	
 										'Turn on prune rememberance';
+#~ $ENV{ special_variable } = 1;
 is_deeply	$edward_scissorhands->prune_data(
                 tree_ref    => $treeref, 
                 slice_ref   => $sliceref,
