@@ -4,7 +4,7 @@ use Moose;
 use MooseX::StrictConstructor;
 use Class::Inspector;
 use Scalar::Util qw( reftype );
-use version; our $VERSION = qv('0.015_003');
+use version; our $VERSION = qv('0.015_005');
 use Carp qw( carp croak confess cluck );
 use Smart::Comments -ENV;
 use MooseX::Types::Moose qw(

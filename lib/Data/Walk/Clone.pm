@@ -128,9 +128,9 @@ sub deep_clone{#Used to convert names for Data::Walk:Extracted
 			{ @_[1 .. $#_] } ;
     ##### <where> - Passed hashref: $passed_ref
 	@$passed_ref{ 
-		'before_method', 'after_method', 'fixed_primary',
+		'before_method', 'after_method',# 'fixed_primary',
 	} = ( 
-		'_clone_before_method',	'_clone_after_method',	1,
+		'_clone_before_method',	'_clone_after_method',#	1,
 	);
 	##### <where> - Start recursive parsing with  : $passed_ref
 	$passed_ref = $self->_process_the_data( $passed_ref, $clone_keys );
