@@ -12,9 +12,10 @@ my %WriteMakefileArgs = (
   "ABSTRACT" => "An extracted dataref walker\r",
   "AUTHOR" => "Jed Lund <jandrew\@cpan.org>",
   "BUILD_REQUIRES" => {
-    "Capture::Tiny" => 0,
+    "Capture::Tiny" => "0.12",
     "Modern::Perl" => 0,
     "Moose::Util" => 0,
+    "MooseX::ShortCut::BuildInstance" => "0.005",
     "Test::Moose" => 0,
     "Test::Most" => 0,
     "YAML::Any" => 0
@@ -32,12 +33,13 @@ my %WriteMakefileArgs = (
     "Moose" => 0,
     "Moose::Role" => 0,
     "MooseX::StrictConstructor" => 0,
+    "MooseX::Types" => 0,
     "MooseX::Types::Moose" => 0,
     "Scalar::Util" => 0,
     "Smart::Comments" => 0,
     "version" => 0
   },
-  "VERSION" => "v0.015_005",
+  "VERSION" => "v0.019_005",
   "test" => {
     "TESTS" => "t/*.t"
   }

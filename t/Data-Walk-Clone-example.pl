@@ -2,14 +2,14 @@
 use Modern::Perl;
 use Moose::Util qw( with_traits );
 use lib '../lib';
-use	Data::Walk::Extracted v0.015;
-use Data::Walk::Clone v0.005;
+use Data::Walk::Extracted 0.019;
+use Data::Walk::Clone 0.011;
 
 my  $dr_nisar_ahmad_wani = with_traits( 
 		'Data::Walk::Extracted', 
 		( 'Data::Walk::Clone',  ) 
 	)->new( 
-		skip_clone_tests =>[  [ 'HASH', 'LowerKey2', 'ALL',   'ALL' ] ],
+		skip_node_tests =>[  [ 'HASH', 'LowerKey2', 'ALL',   'ALL' ] ],
 	);
 my  $donor_ref = {
 	Someotherkey    => 'value',

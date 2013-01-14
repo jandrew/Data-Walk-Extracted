@@ -1,96 +1,112 @@
 #!perl
 #######  Test File for Data::Walk::Extracted  #######
 BEGIN{
-	#~ $ENV{ Smart_Comments } = '###'; #### #####
+	#~ $ENV{ Smart_Comments } = '### #### #####';
 }
 
 use Test::Most;
 use Test::Moose;
-use Capture::Tiny qw( 
+use Capture::Tiny 0.12 qw( 
 	capture_stdout 
 );
-use Smart::Comments -ENV;#'###'
-use Moose::Util qw( with_traits );
+use MooseX::ShortCut::BuildInstance 0.005;
 use lib '../lib', 'lib';
-use Data::Walk::Extracted v0.015;
-use Data::Walk::Print v0.009;
+use Data::Walk::Extracted 0.017;
+use Data::Walk::Print 0.015;
+if( $ENV{ Smart_Comments } ){
+	use Smart::Comments -ENV;#'###'
+	### Smart-Comments turned on for the Data-Walk-Print test ...
+}
 
 my  ( 
 			$first_ref, $second_ref, $newclass, $gutenberg, 
 			$test_inst, $capture, $wait, $x, @answer,
-);#
+);
 my 			$test_case = 1;
 my 			@class_attributes = qw(
-				sort_HASH
-				sort_ARRAY
-				skip_HASH_ref
-				skip_ARRAY_ref
-				skip_SCALAR_ref
+				sorted_nodes
+				skipped_nodes
+				skip_level
+				skip_node_tests
 				change_array_size
+				fixed_primary
 			);
 my  		@class_methods = qw(
 				new
-				has_sort_HASH
-				get_sort_HASH
-				set_sort_HASH
-				clear_sort_HASH
-				has_sort_ARRAY
-				get_sort_ARRAY
-				set_sort_ARRAY
-				clear_sort_ARRAY
-				get_skip_HASH_ref
-				get_skip_ARRAY_ref
-				get_skip_SCALAR_ref
-				set_skip_HASH_ref
-				set_skip_ARRAY_ref
-				set_skip_SCALAR_ref
-				clear_skip_HASH_ref
-				clear_skip_ARRAY_ref
-				clear_skip_SCALAR_ref
-				has_skip_HASH_ref
-				has_skip_ARRAY_ref
-				has_skip_SCALAR_ref
-				set_change_array_size
-				get_change_array_size
+				has_sorted_nodes
+				has_skipped_nodes
+				has_skip_level
+				has_skip_node_tests
 				has_change_array_size
+				has_fixed_primary
+				get_sorted_nodes
+				get_skipped_nodes
+				get_skip_level
+				get_skip_node_tests
+				get_change_array_size
+				get_fixed_primary
+				set_sorted_nodes
+				set_skipped_nodes
+				set_skip_level
+				set_skip_node_tests
+				set_change_array_size
+				set_fixed_primary
+				clear_sorted_nodes
+				clear_skipped_nodes
+				clear_skip_level
+				clear_skip_node_tests
 				clear_change_array_size
+				clear_fixed_primary
+				add_sorted_nodes
+				check_sorted_node
+				remove_sorted_node
+				add_skipped_nodes
+				check_skipped_node
+				remove_skipped_node
+				add_skip_node_test
 			);
 my  		@instance_attributes = qw(
-				sort_HASH
-				sort_ARRAY
-				skip_HASH_ref
-				skip_ARRAY_ref
-				skip_SCALAR_ref
+				sorted_nodes
+				skipped_nodes
+				skip_level
+				skip_node_tests
 				change_array_size
+				fixed_primary
 				match_highlighting
 			);
 my  		@instance_methods = qw(
-				print_data
-				set_match_highlighting
-				get_sort_HASH
-				get_sort_ARRAY
-				get_skip_HASH_ref
-				get_skip_ARRAY_ref
-				get_skip_SCALAR_ref
-				set_sort_HASH
-				set_sort_ARRAY
-				set_skip_HASH_ref
-				set_skip_ARRAY_ref
-				set_skip_SCALAR_ref
-				clear_sort_HASH
-				clear_sort_ARRAY
-				clear_skip_HASH_ref
-				clear_skip_ARRAY_ref
-				clear_skip_SCALAR_ref
-				has_sort_HASH
-				has_sort_ARRAY
-				has_skip_HASH_ref
-				has_skip_ARRAY_ref
-				has_skip_SCALAR_ref
-				set_change_array_size
-				get_change_array_size
+				has_sorted_nodes
+				has_skipped_nodes
+				has_skip_level
+				has_skip_node_tests
 				has_change_array_size
+				has_fixed_primary
+				get_sorted_nodes
+				get_skipped_nodes
+				get_skip_level
+				get_skip_node_tests
+				get_change_array_size
+				get_fixed_primary
+				set_sorted_nodes
+				set_skipped_nodes
+				set_skip_level
+				set_skip_node_tests
+				set_change_array_size
+				set_fixed_primary
+				clear_sorted_nodes
+				clear_skipped_nodes
+				clear_skip_level
+				clear_skip_node_tests
 				clear_change_array_size
+				clear_fixed_primary
+				add_sorted_nodes
+				check_sorted_node
+				remove_sorted_node
+				add_skipped_nodes
+				check_skipped_node
+				remove_skipped_node
+				add_skip_node_test
+				print_data
 				set_match_highlighting
 				get_match_highlighting
 				has_match_highlighting
@@ -99,9 +115,24 @@ my  		@instance_methods = qw(
 my			$answer_ref = [
 				'',#qr/The composed class passed to 'new' does not have either a 'before_method' or an 'after_method' the Role 'Data::Walk::Print' will be added/,
 				[
+					"undef,",
+				],
+				[
+					"'Test String',",
+				],
+				[
+					"[", "\t'Test String',", "],",
+				],
+				[
+					"{", "\tTestString => 1,", "},",
+				],
+				[
+					"{", "\tTestString => 'value',", "},",
+				],
+				[
 					"{", "\tHelping => [", "\t\t{", "\t\t\tMyKey => {", "\t\t\t\tMiddleKey => {",
 					"\t\t\t\t\tLowerKey1 => 'lvalue1',", "\t\t\t\t\tLowerKey2 => {", 
-					"\t\t\t\t\t\tBottomKey1 => '12345',", "\t\t\t\t\t\tBottomKey2 => [", 
+					"\t\t\t\t\t\tBottomKey1 => 12345,", "\t\t\t\t\t\tBottomKey2 => [", 
 					"\t\t\t\t\t\t\t'bavalue2',", "\t\t\t\t\t\t\t'bavalue1',", 
 					"\t\t\t\t\t\t\t'bavalue3',", "\t\t\t\t\t\t],", 
 					"\t\t\t\t\t},", "\t\t\t\t},", "\t\t\t},","\t\t\tSomelevel => {", 
@@ -111,38 +142,38 @@ my			$answer_ref = [
 					"\tSomeotherkey => 'value',", "},"
 				],
 				[
-					"{", "\tHelping => [# !!! SKIPPED !!!", "\t],", 
+					"{", '\tHelping => ARRAY\(0x.{7}\),', 
 					"\tParsing => {", "\t\tHashRef => {", "\t\t\tLOGGER => {",
 					"\t\t\t\trun => 'INFO',", "\t\t\t},", "\t\t},", "\t},",
 					"\tSomeotherkey => 'value',", "},"
 				],
 				[
-					"{#<--- Ref Type Match", "\tHelping => [#<--- Secondary Key Match - Ref Type Match",
-					"\t\t{#<--- Secondary Position Exists - Ref Type Mismatch", 
-					"\t\t\tMyKey => {#<--- Secondary Key Mismatch - Ref Type Mismatch", 
-					"\t\t\t\tMiddleKey => {#<--- Secondary Key Mismatch - Ref Type Mismatch", 
-					"\t\t\t\t\tLowerKey1 => 'lvalue1',#<--- Secondary Key Mismatch - Secondary Value Does NOT Match", 
-					"\t\t\t\t\tLowerKey2 => {#<--- Secondary Key Mismatch - Ref Type Mismatch", 
-					"\t\t\t\t\t\tBottomKey1 => '12345',#<--- Secondary Key Mismatch - Secondary Value Does NOT Match", 
-					"\t\t\t\t\t\tBottomKey2 => [#<--- Secondary Key Mismatch - Ref Type Mismatch", 
-					"\t\t\t\t\t\t\t'bavalue2',#<--- Secondary Position Does NOT Exist - Secondary Value Does NOT Match", 
-					"\t\t\t\t\t\t\t'bavalue1',#<--- Secondary Position Does NOT Exist - Secondary Value Does NOT Match", 
-					"\t\t\t\t\t\t\t'bavalue3',#<--- Secondary Position Does NOT Exist - Secondary Value Does NOT Match", 
+					"{#<--- Ref Type Match", "\tHelping => [#<--- Hash Key Match - Ref Type Match",
+					"\t\t{#<--- Position Exists - Ref Type Mismatch", 
+					"\t\t\tMyKey => {#<--- Hash Key Mismatch - Ref Type Mismatch", 
+					"\t\t\t\tMiddleKey => {#<--- Hash Key Mismatch - Ref Type Mismatch", 
+					"\t\t\t\t\tLowerKey1 => 'lvalue1',#<--- Hash Key Mismatch - Scalar Value Does NOT Match", 
+					"\t\t\t\t\tLowerKey2 => {#<--- Hash Key Mismatch - Ref Type Mismatch", 
+					"\t\t\t\t\t\tBottomKey1 => 12345,#<--- Hash Key Mismatch - Scalar Value Does NOT Match", 
+					"\t\t\t\t\t\tBottomKey2 => [#<--- Hash Key Mismatch - Ref Type Mismatch", 
+					"\t\t\t\t\t\t\t'bavalue2',#<--- No Matching Position - Scalar Value Does NOT Match", 
+					"\t\t\t\t\t\t\t'bavalue1',#<--- No Matching Position - Scalar Value Does NOT Match", 
+					"\t\t\t\t\t\t\t'bavalue3',#<--- No Matching Position - Scalar Value Does NOT Match", 
 					"\t\t\t\t\t\t],", "\t\t\t\t\t},", "\t\t\t\t},", "\t\t\t},", 
-					"\t\t\tSomelevel => {#<--- Secondary Key Mismatch - Ref Type Mismatch", 
-					"\t\t\t\tSublevel => 'levelvalue',#<--- Secondary Key Mismatch - Secondary Value Does NOT Match", 
-					"\t\t\t},", "\t\t},", "\t],", "\tParsing => {#<--- Secondary Key Match - Ref Type Mismatch", 
-					"\t\tHashRef => {#<--- Secondary Key Mismatch - Ref Type Mismatch", 
-					"\t\t\tLOGGER => {#<--- Secondary Key Mismatch - Ref Type Mismatch", 
-					"\t\t\t\trun => 'INFO',#<--- Secondary Key Mismatch - Secondary Value Does NOT Match", 
+					"\t\t\tSomelevel => {#<--- Hash Key Mismatch - Ref Type Mismatch", 
+					"\t\t\t\tSublevel => 'levelvalue',#<--- Hash Key Mismatch - Scalar Value Does NOT Match", 
+					"\t\t\t},", "\t\t},", "\t],", "\tParsing => {#<--- Hash Key Match - Ref Type Mismatch", 
+					"\t\tHashRef => {#<--- Hash Key Mismatch - Ref Type Mismatch", 
+					"\t\t\tLOGGER => {#<--- Hash Key Mismatch - Ref Type Mismatch", 
+					"\t\t\t\trun => 'INFO',#<--- Hash Key Mismatch - Scalar Value Does NOT Match", 
 					"\t\t\t},", "\t\t},", "\t},", 
-					"\tSomeotherkey => 'value',#<--- Secondary Key Match - Secondary Value Matches", 
+					"\tSomeotherkey => 'value',#<--- Hash Key Match - Scalar Value Matches", 
 					"},", 
 				],
 				[
 					"{", "\tHelping => [", "\t\t{", "\t\t\tMyKey => {", "\t\t\t\tMiddleKey => {", 
 					"\t\t\t\t\tLowerKey1 => 'lvalue1',", "\t\t\t\t\tLowerKey2 => {", 
-					"\t\t\t\t\t\tBottomKey1 => '12345',", "\t\t\t\t\t\tBottomKey2 => [", 
+					"\t\t\t\t\t\tBottomKey1 => 12345,", "\t\t\t\t\t\tBottomKey2 => [", 
 					"\t\t\t\t\t\t\t'bavalue2',", "\t\t\t\t\t\t\t'bavalue1',", "\t\t\t\t\t\t\t'bavalue3',", 
 					"\t\t\t\t\t\t],", "\t\t\t\t\t},", "\t\t\t\t},", "\t\t\t},", "\t\t\tSomelevel => {", 
 					"\t\t\t\tSublevel => 'levelvalue',", "\t\t\t},", "\t\t},", "\t],", "\tParsing => {", 
@@ -150,29 +181,32 @@ my			$answer_ref = [
 					"\t},", "\tSomeotherkey => 'value',", "},",
 				],
 				[
-					"{#<--- Ref Type Match", "\tHelping => [#<--- Secondary Key Match - Ref Type Match",
-					"\t\t'Somelevel',#<--- Secondary Position Exists - Secondary Value Matches",
-					"\t\t{#<--- Secondary Position Exists - Ref Type Match",
-					"\t\t\tMyKey => {#<--- Secondary Key Match - Ref Type Match",
-					"\t\t\t\tMiddleKey => {#<--- Secondary Key Match - Ref Type Match",
-					"\t\t\t\t\tLowerKey1 => 'lvalue1',#<--- Secondary Key Match - Secondary Value Matches",
-					"\t\t\t\t\tLowerKey2 => {#<--- Secondary Key Match - Ref Type Match",
-					"\t\t\t\t\t\tBottomKey1 => '12345',#<--- Secondary Key Match - Secondary Value Does NOT Match",
-					"\t\t\t\t\t\tBottomKey2 => [#<--- Secondary Key Match - Ref Type Match",
-					"\t\t\t\t\t\t\t'bavalue1',#<--- Secondary Position Exists - Secondary Value Matches",
-					"\t\t\t\t\t\t\t'bavalue2',#<--- Secondary Position Exists - Secondary Value Matches",
-					"\t\t\t\t\t\t\t'bavalue3',#<--- Secondary Position Does NOT Exist - Secondary Value Does NOT Match",
+					"{#<--- Ref Type Match", "\tHelping => [#<--- Hash Key Match - Ref Type Match",
+					"\t\t'Somelevel',#<--- Position Exists - Scalar Value Matches",
+					"\t\t{#<--- Position Exists - Ref Type Match",
+					"\t\t\tMyKey => {#<--- Hash Key Match - Ref Type Match",
+					"\t\t\t\tMiddleKey => {#<--- Hash Key Match - Ref Type Match",
+					"\t\t\t\t\tLowerKey1 => 'lvalue1',#<--- Hash Key Match - Scalar Value Matches",
+					"\t\t\t\t\tLowerKey2 => {#<--- Hash Key Match - Ref Type Match",
+					"\t\t\t\t\t\tBottomKey1 => 12345,#<--- Hash Key Match - Scalar Value Does NOT Match",
+					"\t\t\t\t\t\tBottomKey2 => [#<--- Hash Key Match - Ref Type Match",
+					"\t\t\t\t\t\t\t'bavalue1',#<--- Position Exists - Scalar Value Matches",
+					"\t\t\t\t\t\t\t'bavalue2',#<--- Position Exists - Scalar Value Does NOT Match",
+					"\t\t\t\t\t\t\t'bavalue3',#<--- No Matching Position - Scalar Value Does NOT Match",
 					"\t\t\t\t\t\t],", "\t\t\t\t\t},", "\t\t\t\t},", "\t\t\t},", "\t\t},", "\t],",
-					"\tParsing => {#<--- Secondary Key Mismatch - Ref Type Mismatch",
-					"\t\tHashRef => {#<--- Secondary Key Mismatch - Ref Type Mismatch",
-					"\t\t\tLOGGER => {#<--- Secondary Key Mismatch - Ref Type Mismatch",
-					"\t\t\t\trun => 'INFO',#<--- Secondary Key Mismatch - Secondary Value Does NOT Match",
+					"\tParsing => {#<--- Hash Key Mismatch - Ref Type Mismatch",
+					"\t\tHashRef => {#<--- Hash Key Mismatch - Ref Type Mismatch",
+					"\t\t\tLOGGER => {#<--- Hash Key Mismatch - Ref Type Mismatch",
+					"\t\t\t\trun => 'INFO',#<--- Hash Key Mismatch - Scalar Value Does NOT Match",
 					"\t\t\t},", "\t\t},", "\t},",
-					"\tSomeotherkey => 'value',#<--- Secondary Key Match - Secondary Value Matches",
+					"\tSomeotherkey => 'value',#<--- Hash Key Match - Scalar Value Matches",
 					"},",
 				],
+				[
+					"{", "\tMyArray => [", "\t\tundef,", "\t\tundef,", "\t\t'ValueFive',", "\t],", "},",
+				],
 			];
-### <where> 'easy questions
+### <where> - easy questions
 map{ 
 has_attribute_ok
 			'Data::Walk::Extracted', $_,
@@ -182,12 +216,17 @@ map{
 can_ok		'Data::Walk::Extracted', $_,
 } 			@class_methods;
 
-### <where> 'harder questions
+### <where> - harder questions
 lives_ok{
-			$gutenberg = with_traits( 
-				'Data::Walk::Extracted', 
-				( 'Data::Walk::Print' ) 
-			)->new( sort_HASH => 1, );#To ensure test passes
+			$gutenberg = 	build_instance(
+								package => 'Print::Shop',
+								superclasses => ['Data::Walk::Extracted'],
+								roles => ['Data::Walk::Print'],
+								sorted_nodes =>{
+									HASH => 1, #To ensure test passes
+								},
+								match_highlighting => 0,
+							);
 }										"Prep a new Print instance";
 map{
 has_attribute_ok 
@@ -198,6 +237,56 @@ map can_ok(
 ), 			@instance_methods;
 
 ### <where> 'hardest questions
+ok			$capture = capture_stdout{ 
+				$gutenberg->print_data( print_ref => undef, ); 
+			},							'Test sending -undef- as a simple case for test case: ' . $test_case;
+			$x = 0;
+			@answer = split "\n", $capture;
+### <where> - checking the answers for test: $test_case
+map{
+is			$answer[$x], $_, 			'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case";
+}			@{$answer_ref->[$test_case]};
+			$test_case++;
+ok			$capture = capture_stdout{ 
+				$gutenberg->print_data( print_ref => 'Test String', ); 
+			},							'Test sending a string as a simple case for test case: ' . $test_case;
+			$x = 0;
+			@answer = split "\n", $capture;
+### <where> - checking the answers for test: $test_case
+map{
+is			$answer[$x], $_, 			'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case";
+}			@{$answer_ref->[$test_case]};
+			$test_case++;
+ok			$capture = capture_stdout{ 
+				$gutenberg->print_data( print_ref =>[ 'Test String', ] ); 
+			},							'Test sending a simple array with one level for test case: ' . $test_case;
+			$x = 0;
+			@answer = split "\n", $capture;
+### <where> - checking the answers for test: $test_case
+map{
+is			$answer[$x], $_, 			'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case";
+}			@{$answer_ref->[$test_case]};
+			$test_case++;
+ok			$capture = capture_stdout{ 
+				$gutenberg->print_data( print_ref =>{ TestString => 1, } ); 
+			},							'Test sending a simple hash with one level, one key, and numeric value for test case: ' . $test_case;
+			$x = 0;
+			@answer = split "\n", $capture;
+### <where> - checking the answers for test: $test_case
+map{
+is			$answer[$x], $_, 			'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case";
+}			@{$answer_ref->[$test_case]};
+			$test_case++;
+ok			$capture = capture_stdout{ 
+				$gutenberg->print_data( print_ref =>{ TestString => 'value', } ); 
+			},							'Test sending a simple hash with one level, one key, and string value  for test case: ' . $test_case;
+			$x = 0;
+			@answer = split "\n", $capture;
+### <where> - checking the answers for test: $test_case
+map{
+is			$answer[$x], $_, 			'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case";
+}			@{$answer_ref->[$test_case]};
+			$test_case++;
 lives_ok{   
 			$first_ref = {
 				Someotherkey => 'value',
@@ -217,7 +306,7 @@ lives_ok{
 							MiddleKey =>{
 								LowerKey1 => 'lvalue1',
 								LowerKey2 => {
-									BottomKey1 => '12345',
+									BottomKey1 => 12345,
 									BottomKey2 =>[
 										'bavalue2',
 										'bavalue1',
@@ -241,23 +330,22 @@ map{
 is			$answer[$x], $_, 			'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case";
 }			@{$answer_ref->[$test_case]};
 			$test_case++;
-$ENV{ special_variable } = 1;
-ok			$gutenberg->set_skip_ARRAY_ref( 1 ),
+ok			$gutenberg->add_skipped_nodes( ARRAY => 1, ),
 										"... set 'skip = yes' for future parsed ARRAY refs (test case: $test_case)";
 lives_ok{
 			$capture = capture_stdout{ 
 				$gutenberg->print_data( print_ref => $first_ref, ); 
 			}
-}										'Test running the same array with the skip_ARRAY_ref set positive (capturing the output)';
+}										'Test running the same array with the ARRAY nodes set for skipping (capturing the output)';
 			$x = 0;
 			@answer = split "\n", $capture;
 ### <where> - checking the answers for test: $test_case
 map{
-is			$answer[$x], $_, 			'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case";
+like		$answer[$x], qr/$_/,			'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case";
 }			@{$answer_ref->[$test_case]};
 			$test_case++;
 lives_ok{ 
-			$gutenberg->set_skip_ARRAY_ref( 0 ); 
+			$gutenberg->remove_skipped_node( 'ARRAY' ); 
 }										"... set 'skip = NO' for future parsed ARRAY refs (test case: $test_case)";
 lives_ok{   
 			$second_ref = {
@@ -296,9 +384,10 @@ lives_ok{
 dies_ok{ 
 			$gutenberg->print_data( data_ref => $first_ref, );
 }										"Test sending the data with a bad key";
-like		$@, qr/The key -print_ref- is required and must have a value/,
+like		$@, qr/-print_ref- is a required key but was not found in the passed ref/,
 										"Check that the code caught the wrong failure";
-#~ $ENV{ special_variable } = 1;
+ok			$gutenberg->set_match_highlighting( 1 ),
+										"Turn on match_highlighting for future testing";
 lives_ok{
 			$capture = capture_stdout{ $gutenberg->print_data( 
 				print_ref => $first_ref,
@@ -312,17 +401,16 @@ map{
 is			$answer[$x], $_, 			'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case";
 }			@{$answer_ref->[$test_case]};
 			$test_case++;
-#~ exit 1;
 lives_ok{ 
 			$gutenberg->set_match_highlighting( 0 ); 
 }										"... set 'match_highlighting = NO' for future parsed refs (test case: $test_case)";
 dies_ok{
 			$gutenberg->print_data(
-				primary_ref	=>  $first_ref,
+				bad_ref	=>  $first_ref,
 				match_ref   =>  $second_ref,
 			) 
-}										"Send a bad reference (actually the underlying method reference) with a new request to print";
-like		$@, qr/The key -print_ref- is required and must have a value/,
+}										"Send a bad reference with a new request to print";
+like		$@, qr/-print_ref- is a required key but was not found in the passed ref/,
 										"Test that the error message was found";
 lives_ok{
 			$capture = capture_stdout{ $gutenberg->print_data(
@@ -354,7 +442,7 @@ lives_ok{
 							MiddleKey => {
 								LowerKey1 => 'lvalue1',
 								LowerKey2 => {
-									BottomKey1 => '12345',
+									BottomKey1 => 12345,
 									BottomKey2 => [
 										'bavalue1',
 										'bavalue2',
@@ -377,9 +465,9 @@ lives_ok{
 								LowerKey2 => {
 									BottomKey2 => [
 										'bavalue1',
-										'bavalue2',
+										'bavalue3',
 									],
-									BottomKey1 => '12354',
+									BottomKey1 => 12354,
 								},
 							},
 						},
@@ -396,6 +484,27 @@ lives_ok{
 				match_ref   =>  $second_ref,
 			) }
 }										"Send the request to print_data";
+			$x = 0;
+			@answer = split "\n", $capture;
+### <where> - checking the answers for test: $test_case
+map{
+is			$answer[$x], $_, 			'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case";
+}			@{$answer_ref->[$test_case]};
+			$test_case++;
+lives_ok{
+			$capture = capture_stdout{ 
+				$gutenberg->print_data(
+					match_highlighting => 0,
+					print_ref => {
+						MyArray => [
+							undef,
+							undef,
+							'ValueFive',
+						],
+					},
+				) 
+			}
+}										"Text a bug fix case for arrays with undef positions using print_data";
 			$x = 0;
 			@answer = split "\n", $capture;
 ### <where> - checking the answers for test: $test_case

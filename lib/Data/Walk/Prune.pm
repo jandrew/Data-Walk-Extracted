@@ -4,55 +4,50 @@ use Moose::Role;
 requires 
 	'_process_the_data', 
 	'_dispatch_method', 
-	'_build_branch', 
-	'_extracted_ref_type';
+	'_build_branch';
 use MooseX::Types::Moose qw(
         HashRef
         ArrayRef
-        RegexpRef
         Bool
-        Str
-        Ref
-        Int
         Item
-    );######<-------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.007_003');
-BEGIN{
-	if( $ENV{ Smart_Comments } ){
-		use Smart::Comments -ENV;
-		### Smart-Comments turned on for Data-Walk-Prune
-	}
+    );######<---------------------------------------------------------  ADD New types here
+use version; our $VERSION = qv('0.011_003');
+if( $ENV{ Smart_Comments } ){
+	use Smart::Comments -ENV;
+	### Smart-Comments turned on for Data-Walk-Prune ...
 }
 
-###############  Package Variables  #####################################################
+#########1 Package Variables  3#########4#########5#########6#########7#########8#########9
 
 $| = 1;
 my $prune_keys = {
-    primary_ref		=> 'slice_ref',
-    secondary_ref	=> 'tree_ref',
+    slice_ref => 'primary_ref',
+    tree_ref => 'secondary_ref',
 };
-my ( $wait );
 
-###############  Dispatch Tables  #######################################################
+#########1 Dispatch Tables    3#########4#########5#########6#########7#########8#########9
 
-my $prune_dispatch = {######<---------------------------------------  ADD New types here
+my $prune_dispatch = {######<-----------------------------------------  ADD New types here
     HASH	=> \&_remove_hash_key,
     ARRAY 	=> \&_clear_array_position,
 };
 
-my $remember_dispatch = {######<------------------------------------  ADD New types here
+my $remember_dispatch = {######<--------------------------------------  ADD New types here
 	HASH	=> \&_build_hash_cut,
     ARRAY	=> \&_build_array_cut,
 };
 
-my $prune_decision_dispatch = {######<------------------------------  ADD New types here
-    HASH	=> \&_hash_cut_test,
-    ARRAY	=> \&_array_cut_test,
-	SCALAR	=> sub { return $_[2]; },#No cut signal for SCALARS
-	END		=> sub { return $_[2]; },#No cut signal for END refs
-};
+my 	$prune_decision_dispatch = {######<-------------------------------  ADD New types here
+		HASH	=> sub{ scalar( keys %{$_[1]->{primary_ref}} ) == 0 },
+		ARRAY	=> sub{ scalar( @{$_[1]->{primary_ref}} ) == 0 },
+		SCALAR	=> sub { return 0 },#No cut signal for SCALARS
+		UNDEF	=> sub { return 0 },#No cut signal for UNDEF refs
+		name	=> '- Prune - prune_decision_dispatch',
+		###### Receives: the current $passed_ref
+		###### Returns: pass | fail (Boolean style)
+	};
 
-###############  Public Attributes  #####################################################
+#########1 Public Attributes  3#########4#########5#########6#########7#########8#########9
 
 has 'prune_memory'	=>(
     is			=> 'ro',
@@ -63,7 +58,7 @@ has 'prune_memory'	=>(
 	clearer		=> 'clear_prune_memory',
 );
 
-###############  Public Methods  ########################################################
+#########1 Public Methods     3#########4#########5#########6#########7#########8#########9
 
 sub prune_data{#Used to convert names
     ### <where> - Made it to prune_data
@@ -71,7 +66,7 @@ sub prune_data{#Used to convert names
     my  $self = $_[0];
     my  $passed_ref = ( @_ == 2 and is_HashRef( $_[1] ) ) ? $_[1] : { @_[1 .. $#_] } ;
     ##### <where> - Passed hashref: $passed_ref
-    @$passed_ref{ 'before_method', 'after_method' } = 
+    @$passed_ref{ 'before_method', 'after_method' } = # Hash slice
         ( '_prune_before_method', '_prune_after_method' );
 	$self->_clear_pruned_positions;
     ##### <where> - Start recursive parsing with: $passed_ref
@@ -81,7 +76,7 @@ sub prune_data{#Used to convert names
     return $passed_ref->{tree_ref};
 }
 
-###############  Private Attributes  ####################################################
+#########1 Private Attributes 3#########4#########5#########6#########7#########8#########9
 
 has '_prune_list' =>(
     is			=> 'ro',
@@ -108,75 +103,67 @@ has '_pruned_positions' =>(
 	reader		=> 'get_pruned_positions',
 );
 
-
-###############  Private Methods / Modifiers  ############################################
-
+#########1 Private Methods    3#########4#########5#########6#########7#########8#########9
 
 sub _prune_before_method{
     my ( $self, $passed_ref ) = @_;
-    ### <where> - reached before_method
+    ### <where> - reached _prune_before_method
     #### <where> - received input: $passed_ref
-    my  $slice_ref  = $passed_ref->{primary_ref};
-    my  $tree_ref   =
-        ( exists $passed_ref->{secondary_ref} ) ?
-            $passed_ref->{secondary_ref} : undef ;
-    ### <where> - slice_ref: $slice_ref
-    ### <where> - tree_ref : $tree_ref
-    if( !$tree_ref ){
-        ### <where> - no matching tree_ref element so 'bounce' called ...
-        $passed_ref->{bounce} = 1;
-    }else{
-		### <where> - determining if this is a prune location and then skip parsing the node ...
-		$passed_ref = $self->_dispatch_method(
-			$prune_decision_dispatch,
-			$self->_extracted_ref_type( $slice_ref ),
-			$slice_ref,
-			$passed_ref,
-		);
+    if( !exists $passed_ref->{secondary_ref} ){
+        ### <where> - no matching tree_ref element so 'skip'ing the slice node ...
+        $passed_ref->{skip} = 'YES';
     }
-	#### <where> - new passed ref; $passed_ref
+	#### <where> - skip state: $passed_ref->{skip}
     return $passed_ref;
 }
 
 sub _prune_after_method{
     my ( $self, $passed_ref ) = @_;
-    ### <where> - reached after_method
+    ### <where> - reached _prune_after_method
     #### <where> - received input: $passed_ref
-    my  $tree_ref   =
-        ( exists $passed_ref->{secondary_ref} ) ?
-            $passed_ref->{secondary_ref} : undef ;
-    #~ my  $ref_type = $self->_extracted_ref_type( $passed_ref->{primary_ref} );
-    ### <where> - tree_ref   : $tree_ref
-    ### <where> - Slice state: $self->_has_prune_list
-    if( $tree_ref and $self->_has_prune_list ){
-        while( my $item_ref = $self->_next_prune_item ){
-			### <where> - item ref: $item_ref
-			my  $tree_ref = $self->_prune_the_item( $item_ref, $tree_ref );
-			#### <where> - tree ref: $tree_ref
-			if(	$self->has_prune_memory and
-				$self->get_prune_memory 	){
-				### <where> - building the rememberance ref ...
-				my $rememberance_ref = $self->_dispatch_method(
-						$remember_dispatch,
-						$item_ref->[0],
-						$item_ref,
-				);
-				###  <where> - current branch ref is: $passed_ref->{branch_ref}
-				$rememberance_ref = $self->_build_branch( 
-					$rememberance_ref, 
-					@{ $passed_ref->{branch_ref}},
-				);
-				###  <where> - rememberance ref: $rememberance_ref
-				$self->_remember_prune_item( $rememberance_ref );
-				#### <where> - prune memory: $self->get_pruned_positions
+	### <where> - Slice state: $self->_has_prune_list
+	### <where> - running the cut test ...
+	if( $passed_ref->{skip} eq 'NO') {
+		### <where> - The node was not skipped ...
+		if( $self->_dispatch_method(
+				$prune_decision_dispatch,
+				$passed_ref->{primary_type},
+				$passed_ref,				) ){
+			### <where> - adding prune item: $passed_ref->{branch_ref}->[-1]
+			$self->_add_prune_item( $passed_ref->{branch_ref}->[-1] );
+			### <where> - go back up and prune ...
+		}elsif( $self->_has_prune_list ){
+			my  $tree_ref   =
+				( exists $passed_ref->{secondary_ref} ) ?
+					$passed_ref->{secondary_ref} : undef ;
+			### <where> - tree_ref: $tree_ref
+			while( my $item_ref = $self->_next_prune_item ){
+				### <where> - item ref: $item_ref
+				$tree_ref = $self->_prune_the_item( $item_ref, $tree_ref );
+				#### <where> - tree ref: $tree_ref
+				if(	$self->has_prune_memory and
+					$self->get_prune_memory 	){
+					### <where> - building the rememberance ref ...
+					my $rememberance_ref = $self->_dispatch_method(
+							$remember_dispatch,
+							$item_ref->[0],
+							$item_ref,
+					);
+					###  <where> - current branch ref is: $passed_ref->{branch_ref}
+					$rememberance_ref = $self->_build_branch( 
+						$rememberance_ref, 
+						@{ $passed_ref->{branch_ref}},
+					);
+					###  <where> - rememberance ref: $rememberance_ref
+					$self->_remember_prune_item( $rememberance_ref );
+					#### <where> - prune memory: $self->get_pruned_positions
+				}
 			}
-			#~ $wait = <> if $ENV{ special_variable };
-        }
-        $passed_ref->{secondary_ref} = $tree_ref;
+			$passed_ref->{secondary_ref} = $tree_ref;
+			### <where> - finished pruning at this node - clear the prune list ...
+			$self->_clear_prune_list;
+		}
     }
-    ### <where> - finished pruning at this node - clear the prune list
-	#~ $wait = <>;
-    $self->_clear_prune_list;
     return $passed_ref;
 }
 
@@ -239,42 +226,15 @@ sub _build_array_cut{
 	return $item_ref;
 }
 
-sub _hash_cut_test{
-    my ( $self, $slice_ref, $passed_ref ) = @_;
-    ### <where> - Made it to _hash_cut_signal ...
-    ### <where> - slice ref: $slice_ref
-	if( scalar( keys %$slice_ref ) == 0 ){
-        ### <where> - Marking hash key for removal: $passed_ref->{branch_ref}->[-1]->[1]
-        $self->_add_prune_item( $passed_ref->{branch_ref}->[-1] );
-		$passed_ref->{bounce} = 1;
-	}
-    ##### <where> - passed ref: $passed_ref
-	return $passed_ref;
-}
-
-sub _array_cut_test{
-    my ( $self, $slice_ref, $passed_ref ) = @_;
-    ### <where> - Made it to _array_cut_signal ...
-    ### <where> - slice ref: $slice_ref
-	if( scalar( @$slice_ref ) == 0 ){
-        ### <where> - Marking array position for removal: $passed_ref->{branch_ref}->[-1]->[2]
-        $self->_add_prune_item( $passed_ref->{branch_ref}->[-1] );
-		$passed_ref->{bounce} = 1;
-	}
-    ##### <where> - passed ref: $passed_ref
-	return $passed_ref;
-}
-	
-	
-
-#################### Phinish with a Phlourish ############################################
+#########1 Phinish Strong     3#########4#########5#########6#########7#########8#########9
 
 no Moose::Role;
 
 1;
 # The preceding line will help the module return a true value
 
-#################### main pod documentation begin ########################################
+#########1 Main POD starts    3#########4#########5#########6#########7#########8#########9
+
 
 __END__
 
@@ -287,10 +247,9 @@ Data::Walk::Prune - A way to say what should be removed
 	#!perl
 	use Modern::Perl;
 	use Moose::Util qw( with_traits );
-	use lib '../lib';
-	use Data::Walk::Extracted v0.015;
-	use Data::Walk::Prune v0.007;
-	use Data::Walk::Print v0.009;
+	use Data::Walk::Extracted 0.019;
+	use Data::Walk::Prune 0.011;
+	use Data::Walk::Print 0.015;
 
 	my  $edward_scissorhands = with_traits(
 			'Data::Walk::Extracted',
@@ -332,70 +291,79 @@ Data::Walk::Prune - A way to say what should be removed
 		);
 	$edward_scissorhands->print_data( $result );
     
-    ######################################################################################
-    #     Output of SYNOPSIS
-    # 01 {
-    # 02 	Helping => [
-    # 03 		'Somelevel',
-    # 04 		{
-    # 05 			MyKey => {
-    # 06 				MiddleKey => {
-    # 07 					LowerKey2 => {
-    # 08 						BottomKey1 => 'bvalue1',
-    # 09 						BottomKey2 => 'bvalue2',
-    # 10 					},
-    # 12 				},
-    # 13 			},
-    # 14 		},
-    # 15 	],
-    # 16 },
-    ######################################################################################
-    
+	######################################################################################
+	#     Output of SYNOPSIS
+	# 01 {
+	# 02 	Helping => [
+	# 03 		'Somelevel',
+	# 04 		{
+	# 05 			MyKey => {
+	# 06 				MiddleKey => {
+	# 07 					LowerKey2 => {
+	# 08 						BottomKey1 => 'bvalue1',
+	# 09 						BottomKey2 => 'bvalue2',
+	# 10 					},
+	# 12 				},
+	# 13 			},
+	# 14 		},
+	# 15 	],
+	# 16 },
+	######################################################################################
+
 =head1 DESCRIPTION
 
-This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> contains methods for 
-implementing the method L</prune_data> using L<Data::Walk::Extracted>.  By sending a 
-L<slice_ref|/This will take a 'slice_ref'> that terminates in an empty 
-hash_ref (no keys) or an empty array_ref (no positions) then the 
-L<tree_ref|/use it to prune a 'tree_ref'.> will be pruned at that spot.  'prune_data' 
-returns a deep cloned data ref that matches the 'tree_ref' with the 'slice_ref' bits 
-taken off.
-
-=head2 Caveat utilitor
-
-Because this uses Data::Walk::Extracted the final $tree_ref is a deep cloned ref with no 
-data pointers matching the original $tree_ref.
-
-=head3 Supported Node types
-
-=over
-
-=item B<ARRAY>
-
-=item B<HASH>
-
-=item B<SCALAR>
-
-=back
-
-=head3 Supported one shot L</Attributes>
-
-=over
-
-=item prune_memory
-
-=back
+This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> implements the method 
+L<prune_data|/prune_data( %args )>.  It takes a L<tree_ref|/tree_ref This is the primary> 
+and a L<slice_ref|/slice_ref This is a data ref> and uses 
+L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>.  
+To remove portions of the 'tree_ref' defined by the 'slice_ref'.  The cut points are 
+defined by an empty hash_ref (no keys) or an empty array_ref (no positions).  If the cut 
+indicators are on a branch of the slice_ref that does not exist on the tree_ref then 
+no cut takes place.
 
 =head2 USE
 
-This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> and can be 
-used as such.  One way to use this role with L<Data::Walk::Extracted>, is the method 
-'with_traits' from L<Moose::Util|https://metacpan.org/module/Moose::Util#EXPORTED-FUNCTIONS>.  
-Otherwise see L<Moose::Manual::Roles|https://metacpan.org/module/Moose::Manual::Roles>.
+This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles>. One way to 
+incorporate this role into 
+L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>. 
+is 
+L<MooseX::ShortCut::BuildInstance|http://search.cpan.org/~jandrew/MooseX-ShortCut-BuildInstance/lib/MooseX/ShortCut/BuildInstance.pm>.
+or read L<Moose::Util|https://metacpan.org/module/Moose::Util> for more class building 
+information.
 
-=head2 Methods
+=head1 Attributes
 
-=head3 prune_data( %args )
+Data passed to -E<gt>new when creating an instance.  For modification of these attributes 
+see L</Methods>.  The -E<gt>new function will either accept fat comma lists or a 
+complete hash ref that has the possible attributes as the top keys.  Additionally 
+L<some attributes|/Supported one shot attributes> that have all the following 
+methods; get_$attribute, set_$attribute, has_$attribute, and clear_$attribute,
+can be passed to L<prune_data|/prune_data( %args )> and will be 
+adjusted for just the run of that method call.  These are called 'one shot' 
+attributes.
+
+=head2 prune_memory
+
+=over
+
+=item B<Definition:> When running a prune operation any branch called on the pruner 
+that does not exist in the tree will not be used.  This attribute turns on tracking 
+of the actual cuts made and stores them for review after the method is complete.  
+This is a way to know if the cut was actually implemented.
+
+=item B<Default> undefined
+
+=item B<Range> 1 = remember the cuts | 0 = don't remember
+    
+=back
+
+Attributes in 
+L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm#Attributes>
+ - also affect the output.
+
+=head1 Methods
+
+=head2 prune_data( %args )
 
 =over
 
@@ -415,14 +383,15 @@ unchanged.  Where the tree_ref should be trimmed insert either an empty array re
 or an empty hash ref.  If this position represents a value in a hash key => value 
 pair then the hash key is deleted.  If this position represents a value in an array 
 then the position is deleted/cleared depending on the attribute 'change_array_size' 
-in L<Data::Walk::Extracted>.  If the slice ref diverges from the tree ref then no 
-action is taken past the divergence, even if there is a mandated slice. (no defacto 
-grafting occurs!)
+in 
+L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm#change_array_size>.  
+If the slice ref diverges from the tree ref then no action is taken past the divergence, 
+even if there is a mandated slice. (no auto vivication occurs!)
 
 =item B<[attribute name]> - attribute names are accepted with temporary attribute settings.  
 These settings are temporarily set for a single "prune_data" call and then the original 
 attribute values are restored.  For this to work the the attribute must meet the 
-L<necessary criteria|/Supported one shot >.
+L<necessary criteria|/Attributes>.
 
 =back
 
@@ -434,11 +403,11 @@ L<necessary criteria|/Supported one shot >.
 		prune_memory => 0,
 	);
 
-=item B<Returns:> The $tree_ref with any changes (Deep cloned)
+=item B<Returns:> The $tree_ref with any changes
 
 =back
 
-=head3 set_prune_memory( $Bool ) 
+=head2 set_prune_memory( $Bool ) 
 
 =over
 
@@ -451,7 +420,7 @@ attribute.
 
 =back
 
-=head3 get_prune_memory
+=head2 get_prune_memory
 
 =over
 
@@ -464,7 +433,7 @@ attribute.
 
 =back
 
-=head3 has_prune_memory
+=head2 has_prune_memory
 
 =over
 
@@ -476,7 +445,7 @@ attribute.
 
 =back
 
-=head3 clear_prune_memory
+=head2 clear_prune_memory
 
 =over
 
@@ -489,7 +458,7 @@ attribute.
 
 =back
 
-=head3 has_pruned_positions
+=head2 has_pruned_positions
 
 =over
 
@@ -501,21 +470,21 @@ attribute.
 
 =back
 
-=head3 get_pruned_positions
+=head2 get_pruned_positions
 
 =over
 
-=item B<Definition:> This returns an array ref of stored pruning cuts
+=item B<Definition:> This returns an array ref of stored cuts
 
 =item B<Accepts:> nothing
 
-=item B<Returns:> an ArrayRef - even if the cuts were defined in one data ref 
+=item B<Returns:> an ArrayRef - although the cuts were defined in one data ref 
 this will return one data ref per cut.  Each ref will go to the root of the 
 original data ref.
 
 =back
 
-=head3 number_of_cuts
+=head2 number_of_cuts
 
 =over
 
@@ -527,45 +496,44 @@ original data ref.
 
 =back
 
-=head2 Attributes
+=head1 Caveat utilitor
 
-Data passed to ->new when creating an instance using a class.  For modification of 
-these attributes see L</Methods>.  The ->new function will either accept fat comma 
-lists or a complete hash ref that has the possible appenders as the top keys.  
-Additionally L<some attributes|/Supported one shot > that have all the following 
-methods; get_$attribute, set_$attribute, has_$attribute, and clear_$attribute,
-can be passed to L<prune_data|/prune_data( %args )> and will be adjusted for 
-just the run of that method call.  These are called 'one shot' attributes.
+Because this uses Data::Walk::Extracted the final $tree_ref is a deep cloned where 
+the $slice_ref passed through.
 
-=head3 prune_memory
+=head2 Supported Node types
 
 =over
 
-=item B<Definition:> When running a prune operation any branch called on the pruner 
-that does not exist in the tree will not be used.  This attribute turns on tracking 
-of the actual cuts made and stores them for review after the method is complete.  
-This is a way to know if the cut was actually implemented.
+=item B<ARRAY>
 
-=item B<Default> undefined
+=item B<HASH>
 
-=item B<Range> 1 = remember the cuts | 0 = don't remember
-    
+=item B<SCALAR>
+
 =back
 
-L<Attributes in Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm#Attributes> 
- - also affect the output.
+=head2 Supported one shot attributes
 
-=head2 GLOBAL VARIABLES
+=over
+
+=item prune_memory
+
+=item L<explanation|/Attributes>
+
+=back
+
+=head1 GLOBAL VARIABLES
 
 =over
 
 =item B<$ENV{Smart_Comments}>
 
 The module uses L<Smart::Comments> if the '-ENV' option is set.  The 'use' is 
-encapsulated in a BEGIN block triggered by the environmental variable for 
-non-believers.  Setting the variable $ENV{Smart_Comments} will load and turn 
-on smart comment reporting.  There are three levels of 'Smartness' available 
-in this module '### #### #####'.
+encapsulated in an if block triggered by an environmental variable to comfort 
+non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN block will 
+load and turn on smart comment reporting.  There are three levels of 'Smartness' 
+available in this module '###',  '####', and '#####'.
 
 =back
 
@@ -581,9 +549,9 @@ in this module '### #### #####'.
 
 =over
 
-=item Support pruning through CodeRef nodes
+=item * Support pruning through Objects / Instances nodes
 
-=item Support pruning through Objects / Instances nodes
+=item * Support pruning through CodeRef nodes
 
 =back
 
@@ -611,11 +579,29 @@ LICENSE file included with this module.
 
 =item L<Data::Walk::Extracted>
 
+=item L<Data::Walk::Extracted::Dispatch>
+
+=item L<MooseX::Types::Moose>
+
 =item L<version>
 
 =item L<Moose::Role>
 
-=item L<MooseX::Types::Moose>
+=over
+
+=item B<requires>
+
+=over
+
+=item _process_the_data
+
+=item _build_branch
+
+=item _dispatch_method
+
+=back
+
+=back
 
 =back
 
@@ -631,8 +617,14 @@ LICENSE file included with this module.
 
 =item L<Data::ModeMerge>
 
+=item L<Data::Walk::Print>
+
+=item L<Data::Walk::Clone>
+
+=item L<Data::Walk::Graft>
+
 =back
 
 =cut
 
-#################### main pod documentation end ##########################################
+#########1 Main POD ends      3#########4#########5#########6#########7#########8#########9

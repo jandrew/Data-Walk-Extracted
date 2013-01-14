@@ -3,10 +3,8 @@ use Modern::Perl;
 use YAML::Any;
 use Moose::Util qw( with_traits );
 use lib '../lib';
-use Data::Walk::Extracted v0.015;
-use Data::Walk::Print v0.009;
-
-$| = 1;
+use Data::Walk::Extracted 0.019;
+use Data::Walk::Print 0.015;
 
 #Use YAML to compress writing the data ref
 my  $firstref = Load(
@@ -52,6 +50,8 @@ my $AT_ST = with_traits(
     );
 $AT_ST->print_data(
     print_ref	=>  $firstref,
-    match_ref	=>  $secondref,
-	sort_HASH	=> 1,#To force order for demo purposes
+    match_ref	=>  $secondref, 
+	sorted_nodes =>{
+		HASH => 1, #To force order for demo purposes
+	}
 );

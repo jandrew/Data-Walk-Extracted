@@ -2,9 +2,9 @@
 use Modern::Perl;
 use Moose::Util qw( with_traits );
 use lib '../lib';
-use Data::Walk::Extracted v0.015;
-use Data::Walk::Prune v0.007;
-use Data::Walk::Print v0.009;
+use Data::Walk::Extracted 0.019;
+use Data::Walk::Prune 0.011;
+use Data::Walk::Print 0.015;
 
 my  $edward_scissorhands = with_traits(
 		'Data::Walk::Extracted',

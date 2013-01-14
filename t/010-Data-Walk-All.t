@@ -3,13 +3,14 @@
 
 use Test::Most;
 use Test::Moose;
-use Moose::Util qw( with_traits );
+use MooseX::ShortCut::BuildInstance 0.003 qw( build_instance );
 use lib '../lib', 'lib';
-use Data::Walk::Extracted v0.011;
-use Data::Walk::Print v0.009;
-use Data::Walk::Prune v0.007;
-use Data::Walk::Clone v0.003;
-use Data::Walk::Graft v0.007;
+use Data::Walk::Extracted::Dispatch 0.001;
+use Data::Walk::Extracted 0.017;
+use Data::Walk::Print 0.015;
+use Data::Walk::Prune 0.011;
+use Data::Walk::Clone 0.011;
+use Data::Walk::Graft 0.011;
 
 my  ( 
 			$wait,
@@ -17,48 +18,51 @@ my  (
 );
 
 my  		@attributes = qw(
-				sort_HASH
-				sort_ARRAY
-				skip_HASH_ref
-				skip_ARRAY_ref
-				skip_SCALAR_ref
+				sorted_nodes
+				skipped_nodes
+				skip_level
+				skip_node_tests
 				change_array_size
+				fixed_primary
 				match_highlighting
 				prune_memory
-				clone_level
-				skip_clone_tests
 				should_clone
 				graft_memory
 			);
 
 my  		@methods = qw(
-				new
-				print_data
-				set_match_highlighting
-				get_sort_HASH
-				get_sort_ARRAY
-				get_skip_HASH_ref
-				get_skip_ARRAY_ref
-				get_skip_SCALAR_ref
-				set_sort_HASH
-				set_sort_ARRAY
-				set_skip_HASH_ref
-				set_skip_ARRAY_ref
-				set_skip_SCALAR_ref
-				clear_sort_HASH
-				clear_sort_ARRAY
-				clear_skip_HASH_ref
-				clear_skip_ARRAY_ref
-				clear_skip_SCALAR_ref
-				has_sort_HASH
-				has_sort_ARRAY
-				has_skip_HASH_ref
-				has_skip_ARRAY_ref
-				has_skip_SCALAR_ref
-				set_change_array_size
-				get_change_array_size
+				has_sorted_nodes
+				has_skipped_nodes
+				has_skip_level
+				has_skip_node_tests
 				has_change_array_size
+				has_fixed_primary
+				get_sorted_nodes
+				get_skipped_nodes
+				get_skip_level
+				get_skip_node_tests
+				get_change_array_size
+				get_fixed_primary
+				set_sorted_nodes
+				set_skipped_nodes
+				set_skip_level
+				set_skip_node_tests
+				set_change_array_size
+				set_fixed_primary
+				clear_sorted_nodes
+				clear_skipped_nodes
+				clear_skip_level
+				clear_skip_node_tests
 				clear_change_array_size
+				clear_fixed_primary
+				add_sorted_nodes
+				check_sorted_node
+				remove_sorted_node
+				add_skipped_nodes
+				check_skipped_node
+				remove_skipped_node
+				add_skip_node_test
+				print_data
 				set_match_highlighting
 				get_match_highlighting
 				has_match_highlighting
@@ -72,15 +76,6 @@ my  		@methods = qw(
 				has_pruned_positions
 				number_of_cuts
 				deep_clone
-				has_clone_level
-				get_clone_level
-				set_clone_level
-				clear_clone_level
-				get_skip_clone_tests
-				clear_skip_clone_tests
-				add_skip_clone_test
-				has_skip_clone_tests
-				set_skip_clone_tests
 				set_should_clone
 				get_should_clone
 				has_should_clone
@@ -97,21 +92,20 @@ my  		@methods = qw(
     
 # basic questions
 lives_ok{
-			$anonymous = with_traits( 
-				'Data::Walk::Extracted', 
-					( 
-						'Data::Walk::Clone', 
-						'Data::Walk::Print',
-						'Data::Walk::Prune',
-						'Data::Walk::Graft',
-					) 
-			)->new();
+			$anonymous =	build_instance(
+								package => 'All::Included',
+								superclasses => ['Data::Walk::Extracted',],
+								roles => [
+									'Data::Walk::Clone', 
+									'Data::Walk::Print',
+									'Data::Walk::Prune',
+									'Data::Walk::Graft',
+								],
+							);
 }										"Prep a new instance with all roles!";
-#~ does_ok	$anonymous, 'Data::Walk::Clone',
-														#~ "Check that 'with_traits' added the 'Data::Walk::Clone' Role to the instance";
 map{
 has_attribute_ok
-			$anonymous, $_, 			"Check that master instance has the -$_- attribute"
+			$anonymous, $_, 			"Check that $anonymous has the -$_- attribute"#the master instance 
 } 			@attributes;
 map{
 can_ok		$anonymous, $_

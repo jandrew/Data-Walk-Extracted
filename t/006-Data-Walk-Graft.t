@@ -1,20 +1,22 @@
 #!perl
 #######  Test File for Data::Walk::Graft  #######
-BEGIN{
-	#~ $ENV{ Smart_Comments } = '###';
-}
 use Test::Most;
 use Test::Moose;
-use Moose::Util qw( with_traits );
+use MooseX::ShortCut::BuildInstance 0.003 qw( build_instance );
 use lib '../lib', 'lib';
-use Data::Walk::Extracted v0.015;
-use Data::Walk::Graft v0.009;
+use Data::Walk::Extracted 0.019;
+use Smart::Comments -ENV;
+use Data::Walk::Graft 0.013;
 use YAML::Any;
 
 my( 
-			$wait, $new_class, $gardener, 
+			$new_class, $gardener, $johnny_appleseed,
 			$tree_ref, $scion_ref, $answer_ref, $answer_two,
 );
+
+my			@attributes = qw(
+				graft_memory
+			);
 
 my  		@methods = qw(
 				new
@@ -27,30 +29,27 @@ my  		@methods = qw(
 				has_grafted_positions
 				get_grafted_positions
 			);
-
-my			@attributes = qw(
-				graft_memory
-			);
     
 # basic questions
 lives_ok{
-			$gardener = with_traits( 
-				'Data::Walk::Extracted',
-				( 
+			$johnny_appleseed = build_instance( 
+				superclasses => ['Data::Walk::Extracted'],
+				roles => [
 					'Data::Walk::Clone',
 					'Data::Walk::Graft',
-					'Data::Walk::Print',
-				), 
-			)->new();
+					#~ 'Data::Walk::Print',
+				],
+				package => 'Gardener',
+			);
 }										"Prep a new Graft instance";
-does_ok		$gardener, 'Data::Walk::Graft',
+does_ok		$johnny_appleseed, 'Data::Walk::Graft',
 										"Check that 'with_traits' added the 'Data::Walk::Graft' Role to the instance";
 map{
 has_attribute_ok
-			$gardener, $_,				"Check that the new instance has the -$_- attribute",
+			$johnny_appleseed, $_,				"Check that the new instance has the -$_- attribute",
 }			@attributes;
 map{									#Check that the new instance can use all methods
-can_ok		$gardener, $_,
+can_ok		$johnny_appleseed, $_,
 }			@methods;
 
 #Run the hard questions
@@ -106,8 +105,8 @@ lives_ok{
 				],
 			};
 }										'Build the $answerref for testing';
-is_deeply	$gardener->graft_data(
-                scion_ref =>{ 
+is_deeply	$johnny_appleseed->graft_data(
+				scion_ref =>{ 
                     Helping =>[
                         'A Different name',
                     ],
@@ -143,7 +142,7 @@ lives_ok{
 				],
 			};
 }										'Build another $answerref for testing';
-is_deeply	$gardener->graft_data(
+is_deeply	$johnny_appleseed->graft_data(
                 scion_ref =>{ 
                     Helping =>[
                         {
@@ -180,7 +179,7 @@ lives_ok{
 				],
 			};
 }										'Build the $answerref for testing';
-is_deeply	$gardener->graft_data(
+is_deeply	$johnny_appleseed->graft_data(
                 scion_ref =>{ 
                     Helping =>[
                         'A Different name',
@@ -219,7 +218,7 @@ lives_ok{
 				],
 			};
 }									'Build another $answerref for testing';
-is_deeply	$gardener->graft_data(
+is_deeply	$johnny_appleseed->graft_data(
                 scion_ref =>{ 
                     Helping =>[
                         [
@@ -258,7 +257,7 @@ lives_ok{
 				],
 			};
 }										'Build the $answerref for testing';
-is_deeply	$gardener->graft_data(
+is_deeply	$johnny_appleseed->graft_data(
                 scion_ref =>{ 
                     Helping =>[
                         'A Different name',
@@ -294,7 +293,7 @@ lives_ok{
 				],
 			};
 }										'Build the $answerref for testing';
-is_deeply	$gardener->graft_data(
+is_deeply	$johnny_appleseed->graft_data(
                 scion_ref =>{ 
                     Helping =>[
                         'IGNORE',
@@ -321,7 +320,7 @@ lives_ok{
 				},
 			};
 }										'Build the $answerref for testing';
-is_deeply	$gardener->graft_data(
+is_deeply	$johnny_appleseed->graft_data(
                 scion_ref =>{ 
                     Helping =>{
                         OtherKey => 'Something',
@@ -352,7 +351,7 @@ lives_ok{
 				],
 			};
 }										'Build the $answerref for testing';
-is_deeply	$gardener->graft_data(
+is_deeply	$johnny_appleseed->graft_data(
                 scion_ref =>{ 
                     Helping =>{
                         KeyTwo => 'A New Value',
@@ -393,7 +392,7 @@ lives_ok{
 				],
 			};
 }										'Build the $answerref for testing';
-is_deeply	$gardener->graft_data(
+is_deeply	$johnny_appleseed->graft_data(
                 scion_ref =>{
                     MyArray =>[
                         'IGNORE',
@@ -421,7 +420,7 @@ lives_ok{
 				],
 			};
 }										'Build the $answerref for testing';
-is_deeply	$gardener->graft_data(
+is_deeply	$johnny_appleseed->graft_data(
                 scion_ref =>{
                     MyArray =>[
                         'IGNORE',
@@ -439,44 +438,62 @@ lives_ok{
 			$tree_ref ={
 				branch1 => undef,
 				branch2 => {
-						subbranch => [],
+						subbranch => [ ],
 				},
 			};
 			$scion_ref ={
 				branch1 => [ Test1->new, ],
 				branch2 => {
-						subbranch => [ bless( [], 'Test2' ), ],
+					subbranch => [ 
+						'IGNORE', 'IGNORE', 
+						bless( [], 'Test2' ), 
+					],
 				},
 			};
 }										'Build multi-layer one shot attribute test';
 lives_ok{
-			$gardener->set_graft_memory( 1 );
+			$johnny_appleseed->set_graft_memory( 1 );
 		}								'Set graft memory for the next run';
 lives_ok{
-			$tree_ref = $gardener->graft_data(
+			$tree_ref = $johnny_appleseed->graft_data(
 				tree_ref => $tree_ref,
 				scion_ref => $scion_ref,
-				dont_clone_node_types => [ 'OBJECT',  ],
+				skipped_nodes =>{
+					OBJECT => 1,
+				},
+				sorted_nodes =>{
+					HASH => 1,
+				},
 			);
 }										'Run the graft operation to test multi-layer one shot attributes';
-is_deeply	$tree_ref, $scion_ref,		'Check for deep matching on the multi-layer test';
+is_deeply	$tree_ref, 
+			{
+				branch1 => [ Test1->new, ],
+				branch2 => {
+					subbranch => [ 
+						undef, undef, 
+						bless( [], 'Test2' ), 
+					],
+				},
+			},							'Check for deep matching on the multi-layer test';
 isnt		$tree_ref->{branch1}, $scion_ref->{branch1},
 										'Check that the separate variables are separate for the multi-layer test';
 is			$tree_ref->{branch1}->[0],
 			$scion_ref->{branch1}->[0],'Check that the graft did not clone at the first Object in the multi-layer test';
 is			$tree_ref->{branch1}->[0],
 			$scion_ref->{branch1}->[0],'Check that the graft did not clone at the second Object in the multi-layer test(most critical)';
-is_deeply	$gardener->get_grafted_positions, 
-			[
-				{
-					branch2 =>{
-						subbranch =>[ bless( [], 'Test2' ), ],
-					}
-				},
+is_deeply	[
 				{
 					branch1 => [ Test1->new, ],
 				},
-			],							'Check to see if the graft memory worked';
+				{
+					branch2 =>{
+						subbranch =>[ undef, undef, bless( [], 'Test2' ), ],
+					}
+				},
+			],
+			$johnny_appleseed->get_grafted_positions, 
+										'Check to see if the graft memory worked';
 lives_ok{   
 			$tree_ref ={
 				branch2 => {
@@ -484,17 +501,17 @@ lives_ok{
 				},
 			};
 			$scion_ref ={};
-			$answer_two = $gardener->deep_clone( $tree_ref );
+			$answer_two = $johnny_appleseed->deep_clone( $tree_ref );
 }										'Build a defacto pruning operation test';
 lives_ok{
-			$answer_ref = $gardener->graft_data(
+			$answer_ref = $johnny_appleseed->graft_data(
 				tree_ref => $tree_ref,
 				scion_ref => $scion_ref,
 			);
 }										'Run the graft operation to ensure no defacto pruning occurs';
 is_deeply	$answer_ref, $answer_two,	'Check for deep matching on the (excluded) defacto pruning test';
 explain 								"...Test Done";
-done_testing;
+done_testing();
 
 package Test1;
 use Moose;

@@ -5,12 +5,16 @@ BEGIN{
 }
 use Test::Most;
 use Test::Moose;
-use Moose::Util qw( with_traits );
+use MooseX::ShortCut::BuildInstance 0.003 qw( build_instance );
 use lib '../lib', 'lib';
-use Data::Walk::Extracted v0.015;
-use Data::Walk::Prune v0.007;
+use Data::Walk::Extracted 0.019;
+use Data::Walk::Prune 0.011;
 
 my  ( $wait, $newclass, $edward_scissorhands, $treeref, $sliceref, $answerref );
+
+my  		@attributes = qw(
+				prune_memory
+			);
 
 my  		@methods = qw(
 				new
@@ -23,15 +27,14 @@ my  		@methods = qw(
 				has_pruned_positions
 				number_of_cuts
 			);
-
-my  		@attributes = qw(
-				prune_memory
-			);
     
 # basic questions
 lives_ok{
-			$newclass = with_traits( 'Data::Walk::Extracted', ( 'Data::Walk::Prune', ) );
-			$edward_scissorhands = $newclass->new( );# prune_memory => 1, 
+			$edward_scissorhands = 	build_instance(
+										package => 'Barber',
+										superclasses => ['Data::Walk::Extracted',],
+										roles =>[ 'Data::Walk::Prune',],
+									);
 }                                       "Prep a new Prune instance";
 does_ok		$edward_scissorhands, 'Data::Walk::Prune',
 										"Check that 'with_traits' added the 'Data::Walk::Prune' Role to the instance";
@@ -179,7 +182,6 @@ lives_ok{
 }										'... change the $answerref for testing';
 ok 			$edward_scissorhands->set_prune_memory( 1 ),	
 										'Turn on prune rememberance';
-#~ $ENV{ special_variable } = 1;
 is_deeply	$edward_scissorhands->prune_data(
                 tree_ref    => $treeref, 
                 slice_ref   => $sliceref,

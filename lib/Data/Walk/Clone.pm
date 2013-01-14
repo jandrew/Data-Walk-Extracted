@@ -1,48 +1,30 @@
 package Data::Walk::Clone;
-
 use Moose::Role;
 requires 
 	'_process_the_data', 
 	'_dispatch_method', 
 	'_get_had_secondary';
-use MooseX::Types::Moose qw(
+use MooseX::Types::Moose qw(	
         HashRef
         ArrayRef
-        RegexpRef
-		CodeRef
         Bool
-        Str
-        Ref
-        Int
-        Item
-		Num
     );######<--------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.005_005');
-BEGIN{
-	if( $ENV{ Smart_Comments } ){
-		use Smart::Comments -ENV;
-		### Smart-Comments turned on for Data-Walk-Clone
-	}
+use version; our $VERSION = qv('0.011_003');
+if( $ENV{ Smart_Comments } ){
+	use Smart::Comments -ENV;
+	### Smart-Comments turned on for Data-Walk-Clone
 }
 
-###############  Package Variables  #####################################################
+#########1 Package Variables  3#########4#########5#########6#########7#########8#########9
 
 $| = 1;
 my $clone_keys = {
-    primary_ref		=> 'donor_ref',
+    donor_ref => 'primary_ref',
 };
-my ( $wait );
 
-###############  Dispatch Tables  #######################################################
+#########1 Dispatch Tables    3#########4#########5#########6#########7#########8#########9
 
-my 	$skip_clone_test_dispatch ={######<------------------------------  ADD New types here
-		ARRAY	=> \&_array_skip_clone_test,
-		HASH	=> \&_general_skip_clone_test,
-		OBJECT	=> \&_general_skip_clone_test,
-		name 	=> 'skip_clone_test_dispatch',#Meta data
-	};
-
-my 	$seed_clone_dispatch ={
+my 	$seed_clone_dispatch ={######<------------------------------------  ADD New types here
 		ARRAY => sub{
 			unless( exists $_[1]->{secondary_ref} ){
 				$_[1]->{secondary_ref} = [];
@@ -55,55 +37,20 @@ my 	$seed_clone_dispatch ={
 			}
 			return $_[1];
 		},
-		SCALAR => sub{ 
-			$_[1]->{secondary_ref} = $_[1]->{primary_ref};
+		OBJECT => sub{
+			unless( exists $_[1]->{secondary_ref} ){
+				$_[1]->{secondary_ref} = bless( {}, ref $_[1]->{primary_ref} );
+			}
 			return $_[1];
 		},
-		END => sub{ 
-			$_[1]->{secondary_ref} = undef;
+		SCALAR => sub{ 
+			$_[1]->{secondary_ref} = $_[1]->{primary_ref};
 			return $_[1];
 		},
 		name => 'seed_clone_dispatch',#Meta data
 	};
 
-###############  Public Attributes  #####################################################
-
-has 'clone_level' =>(
-	is			=> 'ro',
-	isa			=> Int,
-	predicate	=> 'has_clone_level',
-	reader		=> 'get_clone_level',
-	writer		=> 'set_clone_level',
-	clearer		=> 'clear_clone_level',
-);
-
-has 'dont_clone_node_types' =>(
-	is		=> 'ro',
-	isa		=> ArrayRef,
-	traits	=> ['Array'],
-	reader	=> 'get_dont_clone_node_types',
-	writer	=> 'set_dont_clone_node_types',
-	default	=> sub{ [] },
-    handles => {
-        add_dont_clone_node_type	=> 'push',
-		has_dont_clone_node_types	=> 'count',
-		clear_dont_clone_node_types	=> 'clear',
-    },
-);
-
-has 'skip_clone_tests' =>(
-	is		=> 'ro',
-	isa		=> ArrayRef[ArrayRef],
-	traits	=> ['Array'],
-	reader	=> 'get_skip_clone_tests',
-	writer	=> 'set_skip_clone_tests',
-	default	=> sub{ [] },
-    handles => {
-        add_skip_clone_test		=> 'push',
-		has_skip_clone_tests	=> 'count',
-		clear_skip_clone_tests	=> 'clear',
-    },
-);
+#########1 Public Attributes  3#########4#########5#########6#########7#########8#########9
 
 has 'should_clone' =>(
 	is			=> 'ro',
@@ -113,9 +60,15 @@ has 'should_clone' =>(
 	predicate	=> 'has_should_clone',
 	default		=> 1,
 );
-	
 
-###############  Public Methods  ########################################################
+sub clear_should_clone{
+	### <where> - turn cloning back on at clear_should_clone ...
+    my ( $self, ) = @_;
+	$self->set_should_clone( 1 );
+	return 1;
+}
+
+#########1 Public Methods     3#########4#########5#########6#########7#########8#########9
 
 sub deep_clone{#Used to convert names for Data::Walk:Extracted
     ### <where> - Made it to deep_clone
@@ -128,66 +81,45 @@ sub deep_clone{#Used to convert names for Data::Walk:Extracted
 			{ @_[1 .. $#_] } ;
     ##### <where> - Passed hashref: $passed_ref
 	@$passed_ref{ 
-		'before_method', 'after_method',# 'fixed_primary',
+		'before_method', 'after_method',
 	} = ( 
-		'_clone_before_method',	'_clone_after_method',#	1,
+		'_clone_before_method',	'_clone_after_method',
 	);
 	##### <where> - Start recursive parsing with  : $passed_ref
 	$passed_ref = $self->_process_the_data( $passed_ref, $clone_keys );
+	$self->_set_first_pass( 1 );# Re-set
 	### <where> - End recursive parsing with    : $passed_ref
 	return $passed_ref->{secondary_ref};
 }
 
-sub clear_should_clone{
-	### <where> - turn cloning back on at clear_should_clone ...
-    my ( $self, ) = @_;
-	$self->set_should_clone( 1 );
-	return 1;
-}
+#########1 Private Attributes 3#########4#########5#########6#########7#########8#########9
 
-###############  Private Attributes  ####################################################
-
-has '_clone_level_dispatch' =>(
+has '_first_pass' =>(
 	is			=> 'ro',
-	isa		=> HashRef[CodeRef],
-	init_arg	=> {
-		predicate 	=> \&has_clone_level,
-		clearer		=> \&clear_clone_level,
-		writer		=> \&set_clone_level,
-	},
-	reader	=> '_get_clone_level_dispatch',
+	isa			=> Bool,
+	writer		=> '_set_first_pass',
+	reader		=> '_get_first_pass',
+	default		=> 1,
 );
 
-###############  Private Methods / Modifiers  ###########################################
+#########1 Private Methods    3#########4#########5#########6#########7#########8#########9
 
 sub _clone_before_method{
     my ( $self, $passed_ref ) = @_;
-    my  $donor_ref  = $passed_ref->{primary_ref};
     ### <where> - reached _clone_before_method
     #### <where> - received input: $passed_ref
-    ### <where> - doner_ref: $donor_ref
+    ### <where> - doner_ref: $passed_ref->{primary_ref}
 	##### <where> - self: $self
-	if( exists $passed_ref->{branch_ref} and
-		@{$passed_ref->{branch_ref}}			){
-		### <where> - testing for a bounce condition ...
-		if(  	$self->_went_too_deep( $passed_ref ) or
-				$self->_dont_clone_node( $passed_ref ) or
-				$self->_dont_clone_here( $passed_ref )		){
-			### <where> - attaching the uncloned portion to the secondary_ref and then bouncing ...
-			$passed_ref->{secondary_ref} =  $passed_ref->{primary_ref};
-			$passed_ref->{bounce} = 1;
-		}
-		#### <where> - passed ref is: $passed_ref
-	}else{
+	if( $self->_get_first_pass ){
 		### <where> perform a one time test for should_clone ...
 		if( !$self->get_should_clone ){
-			### <where> - bouncing now ...
-			$passed_ref->{bounce} = 1;
-			$passed_ref->{secondary_ref} =  $passed_ref->{primary_ref};
+			### <where> - skipping level now ...
+			$passed_ref->{skip} = 'YES';
 		}else{
 			### <where> - turn on one element of cloning ...
-			$self->_get_had_secondary( 1 );
+			$self->_set_had_secondary( 1 );
 		}
+		$self->_set_first_pass( 0 );
 	}
     return $passed_ref;
 }
@@ -198,158 +130,30 @@ sub _clone_after_method{
     #### <where> - received input: $passed_ref
 	### <where> - current item: $passed_ref->{branch_ref}->[-1]
 	### <where> - should clone?: $self->get_should_clone
-	if( $self->get_should_clone ){
-		my 	$next_ref = $self->_extracted_ref_type( 
-				$passed_ref->{primary_ref} 
-			);
-		### <where> - seeding the clone as needed for: $next_ref
+	if( $self->get_should_clone and
+		$passed_ref->{skip} eq 'NO'	){
+		### <where> - seeding the clone as needed for: $passed_ref->{primary_type}
 		$passed_ref = $self->_dispatch_method(
 			$seed_clone_dispatch,
-			$next_ref,
+			$passed_ref->{primary_type},
 			$passed_ref,
 		);
+	}else{
+		# Eliminating the clone at this level
+		$passed_ref->{secondary_ref} =  $passed_ref->{primary_ref};
 	}
     #### <where> - the new passed_ref is: $passed_ref
     return $passed_ref;
 }
 
-sub _went_too_deep{
-    my ( $self, $passed_ref ) = @_;
-	my  $answer = 0; #keep going - default
-    ### <where> - reached _went_too_deep ...
-	### <where> - current item: $passed_ref->{branch_ref}->[-1]
-    #### <where> - received input: $passed_ref
-	if( $self->has_clone_level and
-		$self->get_clone_level == $passed_ref->{branch_ref}->[-1]->[3] ){
-		### <where> - NONE SHALL PASS! ...
-		$answer = 1;
-	}
-	### <where> - answer: $answer
-	return $answer;
-}
-
-sub _dont_clone_node{
-    my ( $self, $passed_ref ) = @_;
-	my ( $answer, $current_branch ) = (0, $passed_ref->{branch_ref}->[-1]);
-    ### <where> - reached _dont_clone_node ...
-	### <where> - current item: $current_branch
-    #### <where> - received input: $passed_ref
-	if( $self->has_dont_clone_node_types ){
-		### <where> - found node skip list: $self->get_dont_clone_node_types
-		my $ref_type = $self->_extracted_ref_type( $passed_ref->{primary_ref} );
-		for my $test ( @{$self->get_dont_clone_node_types} ){
-			### <where> - running test: $test
-			if( $test eq $ref_type ){
-				### <where> - Never on a sunday! ...
-				$answer = 1;
-				last;
-			}
-		}
-	}
-	### <where> - answer: $answer
-	return $answer;
-}
-
-sub _dont_clone_here{
-    my ( $self, $passed_ref ) = @_;
-	my ( $answer, $current_branch ) = (0, $passed_ref->{branch_ref}->[-1]);
-    ### <where> - reached _dont_clone_here ...
-	### <where> - current item: $current_branch
-    #### <where> - received input: $passed_ref
-	if( $self->has_skip_clone_tests ){
-		### <where> - found skip tests: $self->get_skip_clone_tests
-		for my $test ( @{$self->get_skip_clone_tests} ){
-			### <where> - running test: $test
-			if( $self->_dispatch_method( 
-					$skip_clone_test_dispatch,
-					$test->[0], 
-					$test,
-					$current_branch,
-				)										){
-				### <where> - NONE SHALL PASS! ...
-				$answer = 1;
-				last;
-			}
-		}
-	}
-	### <where> - answer: $answer
-	return $answer;
-}
-
-sub _array_skip_clone_test{
-    my ( $self, $test_ref, $branch_ref ) = @_;
-	my ( $answer, $match_level ) = ( 0, 0 );
-    ### <where> - reached _array_skip_clone_test ...
-	### <where> - test_ref: $test_ref
-	### <where> - branch_ref: $branch_ref
-	if( $branch_ref ){
-		$match_level++ if
-			(	$test_ref->[0] eq $branch_ref->[0] );
-		$match_level++ if
-			(	$test_ref->[2] =~ /^(any|all)$/i or
-				$test_ref->[2] == $branch_ref->[2]);
-		$match_level++ if
-			(	$test_ref->[3] =~ /^(any|all)$/i or
-				$test_ref->[3] == $branch_ref->[3] );
-		### <where> - match level: $match_level
-	}
-	$answer = ( $match_level == 3 ) ? 1 : 0 ;
-	### <where> - answer: $answer
-	return $answer;
-}
-
-sub _general_skip_clone_test{
-    my ( $self, $test_ref, $branch_ref ) = @_;
-	my ( $answer, $match_level ) = ( 0, 0 );
-    ### <where> - reached _general_skip_clone_test ...
-	### <where> - test_ref: $test_ref
-	### <where> - branch_ref: $branch_ref
-	$wait = <> if $ENV{ special_variable };
-	if( $branch_ref ){
-		my $item = $branch_ref->[1];
-		### <where> - item: $item
-		$match_level++ if
-			(	$test_ref->[0] eq $branch_ref->[0] );
-		### <where> - match level after type match: $match_level
-		$match_level++ if
-			( 
-				( 
-					$test_ref->[1] =~ /^(any|all)$/i	
-				) or
-				( 
-					$item and
-					( 	
-						$test_ref->[1] eq $item or
-						$test_ref->[1] =~ /$item/		
-					) 	
-				)
-			);
-		### <where> - match level after item match: $match_level
-		$match_level++ if
-			(	$test_ref->[2] =~ /^(any|all)$/i or
-				( 	is_Num( $test_ref->[2] ) and 
-					$test_ref->[2] == $branch_ref->[2] ) );
-		### <where> - match level after position match: $match_level
-		$match_level++ if
-			(	$test_ref->[3] =~ /^(any|all)$/i or
-				( 	is_Num( $test_ref->[3] ) and 
-					$test_ref->[3] == $branch_ref->[3] ) );
-		### <where> - match level after depth match: $match_level
-	}
-	$answer = ( $match_level == 4 ) ? 1 : 0 ;
-	### <where> - answer: $answer
-	return $answer;
-}
-	
-
-#################### Phinish with a Phlourish ###########################################
+#########1 Phinish Strong     3#########4#########5#########6#########7#########8#########9
 
 no Moose::Role;
 
 1;
 # The preceding line will help the module return a true value
 
-#################### main pod documentation begin #######################################
+#########1 Main POD starts    3#########4#########5#########6#########7#########8#########9
 
 __END__
 
@@ -362,14 +166,14 @@ Data::Walk::Clone - deep data cloning with boundaries
 	#!perl
 	use Modern::Perl;
 	use Moose::Util qw( with_traits );
-	use Data::Walk::Extracted v0.015;
-	use Data::Walk::Clone v0.005;
+	use Data::Walk::Extracted 0.019;
+	use Data::Walk::Clone 0.011;
 
 	my  $dr_nisar_ahmad_wani = with_traits( 
 			'Data::Walk::Extracted', 
 			( 'Data::Walk::Clone',  ) 
 		)->new( 
-			skip_clone_tests =>[  [ 'HASH', 'LowerKey2', 'ALL',   'ALL' ] ],
+			skip_node_tests =>[  [ 'HASH', 'LowerKey2', 'ALL',   'ALL' ] ],
 		);
 	my  $donor_ref = {
 		Someotherkey    => 'value',
@@ -409,65 +213,68 @@ Data::Walk::Clone - deep data cloning with boundaries
 		$donor_ref->{Helping}->[1]->{MyKey}->{MiddleKey}		){
 		print "The data is cloned above the skip point\n";
 	}
-    
-    #####################################################################################
-    #     Output of SYNOPSIS
-    # 01 The data is not cloned at the skip point
-    # 02 The data is cloned above the skip point
-    #####################################################################################
-    
+
+	#####################################################################################
+	#     Output of SYNOPSIS
+	# 01 The data is not cloned at the skip point
+	# 02 The data is cloned above the skip point
+	#####################################################################################
+
 =head1 DESCRIPTION
 
 This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> contains 
-methods for implementing the method L<deep_clone|/deep_clone( %args )> using 
+methods for implementing the method L<deep_clone|/deep_clone( $arg_ref|%args|$data_ref )> using 
 L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>.  
 This method is used to deep clone (clone many/all) levels of a data ref.  Deep cloning 
-is accomplished by sending a 'donor_ref' that has data that you want copied into a 
+is accomplished by sending a 'donor_ref' that has data nodes that you want copied into a 
 different memory location.  In general Data::Walk::Extracted already deep clones any 
-output as part of its data walking so the primary value of this role is to define 
+output as part of its data walking so the primary value of this role is to manage 
 deep cloning boundaries. It may be that some portion of the data should maintain common 
-memory location pointers to the original memory locations and so two ways of defining 
-where to stop deep cloning are provided.  First a L<level callout|/clone_level> where 
-deep cloning can stop at a common level.  Second a L<matching tool|/skip_clone_tests> 
-where key or node type matching can be done across multiple levels or only at targeted 
-levels.
-
-=head2 Caveat utilitor
-
-=head3 Supported Node types
-
-=over
-
-=item B<ARRAY>
-
-=item B<HASH>
-
-=item B<SCALAR>
-
-=back
-
-=head3 Supported one shot L</Attributes>
-
-=over
-
-=item clone_level
-
-=item skip_clone_tests
-
-=item should_clone
-
-=back
+memory references to the original memory references and so all of the Data::Walk::Extracted 
+skip methods will be recognized and supported.  Meaning that if a node is skipped the 
+data reference will be copied directly rather than cloned.
 
 =head2 USE
 
-This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> and can be 
-used as such.  One way to use this role with L<Data::Walk::Extracted>, is the method 
-'with_traits' from L<Moose::Util|https://metacpan.org/module/Moose::Util#EXPORTED-FUNCTIONS>.  
-Otherwise see L<Moose::Manual::Roles|https://metacpan.org/module/Moose::Manual::Roles>.
+This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles>. One way to 
+incorporate this role into 
+L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>. 
+is 
+L<MooseX::ShortCut::BuildInstance|http://search.cpan.org/~jandrew/MooseX-ShortCut-BuildInstance/lib/MooseX/ShortCut/BuildInstance.pm>.
+or read L<Moose::Util|https://metacpan.org/module/Moose::Util> for more class building 
+information.
 
-=head2 Methods
+=head1 Attributes
 
-=head3 deep_clone( $arg_ref|%args )
+Data passed to -E<gt>new when creating an instance.  For modification of these attributes 
+see L</Methods>.  The -E<gt>new function will either accept fat comma lists or a 
+complete hash ref that has the possible attributes as the top keys.  Additionally 
+L<some attributes|/Supported one shot attributes> that have all the following 
+methods; get_$attribute, set_$attribute, has_$attribute, and clear_$attribute,
+can be passed to L<prune_data|/prune_data( %args )> and will be 
+adjusted for just the run of that method call.  These are called 'one shot' 
+attributes.
+
+=head2 should_clone
+
+=over
+
+=item B<Definition:> There are times when the cloning needs to be turned off.  This 
+is the switch.  If this is set to 0 then deep_clone just passes the doner ref back.
+
+=item B<Default> undefined = everything is cloned
+
+=item B<Range> Boolean values (0|1)
+    
+=back
+
+Attributes in 
+L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm#Attributes>
+ - also affect the output.
+
+=head1 Methods
+
+=head2 deep_clone( $arg_ref|%args|$data_ref )
 
 =over
 
@@ -478,23 +285,27 @@ in a fat comma list or hashref
 
 =over
 
-=item B<named variable option> - if data comes in a fat comma list or as a hash ref 
+=item B<Hash option> - if data comes in a fat comma list or as a hash ref 
 and the keys include a 'donor_ref' key then the list is processed as such.
 
 =over
 
 =item B<donor_ref> - this is the data reference that should be deep cloned - required
 
-=item B<[attribute name]> - attribute names are accepted with temporary attribute settings.  
-These settings are temporarily set for a single "deep_clone" call and then the original 
-attribute values are restored.  For this to work the the attribute must meet the 
-L<necessary criteria|/get_$attribute, set_$attribute>.
+=item B<[attribute name]> - attribute names are accepted with temporary attribute 
+settings.  These settings are temporarily set for a single "deep_clone" call and 
+then the original attribute values are restored.  For this to work the the attribute 
+must meet the L<necessary criteria|/get_$attribute, set_$attribute>.
 
 =back
 
-=item B<single variable option> - if only one data_ref is sent and it fails the test 
-for "exists $data_ref->{donor_ref}" then the program will attempt to name it as 
-donor_ref => $data_ref and then process the data as a fat comma list.
+=item B<single data reference option> - if only one data_ref is sent and it fails 
+the test;
+
+	exists $data_ref->{donor_ref}
+
+then the program will attempt to name it as donor_ref => $data_ref and then process 
+the data as a fat comma list.
 
 =back
 
@@ -502,121 +313,7 @@ donor_ref => $data_ref and then process the data as a fat comma list.
 
 =back
 
-=head3 has_clone_level
-
-=over
-
-=item B<Definition:> This will indicate if the attribute L<clone_level|/clone_level> is set
-
-=item B<Accepts:> nothing
-
-=item B<Returns:> 1 or 0
-
-=back
-
-=head3 get_clone_level
-
-=over
-
-=item B<Definition:> This will return the currently set L<clone_level|/clone_level> attribute value
-
-=item B<Accepts:> nothing
-
-=item B<Returns:> the level as an integer number or undef for nothing
-
-=back
-
-=head3 set_clone_level( $int )
-
-=over
-
-=item B<Definition:> This will set the L<clone_level|/clone_level> attribute
-
-=item B<Accepts:> a positive integer
-
-=item B<Returns:> nothing
-
-=back
-
-=head3 clear_clone_level
-
-=over
-
-=item B<Definition:> This will clear the L<clone_level|/clone_level> attribute
-
-=item B<Accepts:> nothing
-
-=item B<Returns:> nothing
-
-=back
-
-=head3 get_skip_clone_tests
-
-=over
-
-=item B<Definition:> This will return an ArrayRef[ArrayRef] with all skip tests for 
-the L<skip_clone_tests|/skip_clone_tests> attribute
-
-=item B<Accepts:> nothing
-
-=item B<Returns:> an ArrayRef[ArrayRef]
-
-=back
-
-=head3 set_skip_clone_tests( [ [ $type, $key, $position, $level ], ] )
-
-=over
-
-=item B<Definition:> This will take an ArrayRef[ArrayRef] with all skip tests for 
-the L<skip_clone_tests|/skip_clone_tests> attribute and replace any existing 
-tests with the new list.
-
-=item B<Accepts:>  ArrayRef[ArrayRef]
-
-=item B<Returns:> nothing
-
-=back
-
-=head3 add_skip_clone_test( [ $type, $key, $position, $level ] )
-
-=over
-
-=item B<Definition:> This will add one array ref skip test callout to the 
-L<skip_clone_tests|/skip_clone_tests> attribute list
-
-=item B<Accepts:> [ $type, $key, $position, $level ]
-
-=item B<Returns:> nothing
-
-=back
-
-=head3 has_skip_clone_tests
-
-=over
-
-=item B<Definition:> This will return the number of skip tests called out in 
-the L<skip_clone_tests|/skip_clone_tests> attribute list
-
-=item B<Accepts:> nothing
-
-=item B<Returns:> a positive integer indicating how many array positions there are
-
-=back
-
-=head3 clear_skip_clone_tests
-
-=over
-
-=item B<Definition:> This will clear the the L<skip_clone_tests|/skip_clone_tests> 
-attribute list
-
-=item B<Accepts:> nothing
-
-=item B<Returns:> nothing
-
-=back
-
-=head3 get_should_clone
+=head2 get_should_clone
 
 =over
 
@@ -629,7 +326,7 @@ L<should_clone|/should_clone>
 
 =back
 
-=head3 set_should_clone( $Bool )
+=head2 set_should_clone( $Bool )
 
 =over
 
@@ -641,7 +338,7 @@ L<should_clone|/should_clone>
 
 =back
 
-=head3 has_should_clone
+=head2 has_should_clone
 
 =over
 
@@ -654,12 +351,12 @@ is active
 
 =back
 
-=head3 clear_should_clone
+=head2 clear_should_clone
 
 =over
 
 =item B<Definition:> This will set the attribute L<should_clone|/should_clone> 
-to on ( 1 ).  I<The name is awkward to accomodate one shot attribute changes.>
+to one ( 1 ).  I<The name is awkward to accomodate one shot attribute changes.>
 
 =item B<Accepts:> nothing
 
@@ -667,99 +364,41 @@ to on ( 1 ).  I<The name is awkward to accomodate one shot attribute changes.>
 
 =back
 
-=head2 Attributes
+=head1 Caveat utilitor
 
-Data passed to ->new when creating an instance using a class.  For modification of 
-these attributes see L</Methods>.  The ->new function will either accept fat comma 
-lists or a complete hash ref that has the possible appenders as the top keys.  
-Additionally L<some attributes|/Supported one shot > that have all the following 
-methods; get_$attribute, set_$attribute, has_$attribute, and clear_$attribute,
-can be passed to L<deep_clone|/deep_clone( $arg_ref|%args )> and will be adjusted for 
-just the run of that method call.  These are called 'one shot' attributes.
-
-=head3 clone_level
+=head2 Supported Node types
 
 =over
 
-=item B<Definition:> When running a clone operation it is possible to stop cloning 
-and use the actual data references in the original data structure below a certain 
-level.  This sets the boundary for that level.
+=item B<ARRAY>
 
-=item B<Default> undefined = everything is cloned
+=item B<HASH>
 
-=item B<Range> positive integers (3 means clone to the 3rd level)
-    
+=item B<SCALAR>
+
 =back
 
-=head3 skip_clone_tests
+=head2 Supported one shot attributes
 
 =over
 
-=item B<Definition:> When running a clone operation it is possible to stop cloning 
-and use the actual data references in the original data structure at clearly defined 
-trigger points.  This is the way to define those points.  The definition can test against 
-array position, match a hash key, also only test at a level 
-L<I<(Testing at level 0 is not supported!)>|/should_clone( $Bool )>, and can use eq 
-or =~ when matching.  The attribute is passed an ArrayRef of ArrayRefs.  Each sub_ref 
-contains the following.
+=item clone_level
 
-=over
-
-=item B<$type> - this is any of the L<allowed|/Supported Node types> reference node 
-types
-
-=item B<$key> - this is either a scalar or regexref to use for matching a hash key
-
-=item B<$position> - this is used to match an array position can be an integer or 'ANY'
-
-=item B<$level> - this restricts the skipping test usage to a specific level only or 'ANY'
-
-=back
-    
-=item B<Example>
-	
-	[ 
-		[ 'HASH', 'KeyWord', 'ANY', 'ANY'], 
-		# Dont clone the value of any hash key eq 'Keyword'
-		[ 'ARRAY', 'ANY', '3', '4'], ], 
-		#Don't clone the data in arrays at position three on level four
-	]
-
-=item B<Range> an infinite number of skip tests added to an array
-
-=item B<Default> [] = no cloning is skipped
+=item L<explanation|/Attributes>
 
 =back
 
-=head3 should_clone
-
-=over
-
-=item B<Definition:> There are times when the cloning is built into code by adding the role 
-to a class but you want to turn it off.  This attribute will cause the deep_clone function 
-to return the donor_ref pointer as the cloned_ref.
-
-=item B<Default> 1 = cloning occurs
-
-=item B<Range> 1 | 0 = no cloning
-    
-=back
-
-Attributes in 
-L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm#Attributes> 
-can affect the output.
-
-=head2 GLOBAL VARIABLES
+=head1 GLOBAL VARIABLES
 
 =over
 
 =item B<$ENV{Smart_Comments}>
 
 The module uses L<Smart::Comments> if the '-ENV' option is set.  The 'use' is 
-encapsulated in a BEGIN block triggered by the environmental variable to comfort 
-non-believers.  Setting the variable $ENV{Smart_Comments} will load and turn 
-on smart comment reporting.  There are three levels of 'Smartness' available 
-in this module '### #### #####'.
+encapsulated in an if block triggered by an environmental variable to comfort 
+non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN block will 
+load and turn on smart comment reporting.  There are three levels of 'Smartness' 
+available in this module '###',  '####', and '#####'.
 
 =back
 
@@ -775,9 +414,9 @@ in this module '### #### #####'.
 
 =over
 
-=item Support cloning through CodeRef nodes
+=item * Support cloning through Objects / Instances nodes
 
-=item Support cloning through Objects / Instances nodes
+=item * Support cloning through CodeRef nodes
 
 =back
 
@@ -805,11 +444,29 @@ LICENSE file included with this module.
 
 =item L<Data::Walk::Extracted>
 
-=item L<version|https://metacpan.org/module/version>
+=item L<Data::Walk::Extracted::Dispatch>
 
-=item L<Moose::Role|https://metacpan.org/module/Moose::Role>
+=item L<MooseX::Types::Moose>
 
-=item L<MooseX::Types::Moose|https://metacpan.org/module/MooseX::Types::Moose>
+=item L<version>
+
+=item L<Moose::Role>
+
+=over
+
+=item B<requires>
+
+=over
+
+=item _process_the_data
+
+=item _get_had_secondary
+
+=item _dispatch_method
+
+=back
+
+=back
 
 =back
 
@@ -835,4 +492,4 @@ LICENSE file included with this module.
 
 =cut
 
-#################### main pod documentation end #########################################
+#########1 Main POD ends      3#########4#########5#########6#########7#########8#########9

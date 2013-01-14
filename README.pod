@@ -2,49 +2,144 @@
 
 An extracted dataref walker
 
+=head1 SYNOPSIS
+    
+This is a contrived example!  For more functional (complex) examples see the roles in 
+this package.
+
+	package Data::Walk::MyRole;
+	use Moose::Role;
+	requires '_process_the_data';
+	use MooseX::Types::Moose qw(
+			Str
+			ArrayRef
+			HashRef
+		);
+
+	my $mangle_keys = {
+		Hello_ref => 'primary_ref',
+		World_ref => 'secondary_ref',
+	};
+
+	#########1 Public Method      3#########4#########5#########6#########7#########8
+
+	sub mangle_data{
+		my ( $self, $passed_ref ) = @_;
+		@$passed_ref{ 'before_method', 'after_method' } = 
+			( '_mangle_data_before_method', '_mangle_data_after_method' );
+		### Start recursive parsing
+		$passed_ref = $self->_process_the_data( $passed_ref, $mangle_keys );
+		### End recursive parsing with: $passed_ref
+		return $passed_ref->{Hello_ref};
+	}
+
+	#########1 Private Methods    3#########4#########5#########6#########7#########8
+
+	### If you are at the string level merge the two references
+	sub _mangle_data_before_method{
+		my ( $self, $passed_ref ) = @_;
+		if( 
+			is_Str( $passed_ref->{primary_ref} ) and 
+			is_Str( $passed_ref->{secondary_ref} )		){
+			$passed_ref->{primary_ref} .= " " . $passed_ref->{secondary_ref};
+		}
+		return $passed_ref;
+	}
+
+	### Strip the reference layers on the way out
+	sub _mangle_data_after_method{
+		my ( $self, $passed_ref ) = @_;
+		if( is_ArrayRef( $passed_ref->{primary_ref} ) ){
+			$passed_ref->{primary_ref} = $passed_ref->{primary_ref}->[0];
+		}elsif( is_HashRef( $passed_ref->{primary_ref} ) ){
+			$passed_ref->{primary_ref} = $passed_ref->{primary_ref}->{level};
+		}
+		return $passed_ref;
+	}
+
+	package main;
+	use Modern::Perl;
+	use MooseX::ShortCut::BuildInstance qw(
+			build_instance
+		);
+	my 	$AT_ST = build_instance( 
+			package			=> 'Greeting',
+			superclasses	=> [ 'Data::Walk::Extracted' ],
+			roles			=> [ 'Data::Walk::MyRole' ],
+		);
+	print $AT_ST->mangle_data( {
+			Hello_ref	=> { level =>[ { level =>[ 'Hello' ] } ] },
+			World_ref	=> { level =>[ { level =>[ 'World' ] } ] },
+		} ) . "\n";
+	
+	
+    
+	#################################################################################
+	#     Output of SYNOPSIS
+	# 01:Hello World
+	#################################################################################
+
 =head1 DESCRIPTION
 
-This module takes a data reference (or two) and recursivly travels through it(them).  Where the two references diverge the walker follows the primary data reference.  At the beginning and end of each node the code will attempt to call a method using data from the current location of the node.
+This module takes a data reference (or two) and recursivly travels through it(them).  
+Where the two references diverge the walker follows the primary data reference.  At the 
+beginning and end of each node the code will attempt to call a method using data from the 
+current location of the node.
 
 =head2 Caveat utilitor
 
-This is not an extention of L<Data::Walk>
+This is not an extention of L<Data::Walk|https://metacpan.org/module/Data::Walk>
 
-This is a L<Moose> based data handling class.  Many coders will tell you Moose and data manipulation don't belong together.  They are most certainly right in speed intensive circumstances.
+This module uses the 'L<defined or|http://perldoc.perl.org/perlop.html#Logical-Defined-Or>' 
+(  //= ) and so requires perl 5.010 or higher.
 
-Recursive parsing is not a good fit for all data since very deep data structures will burn a fair amount of perl memory!  Meaning that as the module recursively parses through the levels perl leaves behind snapshots of the previous level that allow perl to keep track of it's location.
+This is a L<Moose|https://metacpan.org/module/Moose::Manual> based data handling class.  
+Many coders will tell you Moose and data manipulation don't belong together.  They are 
+most certainly right in speed intensive circumstances.
 
-This class has no external effect all output comes from the Roles in the package.  See L<Data::Walk::Print> for example.
+Recursive parsing is not a good fit for all data since very deep data structures will 
+burn a fair amount of perl memory!  Meaning that as the module recursively parses through 
+the levels perl leaves behind snapshots of the previous level that allow perl to keep 
+track of it's location.
 
-=head2 What is the unique value of this module?
+The core class has no external effect.  All output comes from addtions to the class.
 
-With the recursive part of data walking extracted the various functionalities desired when walking the data can be modularized without copying this code.  This also allows diverse and targeted data parsing without dragging along a 
-Kitchen sink [http://en.wiktionary.org/wiki/everything_but_the_kitchen_sink] API.
+Both data references are effectivly deep cloned during this process.  I<There is an 
+attribute to control this behavior.>
+
+=head2 What is the unique value of this package?
+
+With the recursive part of data walking extracted, the various functionalities desired 
+when walking the data can be modularized without copying this code.  This also allows 
+diverse and targeted data parsing without dragging along a 
+L<Kitchen sink|http://en.wiktionary.org/wiki/everything_but_the_kitchen_sink> API.
 
 =head2 Acknowledgement of MJD
 
-This is an implementation of the concept of extracted data walking from 
-Higher-Order-Perl [http://hop.perl.plover.com/book/] Chapter 1 by Mark Jason Dominus.  I<The book is well worth the money!>  With that said I diverged from MJD purity in two ways. This is object oriented code not functional code. Second, like the MJD equivalent, the code does nothing on its own.  Unlike the MJD equivalent it looks for methods provided in a role or class extention at the appropriate places for action.  The MJD equivalent expects to use a passed CodeRef at the action points.  There is clearly some overhead associated with both of these differences.  I made those choices consciously and if that upsets you do not hassle MJD!
+This is one possible implementation of the concept of extracted data walking from 
+L<Higher-Order-Perl|http://hop.perl.plover.com/book/> Chapter 1 by Mark Jason Dominus.  
+I<The book is well worth the money!>  With that said I diverged from MJD purity in two 
+ways. This is object oriented code not functional code. Second, like the MJD equivalent, 
+the code does nothing on its own.  Unlike the MJD equivalent it looks for methods provided 
+in a role or class extention at the appropriate places for action.  The MJD equivalent 
+expects to use a passed CodeRef at the action points.  There is clearly some overhead 
+associated with both of these differences.  I made those choices consciously and if that 
+upsets you do not hassle MJD!
 
 =head2 Extending Data::Walk::Extracted
 
-All action taken during the data walking must be initiated by implementation of action methods that do not exist in this Class.  They can be added with a 
-L<Moose::Role> or by extending the class [https://metacpan.org/module/Moose::Manual::Classes], or joined to the class later with the method 'with_traits' from L<Moose::Util>.
+All action taken during the data walking must be initiated by implementation of action 
+methods that do not exist in this Class.  They can be added with a 
+L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles>, by extending the 
+L<class|https://metacpan.org/module/Moose::Manual::Classes>, or 
+L<joined|/$AT_ST = build_instance> to the class later. See   
+L<MooseX::ShortCut::BuildInstance|http://search.cpan.org/~jandrew/MooseX-ShortCut-BuildInstance/lib/MooseX/ShortCut/BuildInstance.pm>.
+or L<Moose::Util|https://metacpan.org/module/Moose::Util> for more class building 
+information.
 
-=head2 What is the reccomended way to build a role that uses this class?
-
-First build a method to be used when the Class reaches a data node and another to be used when the Class leaves a data node (as needed).   Then create the 'action' method for the role.  This would preferably be named something descriptive like 'mangle_data'.  This method should compose required node action methods and data references into a $passed_ref and possibly a $conversion_ref to be used by '_process_the_data'.  Then the 'action method should call;
-
-	$passed_ref = $self->_process_the_data( $passed_ref, $conversion_ref );
-
-Then return anything from the $passed_ref of interest.
-
-Finally, Write some tests for your role! [http://www.perlmonks.org/?node_id=918837]
-
-
-=head2 Further Documentation
-
-L<Data::Walk::Extracted> on CPAN
+See 
+L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm> 
+for more documentation.
 
 =head1 Install from Source
 
@@ -64,7 +159,7 @@ L<Data::Walk::Extracted> on CPAN
 
 	perl  -V:make
 
-Then
+Then (modifying make based on the previous step)
 
 	perl Makefile.PL
 	make

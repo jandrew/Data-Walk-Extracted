@@ -3,61 +3,68 @@ package Data::Walk::Print;
 use Moose::Role;
 requires 
 	'_get_had_secondary', 
-	'_process_the_data';
+	'_process_the_data',
+	'_dispatch_method';
 use MooseX::Types::Moose qw(
         HashRef
         ArrayRef
         Bool
         Str
         Ref
-    );######<-------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.009_003');
-BEGIN{
-	if( $ENV{ Smart_Comments } ){
-		use Smart::Comments -ENV;
-		### Smart-Comments turned on for Data-Walk-Print
-	}
+		Num
+    );######<---------------------------------------------------------  ADD New types here
+use version; our $VERSION = qv('0.015_003');
+if( $ENV{ Smart_Comments } ){
+	use Smart::Comments -ENV;
+	### Smart-Comments turned on for Data-Walk-Print ...
 }
 
-###############  Package Variables  #####################################################
+#########1 Package Variables  3#########4#########5#########6#########7#########8#########9
 
 $| = 1;
 my $print_keys = {
-    primary_ref     => 'print_ref',
-    secondary_ref   => 'match_ref',
+    print_ref => 'primary_ref',
+    match_ref => 'secondary_ref',
 };
-my $wait;
 
-###############  Dispatch Tables  #######################################################
+#########1 Dispatch Tables    3#########4#########5#########6#########7#########8#########9
 
-my	$item_dispatch ={######<-----------------------------------------  ADD New types here
-		SCALAR 	=> sub{ return ''; },
-		DEFAULT	=> sub{ return $_[1]; },
+my	$before_pre_string_dispatch ={######<-----------------------------  ADD New types here
+		HASH => \&_before_hash_pre_string,
+		ARRAY => \&_before_array_pre_string,
+		DEFAULT => sub{ 0 },
+		name => 'print - before pre string dispatch',
+		###### Receives: the current $passed_ref and the last branch_ref array
+		###### Returns: nothing
+		###### Action: adds the necessary pre string and match string 
+		######           for the currently pending position
+	};
+		
+
+my 	$before_method_dispatch ={######<----------------------------------  ADD New types here
+		HASH => \&_before_hash_printing,
+		ARRAY => \&_before_array_printing,
+		DEFAULT => sub{ 0 },
+		name => 'print - before_method_dispatch',
+		###### Receives: the passed_ref
+		###### Returns: 1|0 if the string should be printed
+		###### Action: adds the necessary before string and match string to the currently 
+		######           pending line
 	};
 
-my	$inter_ref_dispatch ={######<------------------------------------  ADD New types here
-		HASH 	=> sub{ return ' => '; },
-		DEFAULT	=> sub{ return ''; },
+my 	$after_method_dispatch ={######<-----------------------------------  ADD New types here
+		UNDEF => \&_after_undef_printing,
+		SCALAR => \&_after_scalar_printing,
+		HASH => \&_after_hash_printing,
+		ARRAY => \&_after_array_printing,
+		name => 'print - after_method_dispatch',
+		###### Receives: the passed_ref
+		###### Returns: 1|0 if the string should be printed
+		###### Action: adds the necessary after string and match string to the currently 
+		######           pending line
 	};
 
-my	$initial_match_statement_dispatch ={######<----------------------  ADD New types here
-		HASH => sub{ 
-			return (	
-				$_[1] ? 
-					'Secondary Key Match - ' :
-                    'Secondary Key Mismatch - ' 
-			); },
-		ARRAY => sub{ 
-			return (	
-				$_[1] ? 
-					'Secondary Position Exists - ' :
-                    'Secondary Position Does NOT Exist - ' 
-			); },
-		DEFAULT	=> sub{ return ''; },
-	};
-
-
-###############  Public Attributes  #####################################################
+#########1 Public Attributes  3#########4#########5#########6#########7#########8#########9
 
 has 'match_highlighting' =>(
     is      	=> 'ro',
@@ -69,30 +76,31 @@ has 'match_highlighting' =>(
     default 	=> 1,
 );
 
-###############  Public Methods  ########################################################
+#########1 Public Methods     3#########4#########5#########6#########7#########8#########9
 
 sub print_data{
     ### <where> - Made it to print
     ##### <where> - Passed input  : @_
     my  $self = $_[0];
     my  $passed_ref = 
-            ( @_ == 2 and 
-                (   ( is_HashRef( $_[1] ) and !( exists $_[1]->{print_ref} ) ) or
-                    !is_HashRef( $_[1] )                                            ) ) ? 
-                { print_ref => $_[1] }  :
-            ( @_ == 2 and is_HashRef( $_[1] ) ) ? 
-                $_[1] : 
-                { @_[1 .. $#_] } ;
+            ( 	@_ == 2 and 
+                (   ( is_HashRef( $_[1] ) and 
+					!( exists $_[1]->{print_ref} ) ) or
+				!is_HashRef( $_[1] )						) ) ? 
+					{ print_ref => $_[1] }  :
+            ( 	@_ == 2 and is_HashRef( $_[1] ) ) ? 
+					$_[1] : 
+					{ @_[1 .. $#_] } ;
     ##### <where> - Passed hashref: $passed_ref
     @$passed_ref{ 'before_method', 'after_method' } = 
         ( '_print_before_method', '_print_after_method' );
-    ##### <where> - Start recursive passing with  : $passed_ref
+    ##### <where> - Start recursive parsing with: $passed_ref
     $passed_ref = $self->_process_the_data( $passed_ref, $print_keys );
-    ### <where> - End recursive passing with    : $passed_ref
+    ### <where> - End recursive parsing with: $passed_ref
     return 1;
 }
 
-###############  Private Attributes  ####################################################
+#########1 Private Attributes 3#########4#########5#########6#########7#########8#########9
 
 has '_pending_string' =>(
     is          => 'ro',
@@ -109,135 +117,65 @@ has '_match_string' =>(
     writer      => '_set_match_string',
     clearer     => '_clear_match_string',
     predicate   => '_has_match_string',
+	reader		=> '_get_match_string',
 );
 
-###############  Private Methods / Modifiers  ###########################################
+#########1 Private Methods    3#########4#########5#########6#########7#########8#########9
 
 sub _print_before_method{
     my ( $self, $passed_ref ) = @_;
-    ### <where> - reached before_method
+    ### <where> - reached before_method ...
     #### <where> - received input: $passed_ref
-    #~ $self->_clear_match_string;
-    my  $match_string =
-            ($self->_has_match_string) ?
-                $self->_match_string :
-                '#<--- ' ;
-    my  $branch_ref = $passed_ref->{branch_ref}->[-1];
-    ### <where> - branch values             : $branch_ref
-    ### <where> - current match highlighting: $self->get_match_highlighting
-    my $should_print = 0;
-    if( $branch_ref->[3] ){
-		### <where> - adding secondary levels ...
-		### <where> - add tabs ...
-		if( !$self->_has_pending_string or
-			( 	$self->_has_pending_string and
-				($self->_get_pending_string !~ /^\t/) ) ){
-			$self->_add_to_pending_string( ("\t" x ($branch_ref->[3])) );
-		}
-		### <where> - add item ...
-		$self->_add_to_pending_string(
-			$self->_dispatch_method(
-				$item_dispatch,
-				$branch_ref->[0],
-				$branch_ref->[1],
-			)
+	##### <where> - self: $self
+	my ( $should_print );
+	if( 	$self->get_match_highlighting and
+			!$self->_has_match_string 			){
+		$self->_set_match_string( '#<--- ' );
+	}
+	### <where> - add before pre-string ...
+	if( $self->_get_current_level ){ 
+		### <where> - only available at level 1 + ...
+		$self->_dispatch_method(
+			$before_pre_string_dispatch,
+			$passed_ref->{branch_ref}->[-1]->[0],
+			$passed_ref,
+			$passed_ref->{branch_ref}->[-1],
 		);
-		### <where> - add inter reference markers ...
-		$self->_add_to_pending_string(
-			$self->_dispatch_method(
-				$inter_ref_dispatch,
-				$branch_ref->[0],
-			)
+	}
+	### <where> - printing reference bracket ...
+	if( $passed_ref->{skip} eq 'NO' ){
+		$should_print = $self->_dispatch_method(
+			$before_method_dispatch,
+			$passed_ref->{primary_type},
+			$passed_ref,
 		);
-		### <where> - add to match string as needed
-		$match_string .= $self->_dispatch_method(
-			$initial_match_statement_dispatch,
-			$branch_ref->[0],
-			( exists $passed_ref->{secondary_ref} ),
-		);
-    }
-    ### <where> - match string is: $match_string
-    if( is_HashRef( $passed_ref->{primary_ref} ) ){######<----------  ADD New types here
-        ### <where> - a HASH ref is next
-        $self->_add_to_pending_string( '{' );
-        $match_string .=
-            ( exists $passed_ref->{secondary_ref} and
-            is_HashRef( $passed_ref->{secondary_ref} ) ) ?
-                'Ref Type Match' : 'Ref Type Mismatch' ;
-        $should_print = 1;
-    }elsif( is_ArrayRef( $passed_ref->{primary_ref} ) ){
-        ### <where> - an ARRAY ref is next
-        $self->_add_to_pending_string( '[' );
-        $match_string .=
-            ( exists $passed_ref->{secondary_ref} and
-            is_ArrayRef( $passed_ref->{secondary_ref} ) ) ?
-                'Ref Type Match' : 'Ref Type Mismatch' ;
-        $should_print = 1;
-    }elsif( $branch_ref and $branch_ref->[0] eq 'SCALAR' ){
-        $self->_add_to_pending_string( "'$branch_ref->[1]'," );
-		### <where> - checking for scalar match with: $passed_ref
-		$match_string .= 
-			( exists $passed_ref->{secondary_ref} ) ?
-				'Secondary Value Matches' : 
-				'Secondary Value Does NOT Match' ;
-		### <where> - current match string: $match_string
-        $should_print = 1;
-    }
-    if( ref $passed_ref->{primary_ref} ){
-        my $skip_method = 'get_skip_' . (ref $passed_ref->{primary_ref}) . '_ref';
-        if( $self->$skip_method ){
-            $self->_add_to_pending_string( '# !!! SKIPPED !!!' );
-        }
-    }
-    ### <where> - match string is   : $match_string
-    ### <where> - match highlighting: $self->get_match_highlighting
-    ### <where> - secondary prexist : $self->_get_had_secondary
-    $self->_set_match_string( $match_string ) if $match_string;
+	}else{
+		### <where> - Found a skip - handling it in the after_method ...
+	}
+	### <where> - print as needed ...
     if( $should_print ){
+		### <where> - found a line that should print ...
         $self->_print_pending_string;
     }
-    ### <where> - current string      : $self->_get_pending_string
-    ### <where> - current match string: $self->_match_string
     ### <where> - leaving before_method
 	return $passed_ref;
 }
 
 sub _print_after_method{
     my ( $self, $passed_ref ) = @_;
-    my  $branch_ref = $passed_ref->{branch_ref}->[-1];
-    my  $match_string =
-            ($self->_has_match_string) ?
-                $self->_match_string :
-            (!($self->_has_pending_string)) ?
-                '#<--- ' : '' ;
-    ### <where> - reached after_method
-    ##### <where> - received input: $passed_ref
-    ### <where> - branchvalues  : $branch_ref
-    ### <where> - current match : $match_string
-    if( $branch_ref ){
-        if( !$self->_has_pending_string ){
-            ### <where> - No currently pending string
-            if( $branch_ref->[3] and is_Ref( $passed_ref->{primary_ref} ) ){
-                $self->_add_to_pending_string( ("\t" x ($branch_ref->[3])) );
-            }
-        }
+    ### <where> - reached the print after_method ...
+    #### <where> - received input: $passed_ref
+	##### <where> - self: $self
+	my  $should_print = $self->_dispatch_method(
+		$after_method_dispatch,
+		$passed_ref->{primary_type}, 
+		$passed_ref,
+	);
+	### <where> - Should Print: $should_print
+    if( $should_print ){
+		### <where> - found a line that should print ...
+        $self->_print_pending_string;
     }
-    if( is_HashRef( $passed_ref->{primary_ref} ) ){######<----------  ADD New types here
-        ### <where> - a HASH ref has just closed ...
-        $self->_add_to_pending_string( '}' );
-        $match_string .=
-            ( exists $passed_ref->{secondary_ref} and
-            is_HashRef( $passed_ref->{secondary_ref} ) ) ?
-                'Ref Type Match' : 'Ref Type Mismatch' ;
-    }elsif( is_ArrayRef( $passed_ref->{primary_ref} ) ){
-        ### <where> - an ARRAY ref is just completed
-        $self->_add_to_pending_string( ']' );
-        $match_string .=
-            ( exists $passed_ref->{secondary_ref} and
-            is_ArrayRef( $passed_ref->{secondary_ref} ) ) ?
-                'Ref Type Match' : 'Ref Type Mismatch' ;
-    }
-    $self->_print_pending_string( ',' );
     ### <where> - after_method complete
     #### <where> - returning: $passed_ref
     return $passed_ref;
@@ -245,7 +183,7 @@ sub _print_after_method{
 
 sub _add_to_pending_string{
     my ( $self, $string ) = @_;
-    ### <where> - reached add to pending string
+    ### <where> - reached _add_to_pending_string
     ### <where> - adding: $string
     $self->_set_pending_string( 
         (($self->_has_pending_string) ?
@@ -255,22 +193,36 @@ sub _add_to_pending_string{
     return 1;
 }
 
-sub _print_pending_string{
+sub _add_to_match_string{
     my ( $self, $string ) = @_;
+    ### <where> - reached _add_to_match_string
+    ### <where> - adding: $string
+    $self->_set_match_string( 
+        (($self->_has_match_string) ?
+            $self->_get_match_string : '') . 
+        ( ( $string ) ? $string : '' )
+    );
+    return 1;
+}
+
+sub _print_pending_string{
+    my ( $self, $input ) = @_;
     ### <where> - reached print pending string ...
+	### <where> - called with additional input: $input
 	#### <where> - match_highlighting called: $self->has_match_highlighting
 	#### <where> - match_highlighting on: $self->get_match_highlighting
 	#### <where> - secondary_ref exists: $self->_get_had_secondary
 	#### <where> - has pending match string: $self->_has_match_string
     if( $self->_has_pending_string ){
-        my  $new_string = $self->_get_pending_string;
-            $new_string .= $string if $string;
+        my	$new_string = $self->_add_tabs( $self->_get_current_level );
+			$new_string .= $self->_get_pending_string;
+			$new_string .= $input if $input;
             if(	$self->has_match_highlighting and
                 $self->get_match_highlighting and
                 $self->_get_had_secondary and
                 $self->_has_match_string        ){
                 ### <where> - match_highlighting on - adding match string
-                $new_string .= $self->_match_string;
+                $new_string .= $self->_get_match_string;
             }
             $new_string .= "\n";
         ### <where> - printing string: $new_string
@@ -281,14 +233,131 @@ sub _print_pending_string{
     return 1;
 }
 
-#################### Phinish with a Phlourish ###########################################
+sub _before_hash_pre_string{
+    my ( $self, $passed_ref, $branch_ref ) = @_;
+    ### <where> - reached _before_hash_pre_string ...
+	#### <where> - passed ref: $passed_ref
+	$self->_add_to_pending_string( $branch_ref->[1] . ' => ' );
+	$self->_add_to_match_string(
+		( $passed_ref->{secondary_type} ne 'DNE' ) ? 
+			'Hash Key Match - ' : 'Hash Key Mismatch - '
+	);
+	### <where> - current pending string: $self->_get_pending_string
+	### <where> - current match string: $self->_get_match_string
+}
+
+sub _before_array_pre_string{
+    my ( $self, $passed_ref, $branch_ref ) = @_;
+    ### <where> - reached _before_array_pre_string ...
+	#### <where> - passed ref: $passed_ref
+	$self->_add_to_match_string(
+		( $passed_ref->{secondary_type} ne 'DNE' ) ? 
+			'Position Exists - ' : 'No Matching Position - '
+	);
+	### <where> - current pending string: $self->_get_pending_string
+	### <where> - current match string: $self->_get_match_string
+}
+
+sub _before_hash_printing{
+    my ( $self, $passed_ref ) = @_;
+    ### <where> - reached _before_hash_printing ...
+	$self->_add_to_pending_string( '{' );
+	$self->_add_to_match_string(
+		( $passed_ref->{secondary_type} eq 'HASH' ) ? 
+			'Ref Type Match' : 'Ref Type Mismatch'
+	);
+	### <where> - current pending string: $self->_get_pending_string
+	### <where> - current match string: $self->_get_match_string
+    return 1;
+}
+
+sub _before_array_printing{
+    my ( $self, $passed_ref ) = @_;
+    ### <where> - reached _before_array_printing ...
+	#### <where> - passed ref: $passed_ref
+	$self->_add_to_pending_string( '[' );
+	$self->_add_to_match_string(
+		( $passed_ref->{secondary_type} eq 'ARRAY' ) ? 
+			'Ref Type Match' : 'Ref Type Mismatch'
+	);
+	### <where> - current pending string: $self->_get_pending_string
+	### <where> - current match string: $self->_get_match_string
+    return 1;
+}
+
+sub _after_scalar_printing{
+    my ( $self, $passed_ref, ) = @_;
+    ### <where> - reached _after_scalar_printing ...
+	##### <where> - passed ref: $passed_ref
+	$self->_add_to_pending_string(
+		(
+			( is_Num( $passed_ref->{primary_ref} )  ) ?
+				$passed_ref->{primary_ref} : 
+				"'$passed_ref->{primary_ref}'" 
+		) . ','
+	);
+	$self->_add_to_match_string(
+		( $passed_ref->{match} eq 'YES' ) ? 
+			'Scalar Value Matches' : 
+			'Scalar Value Does NOT Match'
+	);
+	### <where> - current pending string: $self->_get_pending_string
+	### <where> - current match string: $self->_get_match_string
+	return 1;
+}
+
+sub _after_undef_printing{
+    my ( $self, $passed_ref, ) = @_;
+    ### <where> - reached _after_scalar_printing ...
+	##### <where> - passed ref: $passed_ref
+	$self->_add_to_pending_string( 
+		"undef," 
+	);
+	### <where> - current pending string: $self->_get_pending_string
+	return 1;
+}
+
+sub _after_array_printing{
+    my ( $self, $passed_ref ) = @_;
+    ### <where> - reached _after_array_printing ...
+	##### <where> - passed ref: $passed_ref
+	if( $passed_ref->{skip} eq 'YES' ){
+		$self->_add_to_pending_string( $passed_ref->{primary_ref} . ',' );
+	}else{
+		$self->_add_to_pending_string( '],' );
+	}
+	### <where> - current pending string: $self->_get_pending_string
+	return 1;
+}
+
+sub _after_hash_printing{
+    my ( $self, $passed_ref, $skip_method ) = @_;
+    ### <where> - reached _after_hash_printing ...
+	##### <where> - passed ref: $passed_ref
+	if( $passed_ref->{skip} eq 'YES' ){
+		$self->_add_to_pending_string( $passed_ref->{primary_ref} . ',' );
+	}else{
+		$self->_add_to_pending_string( '},' );
+	}
+	### <where> - current pending string: $self->_get_pending_string
+	return 1;
+}
+
+sub _add_tabs{
+    my ( $self, $current_level ) = @_;
+    ### <where> - reached _add_tabs ...
+	##### <where> - current level: $current_level
+    return ("\t" x $current_level);
+}
+
+#########1 Phinish Strong     3#########4#########5#########6#########7#########8#########9
 
 no Moose::Role;
 
 1;
 # The preceding line will help the module return a true value
 
-#################### main pod documentation begin #######################################
+#########1 Main POD starts    3#########4#########5#########6#########7#########8#########9
 
 __END__
 
@@ -302,10 +371,8 @@ Data::Walk::Print - A data printing function
 	use Modern::Perl;
 	use YAML::Any;
 	use Moose::Util qw( with_traits );
-	use Data::Walk::Extracted v0.015;
-	use Data::Walk::Print v0.009;
-
-	$| = 1;
+	use Data::Walk::Extracted 0.019;
+	use Data::Walk::Print 0.015;
 
 	#Use YAML to compress writing the data ref
 	my  $firstref = Load(
@@ -340,7 +407,7 @@ Data::Walk::Print - A data printing function
 					LowerKey2:
 						BottomKey2:
 						- bavalue1
-						- bavalue2
+						- bavalue3
 						BottomKey1: 12354'
 	);
 	my $AT_ST = with_traits( 
@@ -351,96 +418,80 @@ Data::Walk::Print - A data printing function
 		);
 	$AT_ST->print_data(
 		print_ref	=>  $firstref,
-		match_ref	=>  $secondref,
-		sort_HASH	=> 1,#To force order for demo purposes
+		match_ref	=>  $secondref, 
+		sorted_nodes =>{
+			HASH => 1, #To force order for demo purposes
+		}
 	);
     
-    #####################################################################################
-    #     Output of SYNOPSIS
-    # 01:{#<--- Ref Type Match
-    # 02:	Helping => [#<--- Secondary Key Match - Ref Type Match
-    # 03:		'Somelevel',#<--- Secondary Position Exists - Secondary Value Matches
-    # 04:		{#<--- Secondary Position Exists - Ref Type Match
-    # 05:			MyKey => {#<--- Secondary Key Match - Ref Type Match
-    # 06:				MiddleKey => {#<--- Secondary Key Match - Ref Type Match
-    # 07:					LowerKey1 => 'lvalue1',#<--- Secondary Key Match - Secondary Value Matches
-    # 08:					LowerKey2 => {#<--- Secondary Key Match - Ref Type Match
-    # 09:						BottomKey1 => '12345',#<--- Secondary Key Match - Secondary Value Does NOT Match
-    # 10:						BottomKey2 => [#<--- Secondary Key Match - Ref Type Match
-    # 11:							'bavalue1',#<--- Secondary Position Exists - Secondary Value Matches
-    # 12:							'bavalue2',#<--- Secondary Position Exists - Secondary Value Does NOT Match
-    # 13:							'bavalue3',#<--- Secondary Position Does NOT Exist - Secondary Value Does NOT Match
-    # 14:						],
-    # 15:					},
-    # 16:				},
-    # 17:			},
-    # 18:		},
-    # 19:	],
-    # 20:	Parsing => {#<--- Secondary Key Mismatch - Ref Type Mismatch
-    # 21:		HashRef => {#<--- Secondary Key Mismatch - Ref Type Mismatch
-    # 22:			LOGGER => {#<--- Secondary Key Mismatch - Ref Type Mismatch
-    # 23:				run => 'INFO',#<--- Secondary Key Mismatch - Secondary Value Does NOT Match
-    # 24:			},
-    # 25:		},
-    # 26:	},
-    # 27:	Someotherkey => 'value',#<--- Secondary Key Match - Secondary Value Matches
-    # 28:},
-    #####################################################################################
+	#################################################################################
+	#     Output of SYNOPSIS
+	# 01:{#<--- Ref Type Match
+	# 02:	Helping => [#<--- Secondary Key Match - Ref Type Match
+	# 03:		'Somelevel',#<--- Secondary Position Exists - Secondary Value Matches
+	# 04:		{#<--- Secondary Position Exists - Ref Type Match
+	# 05:			MyKey => {#<--- Secondary Key Match - Ref Type Match
+	# 06:				MiddleKey => {#<--- Secondary Key Match - Ref Type Match
+	# 07:					LowerKey1 => 'lvalue1',#<--- Secondary Key Match - Secondary Value Matches
+	# 08:					LowerKey2 => {#<--- Secondary Key Match - Ref Type Match
+	# 09:						BottomKey1 => '12345',#<--- Secondary Key Match - Secondary Value Does NOT Match
+	# 10:						BottomKey2 => [#<--- Secondary Key Match - Ref Type Match
+	# 11:							'bavalue1',#<--- Secondary Position Exists - Secondary Value Matches
+	# 12:							'bavalue2',#<--- Secondary Position Exists - Secondary Value Does NOT Match
+	# 13:							'bavalue3',#<--- Secondary Position Does NOT Exist - Secondary Value Does NOT Match
+	# 14:						],
+	# 15:					},
+	# 16:				},
+	# 17:			},
+	# 18:		},
+	# 19:	],
+	# 20:	Parsing => {#<--- Secondary Key Mismatch - Ref Type Mismatch
+	# 21:		HashRef => {#<--- Secondary Key Mismatch - Ref Type Mismatch
+	# 22:			LOGGER => {#<--- Secondary Key Mismatch - Ref Type Mismatch
+	# 23:				run => 'INFO',#<--- Secondary Key Mismatch - Secondary Value Does NOT Match
+	# 24:			},
+	# 25:		},
+	# 26:	},
+	# 27:	Someotherkey => 'value',#<--- Secondary Key Match - Secondary Value Matches
+	# 28:},
+	#################################################################################
 
  
 =head1 DESCRIPTION
 
 This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> is mostly written 
-as a demonstration module for L<Data::Walk::Extracted>.  
+as a demonstration module for 
+L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>.  
 Both L<Data::Dumper|https://metacpan.org/module/Data::Dumper#Functions> - Dumper and 
 L<YAML|https://metacpan.org/module/YAML::Any#SUBROUTINES> - Dump functions are more mature than 
 the printing function included here.
 
-=head2 Caveat utilitor
-
-=head3 Supported Node types
-
-=over
-
-=item B<ARRAY>
-
-=item B<HASH>
-
-=item B<SCALAR>
-
-=back
-
-=head3 Supported one shot L</Attributes>
-
-=over
-
-=item match_highlighting
-
-=back
-
 =head2 USE
 
-This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> and can be 
-used as such.  One way to incorporate this role into L<Data::Walk::Extracted> is the 
-method 'with_traits' from L<Moose::Util|https://metacpan.org/module/Moose::Util#EXPORTED-FUNCTIONS>.  
-Otherwise see L<Moose::Manual::Roles|https://metacpan.org/module/Moose::Manual::Roles>.
+This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles>. One way to 
+incorporate this role into 
+L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>. 
+is 
+L<MooseX::ShortCut::BuildInstance|http://search.cpan.org/~jandrew/MooseX-ShortCut-BuildInstance/lib/MooseX/ShortCut/BuildInstance.pm>.
+or read L<Moose::Util|https://metacpan.org/module/Moose::Util> for more class building 
+information.
 
-=head2 Attributes
+=head1 Attributes
 
-Data passed to ->new when creating an instance using a class.  For modification of 
-these attributes see L</Methods>.  The ->new function will either accept fat comma 
-lists or a complete hash ref that has the possible appenders as the top keys.  
-Additionally L<some attributes|/Supported one shot > that have all the following 
+Data passed to -E<gt>new when creating an instance.  For modification of these attributes 
+see L</Methods>.  The -E<gt>new function will either accept fat comma lists or a 
+complete hash ref that has the possible attributes as the top keys.  Additionally 
+L<some attributes|/Supported one shot attributes> that have all the following 
 methods; get_$attribute, set_$attribute, has_$attribute, and clear_$attribute,
-can be passed to L<print_data|/print_data( $arg_ref|%args )> and will be adjusted for 
-just the run of that method call.  These are called 'one shot' attributes.
+can be passed to L<print_data|/print_data( $arg_ref|%args|$data_ref )> and will be 
+adjusted for just the run of that method call.  These are called 'one shot' attributes.
 
-=head3 match_highlighting
+=head2 match_highlighting
 
 =over
 
 =item B<Definition:> this determines if a comments string is added after each printed 
-row that indicates how the 'print_ref' matches the 'match_ref' (or not).
+row that indicates how the 'print_ref' matches the 'match_ref'.
 
 =item B<Default> True (1)
 
@@ -448,12 +499,13 @@ row that indicates how the 'print_ref' matches the 'match_ref' (or not).
     
 =back
 
-L<Attributes in Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm#Attributes> 
+Attributes in 
+L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm#Attributes>
  - also affect the output.
 
 =head1 Methods
 
-=head2 print_data( $arg_ref|%args )
+=head2 print_data( $arg_ref|%args|$data_ref )
 
 =over
 
@@ -478,7 +530,8 @@ and the keys include a 'print_ref' key then the list is processed as such.
 =item B<[attribute name]> - attribute names are accepted with temporary attribute settings.  
 These settings are temporarily set for a single "print_data" call and then the original 
 attribute values are restored.  For this to work the the attribute must meet the 
-L<necessary criteria|/Supported one shot >.
+L<necessary criteria|/Attributes>.  These attributes can include all attributes active 
+for the constructed class not just this role.
 
 =back
 
@@ -497,13 +550,81 @@ L</match_highlighting>)
 
 =over
 
-=item B<Definition:> this is a way to change the match_highlighting attribute
+=item B<Definition:> this is a way to change the L</match_highlighting> attribute
 
 =item B<Accepts:> a Boolean value
 
 =item B<Returns:> ''
 
 =back
+
+=head2 get_match_highlighting
+
+=over
+
+=item B<Definition:> this is a way to view L</match_highlighting> attribute
+
+=item B<Accepts:> nothing
+
+=item B<Returns:> The current 'match_highlighting' state
+
+=back
+
+=head2 has_match_highlighting
+
+=over
+
+=item B<Definition:> this is a way to know if the L</match_highlighting> attribute 
+is active
+
+=item B<Accepts:> nothing
+
+=item B<Returns:> 1 if the attribute is active (not just if it == 1)
+
+=back
+
+=head2 clear_match_highlighting
+
+=over
+
+=item B<Definition:> this clears the L</match_highlighting> attribute
+
+=item B<Accepts:> nothing
+
+=item B<Returns:> '' (always successful)
+
+=back
+
+=head1 Caveat utilitor
+
+=head2 Supported Node types
+
+=over
+
+=item B<ARRAY>
+
+=item B<HASH>
+
+=item B<SCALAR>
+
+=back
+
+=head2 Supported one shot attributes
+
+=over
+
+=item match_highlighting
+
+=item L<explanation|/Attributes>
+
+=back
+
+=head2 Printing for skipped nodes
+
+L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm> 
+allows for some nodes to be skipped.  When a node is skipped the 
+L<print_data|/print_data( $arg_ref|%args|$data_ref )> function prints the scalar (perl pointer 
+description) of that node.
 
 =head1 GLOBAL VARIABLES
 
@@ -512,10 +633,10 @@ L</match_highlighting>)
 =item B<$ENV{Smart_Comments}>
 
 The module uses L<Smart::Comments> if the '-ENV' option is set.  The 'use' is 
-encapsulated in a BEGIN block triggered by the environmental variable to comfort 
-non-believers.  Setting the variable $ENV{Smart_Comments} will load and turn 
-on smart comment reporting.  There are three levels of 'Smartness' available 
-in this module '### #### #####'.
+encapsulated in an if block triggered by an environmental variable to comfort 
+non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN block will 
+load and turn on smart comment reporting.  There are three levels of 'Smartness' 
+available in this module '###',  '####', and '#####'.
 
 =back
 
@@ -531,11 +652,9 @@ in this module '### #### #####'.
 
 =over
 
-=item * Support printing CodeRefs
-
 =item * Support printing Objects / Instances
 
-=item * print the data address if the node is skipped
+=item * Support printing CodeRefs
 
 =back
 
@@ -563,11 +682,29 @@ LICENSE file included with this module.
 
 =item L<Data::Walk::Extracted>
 
+=item L<Data::Walk::Extracted::Dispatch>
+
+=item L<MooseX::Types::Moose>
+
 =item L<version>
 
 =item L<Moose::Role>
 
-=item L<MooseX::Types::Moose>
+=over
+
+=item B<requires>
+
+=over
+
+=item _process_the_data
+
+=item _get_had_secondary
+
+=item _dispatch_method
+
+=back
+
+=back
 
 =back
 
@@ -585,8 +722,14 @@ LICENSE file included with this module.
 
 =item L<YAML> - Dump
 
+=item L<Data::Walk::Clone>
+
+=item L<Data::Walk::Prune>
+
+=item L<Data::Walk::Graft>
+
 =back
 
 =cut
 
-#################### main pod documentation end #########################################
+#########1 Main POD ends      3#########4#########5#########6#########7#########8#########9

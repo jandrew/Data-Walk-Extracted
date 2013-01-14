@@ -7,7 +7,10 @@ Makefile.PL
 README.pod
 dist.ini
 lib/Data/Walk/Clone.pm
+lib/Data/Walk/Diff.pm
 lib/Data/Walk/Extracted.pm
+lib/Data/Walk/Extracted/Dispatch.pm
+lib/Data/Walk/Extracted/Types.pm
 lib/Data/Walk/Graft.pm
 lib/Data/Walk/Print.pm
 lib/Data/Walk/Prune.pm
@@ -19,6 +22,8 @@ t/005-Data-Walk-Clone.t
 t/006-Data-Walk-Graft.t
 t/010-Data-Walk-All.t
 t/Data-Walk-Clone-example.pl
+t/Data-Walk-Diff-example.pl
+t/Data-Walk-Extracted-example.pl
 t/Data-Walk-Graft-example.pl
 t/Data-Walk-Print-example.pl
 t/Data-Walk-Prune-example.pl
