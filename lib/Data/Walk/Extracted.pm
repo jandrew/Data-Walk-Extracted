@@ -4,7 +4,7 @@ use Moose;
 use MooseX::StrictConstructor;
 use Class::Inspector;
 use Scalar::Util qw( reftype );
-use version; our $VERSION = qv('0.019_005');
+use version; our $VERSION = qv('0.020.001');
 use Carp qw( confess );
 use MooseX::Types::Moose qw(
         ArrayRef
@@ -15,15 +15,15 @@ use MooseX::Types::Moose qw(
         Int
         Bool
     );
-use lib '../../../lib';
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;
 	### Smart-Comments turned on for Data-Walk-Extracted ...
 }
-use Data::Walk::Extracted::Types 0.001 qw(
+use lib '../../../lib';
+use Data::Walk::Extracted::Types 0.002 qw(
 		posInt
 	);
-with 'Data::Walk::Extracted::Dispatch' =>{ -VERSION => 0.001 };
+with 'Data::Walk::Extracted::Dispatch' =>{ -VERSION => 0.002 };
 
 #########1 Package Variables  3#########4#########5#########6#########7#########8#########9
 
@@ -544,7 +544,7 @@ sub _has_at_least_one_input{
 sub _manage_the_rest{
     my ( $self, $passed_ref ) = @_;
     ### <where> - Made it to _manage_the_rest ...
-    ##### <where> - Passed ref: $passed_ref
+    ### <where> - Passed ref: $passed_ref
 	### <where> - load a passed branch_ref ...
 	$passed_ref->{branch_ref} =	$self->_main_down_level_branch_ref( 
 									$passed_ref->{branch_ref}
@@ -919,7 +919,7 @@ Data::Walk::Extracted - An extracted dataref walker
 
 =head1 SYNOPSIS
 
-This is a contrived example!  For more functional (complex/useful) examples see the 
+This is a contrived example!  For a more functional (complex/useful) example see the 
 roles in this package.
 
 	package Data::Walk::MyRole;
@@ -999,9 +999,9 @@ This module takes a data reference (or two) and
 L<recursivly|http://en.wikipedia.org/wiki/Recursion_(computer_science)> 
 travels through it(them).  Where the two references diverge the walker follows the 
 primary data reference.  At the L<beginning|/Assess and implement the before_method> 
-and L<end|/Assess and implement the after_method> of each L</node> the code will 
-attempt to call a L<method|/Extending Data::Walk::Extracted> using data from the 
-current location of the node.
+and L<end|/Assess and implement the after_method> of each branch or L<node|/node> 
+the code will attempt to call a L<method|/Extending Data::Walk::Extracted> on the 
+remaining unparsed data.
 
 =head2 Acknowledgement of MJD
 
@@ -1009,10 +1009,8 @@ This is an implementation of the concept of extracted data walking from
 L<Higher-Order-Perl|http://hop.perl.plover.com/book/> Chapter 1 by 
 L<Mark Jason Dominus|https://metacpan.org/author/MJD>.  I<The book is well worth the 
 money!>  With that said I diverged from MJD purity in two ways. This is object oriented 
-code not functional code. Second, like the MJD equivalent, the code does 
-L<nothing on its own|/Extending Data::Walk::Extracted>.   Unlike the MJD equivalent it 
-looks for methods provided in a role or class extention at the appropriate places for action.  
-The MJD equivalent expects to use a passed CodeRef at the action points.  There is clearly 
+code not functional code. Second, when taking action the code will search for class 
+methods provided by (your) role rather than acting on passed closures.  There is clearly 
 some overhead associated with both of these differences.  I made those choices consciously 
 and if that upsets you L<do not hassle MJD|/AUTHOR>!
 
@@ -1022,41 +1020,39 @@ With the recursive part of data walking extracted the various functionalities de
 when walking the data can be modularized without copying this code.  The Moose 
 framework also allows diverse and targeted data parsing without dragging along a 
 L<kitchen sink|http://en.wiktionary.org/wiki/everything_but_the_kitchen_sink> API 
-for every implementation of this Class.
+for every use of this class.
 
 =head2 Extending Data::Walk::Extracted
 
-All action taken during the data walking must be initiated by implementation of action 
-methods that do not exist in this class.  They can be added with a traditionally 
-incorporated Role L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles>, by 
-L<extending the class|https://metacpan.org/module/Moose::Manual::Classes>, or 
-L<joined|/$AT_ST = build_instance> to the class later. See   
-L<MooseX::ShortCut::BuildInstance|http://search.cpan.org/~jandrew/MooseX-ShortCut-BuildInstance/lib/MooseX/ShortCut/BuildInstance.pm>.
+B<All action taken during the data walking must be initiated by implementation of action 
+methods that do not exist in this class>.  It usually also makes sense to build an 
+initial action method as well.  The initial action method can do any data-preprocessing 
+that is useful as well as providing the necessary set up for the generic walker.  All 
+of these elements can be combined with this class using a L<Moose role
+|https://metacpan.org/module/Moose::Manual::Roles>, by 
+L<extending the class|https://metacpan.org/module/Moose::Manual::Classes>, or it can be 
+L<joined|/$AT_ST = build_instance> to the class at run time. See 
+L<MooseX::ShortCut::BuildInstance|https://metacpan.org/module/MooseX::ShortCut::BuildInstance>.
 or L<Moose::Util|https://metacpan.org/module/Moose::Util> for more class building 
-information.  See the L</Recursive Parsing Flow> to understand the details of how the 
-methods are used.
+information.  See the L<parsing flow|/Recursive Parsing Flow> to understand the details 
+of how the methods are used.  See L<methods used to write roles|/Methods used to write roles> 
+for the available methods to implement the roles.
 
-=head3 Requirements to build a role that uses this class
-
-First build either or both of the L<before|/Assess and implement the before_method> 
-and L<after|/Assess and implement the after_method> action methods.  Then create the 
-'action' method for the role.  This would preferably be named something descriptive 
-like 'mangle_data'.  Remember if more than one role is added to Data::Walk::Extracted 
-then all methods should be named with consideration for other (future?) method names.  
-The 'mangle_data' method should 
-L<gather|/@$passed_ref{ 'before_method', 'after_method' }> any action methods and 
-data references into a $passed_ref the pass this reference and possibly a 
-L</$conversion_ref> to be used by 
-L<_process_the_data|/_process_the_data( $passed_ref, $conversion_ref )> .  
-Then the 'action' method should call;
-
-	$passed_ref = $self->_process_the_data( $passed_ref, $conversion_ref );
-
-See the L</Recursive Parsing Flow> for the details of this action.
-
-Finally, L<Write some tests for your role!|http://www.perlmonks.org/?node_id=918837>
+Then, L<Write some tests for your role!|http://www.perlmonks.org/?node_id=918837>
 
 =head1 Recursive Parsing Flow
+
+=head2 Initial data input and scrubbing
+
+The primary input method added to this class for external use is refered to as 
+the 'action' method (ex. 'mangle_data').  This action method needs to receive 
+data and L<compose|/B<Accepts:> ( $passed_ref, $conversion_ref )> it for sending 
+to the core data walker.  The data is then passed to the L<start method
+|/_process_the_data( $passed_ref, $conversion_ref )> for the generic data walker.  
+I<Remember if more than one role is added to Data::Walk::Extracted 
+for a given instance then all methods should be named with consideration for other 
+(future?) method names.  The L<$conversion_ref|/B<$conversion_ref> This allows>. 
+allows for muliple uses of the core data walkers generic functions.> 
 
 =head2 Assess and implement the before_method
 
@@ -1070,56 +1066,61 @@ If the test passes then the next sequence is run.
 	$passed_ref = $self->$method( $passed_ref );
 
 If the $passed_ref is modified by the 'before_method' then the recursive parser will 
-parse the new ref and not the old one.
+parse the new ref and not the old one.  The before_method can set
+
+	$passed_ref->{skip} = 'YES'
+	
+and the walker will jump to the L<after method|/Assess and implement the after_method> 
+at this point.
 
 =head2 Identify node elements
 
-If the next node type is not skipped then a list is generated for all paths within that 
-lower node.  For example a 'HASH' node would generate a list of hash keys for that node.  
-SCALARs are handled as a list with one element single element and UNDEFs are an empty list.  
-If the list L<should be sorted|/sorted_nodes> then the list is sorted. B<ARRAYS 
-are hard sorted.> This means that the actual items in the (primary) passed data ref are 
-permanantly sorted.
+If the next level in is not skipped then a list is generated for all L<paths|/nodes> 
+in the node. For example a 'HASH' node would generate a list of hash keys for that node.  
+SCALAR nodes will generate a list with only one element containing the scalar contents.  
+UNDEF nodes will generate an empty list.  If the list L<should be sorted|/sorted_nodes> 
+then the list is sorted. B<ARRAYS are hard sorted.> I<This means that the actual items in 
+the (primary) passed data ref are permanantly sorted.>
 
 =head2 Iterate through each element
 
-For each element a new 
-L<$passed_ref|/B<$passed_ref> this ref contains key value pairs as follows;> 
-is generated containing the data below that element.  The down level secondary_ref is 
-only constructed if it has a matching type/element to the primary ref.  Matching for 
-hashrefs is done by key matching only.  Matching for arrayrefs is done by position 
+For each identified element of the node a new 
+L<$passed_ref|/B<$passed_ref> This ref contains key value pairs as follows;> 
+is generated containing data that represents just that sub element.  The secondary_ref 
+is only constructed if it has a matching type and element to the primary ref.  Matching 
+for hashrefs is done by key matching only.  Matching for arrayrefs is done by position 
 exists testing only.  I<No position content compare is done!> Scalars are matched on 
 content.  The list of items generated for this element is as follows;
 
 =over
 
-=item B<before_method =E<gt>> --E<gt>name of before method for this role hereE<lt>--
+B<before_method =E<gt>> --E<gt>name of before method for this role hereE<lt>--
 
-=item B<after_method =E<gt>> --E<gt>name of after method for this role hereE<lt>--
+B<after_method =E<gt>> --E<gt>name of after method for this role hereE<lt>--
 
-=item B<branch_ref =E<gt>> L<An array ref of array refs|/A position trace is generated>
+B<primary_ref =E<gt>> the piece of the primary data ref below this element
 
-=item B<primary_ref =E<gt>> the piece of the primary data ref below this element
-
-=item B<primary_type =E<gt>> the lower primary 
+B<primary_type =E<gt>> the lower primary 
 L<ref type|/_extracted_ref_type( $test_ref )>
 
-=item B<match =E<gt>> YES|NO (This indicates if the secondary ref meets matching critera
+B<match =E<gt>> YES|NO (This indicates if the secondary ref meets matching critera
 
-=item B<skip =E<gt>> YES|NO Checks L<the three skip attributes|/skipped_nodes> against 
-the lower primary_ref node.  This can also be adjusted in a 'before_method' upon arrival 
+B<skip =E<gt>> YES|NO Checks L<the three skip attributes|/skipped_nodes> against 
+the lower primary_ref node.  This can also be set in the 'before_method' upon arrival 
 at that node.
 
-=item B<secondary_ref =E<gt>> if match eq 'YES' then built like the primary ref
+B<secondary_ref =E<gt>> if match eq 'YES' then built like the primary ref
 
-=item B<secondary_type =E<gt>> if match eq 'YES' then calculated like the primary type
+B<secondary_type =E<gt>> if match eq 'YES' then calculated like the primary type
+
+B<branch_ref =E<gt>> L<stack trace|/A position trace is generated>
 
 =back
 
 =head2 A position trace is generated
 
-The current node list position is then documented using an internally managed key of the 
-$passed_ref labeled B<'branch_ref'>.  The array reference stored in branch_ref can be 
+The current node list position is then documented and pushed onto the array at 
+$passed_ref->{branch_ref}.  The array reference stored in branch_ref can be 
 thought of as the stack trace that documents the node elements directly between the 
 current position and the initial (or zeroth) level of the parsed primary data_ref.  
 Past completed branches and future pending branches are not maintained.  Each element 
@@ -1133,13 +1134,13 @@ used to traverse that node level.  The values in each sub position are;
 		element sequence position (from 0),
 			#For hashes this is only relevent if sort_HASH is called
 		level of the node (from 0),
-			`#The zeroth level is the passed data ref
+			`#The zeroth level is the initial data ref
 	]
 
 =head2 Going deeper in the data
 
 The down level ref is then passed as a new data set to be parsed and it starts 
-at L</Assess and implement the before_method>.
+at the L<before_method|/Assess and implement the before_method> again.
 
 =head2 Actions on return from recursion
 
@@ -1147,14 +1148,14 @@ When the values are returned from the recursion call the last branch_ref element
 L<pop|http://perldoc.perl.org/functions/pop.html>ed off and the returned data ref 
 is used to L<replace|/fixed_primary> the sub elements of the primary_ref and secondary_ref 
 associated with that list element in the current level of the $passed_ref.  If there are 
-still pending items in the node element list then the program returns to 
-L</Iterate through each element> else it moves to 
-L</Assess and implement the after_method>.
+still pending items in the node element list then the program L<processes them too
+|/Iterate through each element>
 
 
 =head2 Assess and implement the after_method
 
-The class checks for an available 'after_method' using the test;
+After the node elements have all been processed the class checks for an available 
+'after_method' using the test;
 
 	exists $passed_ref->{after_method};
 
@@ -1168,47 +1169,44 @@ parse the new ref and not the old one.
 
 =head2 Go up
 
-The updated $passed_ref is passed back up to the next level.
+The updated $passed_ref is passed back up to the L<next level
+|/Actions on return from recursion>.
 
 =head1 Attributes
 
 Data passed to -E<gt>new when creating an instance.  For modification of these attributes 
-see L</Public Methods>.  The -E<gt>new function will either accept fat comma lists or a 
-complete hash ref that has the possible attributes as the top keys.  Additionally some 
-attributes that meet L<certain criteria|/[attribute name]> can be passed to 
-L<_process_the_data|/B<[attribute name]> - attribute names are> and will be adjusted 
-for just the run of that method call.  These are called 
-L<one shot|/Supported one shot attributes> attributes.  Nested calls to _process_the_data 
-will be tracked and the attribute will remain in force until the parser returns to the 
-calling 'one shot' level.  Previous attribute values are restored after the 'one shot' 
-attribute value expires.
+see L<Public Methods|/Public Methods>.  The -E<gt>new function will either accept fat 
+comma lists or a complete hash ref that has the possible attributes as the top keys.  
+Additionally some attributes that meet L<certain criteria|/[attribute name]> can be passed 
+to L<_process_the_data|/B<[attribute name]> - attribute names are> and will be adjusted 
+for just the run of that method call.  These are called L<one shot
+|/Supported one shot attributes> attributes.  Nested calls to _process_the_data will be 
+tracked and the attribute will remain in force until the parser returns to the calling 
+'one shot' level.  Previous attribute values are restored after the 'one shot' attribute 
+value expires.
 
 =head2 sorted_nodes
 
 =over
 
-=item B<Definition:> This attribute is set to sort (or not) the 
-L<list of items|/Identify node elements> in each node.
-
-=item B<Default> {} #Nothing is sorted
-
-=item B<Range> This accepts a HashRef.
-
-The keys are only used if they match a node type identified by the function 
-L<_extracted_ref_type|/_extracted_ref_type( $test_ref )>.  The value for the 
-key can be anything, but if it is a CODEREF it will be treated as a 
-L<sort|http://perldoc.perl.org/functions/sort.html> function in perl.  In general 
-it is sorting a list of strings not the data structure itself. The sort will be 
-applied as follows.
+B<Definition:> If the L<primary_type|/primary_type => of the L<$primary_ref
+|/B<primary_ref> - a dataref that the> is a key in this attribute hash ref then the 
+ node L<list|/Identify node elements> is sorted. If the value of that key is a CODEREF 
+then the sort L<sort|http://perldoc.perl.org/functions/sort.html> function will called 
+as follows.
 
 	@node_list = sort $coderef @node_list
 
-I<For the type 'ARRAY' the node is sorted (permanantly) as well as the list.  This means 
-that if the array contains a list of references it will effectivly sort in memory pointer 
-order.  Additionally the 'secondary_ref' node is not sorted, so prior alignment may break.  
-In general ARRAY sorts are not recommended.>
+I<For the type 'ARRAY' the node is sorted (permanantly) by the element values.  This 
+means that if the array contains a list of references it will effectivly sort against 
+the ASCII of the memory pointers.  Additionally the 'secondary_ref' node is not 
+sorted, so prior alignment may break.  In general ARRAY sorts are not recommended.>
 
-=item B<Example:>
+B<Default> {} #Nothing is sorted
+
+B<Range> This accepts a HashRef.
+
+B<Example:>
 
 	sorted_nodes =>{
 		ARRAY	=> 1,#Will sort the primary_ref only
@@ -1221,17 +1219,20 @@ In general ARRAY sorts are not recommended.>
 
 =over
 
-=item B<Definition:> This attribute is set to skip (or not) node parsing by type.  If the 
-current node type matches (eq) the L<primary_type|/primary_type => then the 
-'before_method' and 'after_method' are run at that node but no parsing is done.
+B<Definition:> If the L<primary_type|/primary_type => of the L<$primary_ref
+|/B<primary_ref> - a dataref that the> is a key in this attribute hash ref then the 
+'before_method' and 'after_method' are run at that node but no L<parsing
+|/Identify node elements> is done.
 
-=item B<Default> {} #Nothing is skipped
+B<Default> {} #Nothing is skipped
 
-=item B<Range> This accepts a HashRef.
+B<Range> This accepts a HashRef.
 
-The keys are only used if they match a node type identified by the function 
-L<_extracted_ref_type|/_extracted_ref_type( $test_ref )>.  The value for the 
-key can be anything.
+B<Example:>
+
+	sorted_nodes =>{
+		OBJECT => 1,#skips all object nodes
+	}
     
 =back
 
@@ -1239,13 +1240,13 @@ key can be anything.
 
 =over
 
-=item B<Definition:> This attribute is set to skip (or not) node parsing at a given 
+B<Definition:> This attribute is set to skip (or not) node parsing at a given 
 level.  Because the process doesn't start checking until after it enters the data ref 
 it effectivly ignores a skip_level set to 0 (The base node level).
 
-=item B<Default> undef #Nothing is skipped
+B<Default> undef = Nothing is skipped
 
-=item B<Range> This accepts an integer
+B<Range> This accepts an integer
     
 =back
 
@@ -1253,28 +1254,28 @@ it effectivly ignores a skip_level set to 0 (The base node level).
 
 =over
 
-=item B<Definition:> This attribute contains a list of test conditions used to skip 
-certain targeted nodes.  The test can target, array position, match a hash key, even 
-restrict the test to only one level.  The test is run against the 
-L<branch_ref|/A position trace is generated> so it skips the node below the matching 
-conditions not the node at the matching conditions.  Matching is done with either 'eq' 
-or '=~'.  The attribute is passed an ArrayRef of ArrayRefs.  Each sub_ref contains the 
-following;
+B<Definition:> This attribute contains a list of test conditions used to skip 
+certain targeted nodes.  The test can target an array position, match a hash key, even 
+restrict the test to only one level.  The test is run against the latest 
+L<branch_ref|/A position trace is generated> element so it skips the node below the 
+matching conditions not the node at the matching conditions.  Matching is done with 
+'=~' and so will accept a regex or a string.  The attribute contains an ArrayRef of 
+ArrayRefs.  Each sub_ref contains the following;
 
 =over
 
-=item B<$type> - this is any of the L<identified|/_extracted_ref_type( $test_ref )> 
+B<$type> - This is any of the L<identified|/_extracted_ref_type( $test_ref )> 
 reference node types
 
-=item B<$key> - this is either a scalar or regexref to use for matching a hash key
+B<$key> - This is either a scalar or regex to use for matching a hash key
 
-=item B<$position> - this is used to match an array position can be an integer or 'ANY'
+B<$position> - This is used to match an array position.  It can be an integer or 'ANY'
 
-=item B<$level> - this restricts the skipping test usage to a specific level only or 'ANY'
+B<$level> - This restricts the skipping test usage to a specific level only or 'ANY'
 
 =back
     
-=item B<Example>
+B<Example:>
 	
 	[ 
 		[ 'HASH', 'KeyWord', 'ANY', 'ANY'], 
@@ -1283,9 +1284,9 @@ reference node types
 		# Skip the nodes below arrays at position three on level four
 	]
 
-=item B<Range> an infinite number of skip tests added to an array
+B<Range> An infinite number of skip tests added to an array
 
-=item B<Default> [] = no nodes are skipped
+B<Default> [] = no nodes are skipped
 
 =back
 
@@ -1293,14 +1294,15 @@ reference node types
 
 =over
 
-=item B<Definition:> This attribute will not be used by this class directly.  However 
-the L<Data::Walk::Prune> Role and the L<Data::Walk::Graft> Role both use it so it is 
-placed here so there will be no conflicts.
+B<Definition:> This attribute will not be used by this class directly.  However 
+the L<Data::Walk::Prune|https://metacpan.org/module/Data::Walk::Prune> role 
+and the L<Data::Walk::Graft|https://metacpan.org/module/Data::Walk::Prune> Role 
+both use it so it is placed here so there will be no conflicts.  This is usually used to 
+define whether an array size shinks when an element is removed.
 
-=item B<Default> 1 (This usually means that the array will grow or shrink when a position 
-is added or removed)
+B<Default> 1 (This usually means that the array will shrink when a position is removed)
 
-=item B<Range> Boolean values.
+B<Range> Boolean values.
 
 =back
 
@@ -1308,61 +1310,67 @@ is added or removed)
 
 =over
 
-=item B<Definition:> This means that no changes made at lower levels will be passed 
+B<Definition:> This means that no changes made at lower levels will be passed 
 upwards into the final ref.
 
-=item B<Default> 0 = The primary ref is not fixed (and can be changed) I<0 
-effectively deep clones the portions of the primary ref that are traversed.>
+B<Default> 0 = The primary ref is not fixed (and can be changed) I<0 -E<gt> effectively 
+deep clones the portions of the primary ref that are traversed.>
 
-=item B<Range> Boolean values.
+B<Range> Boolean values.
 
 =back
 
 =head1 Methods
 
-=head2 Methods used to write Roles
+=head2 Methods used to write roles
+
+These are methods that are not meant to be exposed to the final user of a composed role and 
+class but are used by the role to excersize the class.
 
 =head3 _process_the_data( $passed_ref, $conversion_ref )
 
 =over
 
-=item B<Definition:> This method is the core access to the recursive parsing of 
-Data::Walk::Extracted.  It should only be used by a method in consuming roles or classes.  
-It should not be used by the end user.  This method scrubs the inputs and then sends them 
-to the recursive function.
+B<Definition:> This method is the gate keeper to the recursive parsing of 
+Data::Walk::Extracted.  This method ensures that the minimum requirements for the recursive 
+data parser are met.  If needed it will use a conversion ref (also provided by the caller) to 
+change input hash keys to the generic hash keys used by this class.  This function then 
+calls the actual recursive function.  For an overview of the recursive steps see the 
+L<flow outline|/Recursive Parsing Flow>.
 
-=item B<Accepts:> ( $passed_ref, $conversion_ref )
+B<Accepts:> ( $passed_ref, $conversion_ref )
 
 =over 
 
-=item B<$passed_ref> this ref contains key value pairs as follows;
+B<$passed_ref> this ref contains key value pairs as follows;
 
 =over
 
-=item B<primary_ref> - a dataref that the walker will walk.  This L<can be renamed
-|/$conversion_ref This allows a public> with a $conversion_ref - required
+B<primary_ref> - a dataref that the walker will walk. - required (L<the key can be renamed
+|/$conversion_ref This allows a public>)
 
-=item B<secondary_ref> - a dataref that is used for comparision while walking.  (L<can be 
-renamed|/$conversion_ref This allows a public>) - optional
+B<secondary_ref> - a dataref that is used for comparision while walking. - optional 
+(L<the key can be renamed|/$conversion_ref This allows a public>)
 
-=item B<before_method> - a method name that will perform some action at the beginning 
+B<before_method> - a method name that will perform some action at the beginning 
 of each node - optional
 
-=item B<after_method> - a method name that will perform some action at the end 
+B<after_method> - a method name that will perform some action at the end 
 of each node - optional
 
-=item B<[attribute name]> - attribute names are accepted with temporary attribute settings.  
-These settings are temporarily set for a single "_process_the_data" call and then the original 
-attribute values are restored.  For this to work the the attribute must have the following 
-prefixed methods; get_$name, set_$name, clear_$name, and has_$name. - optional
+B<[attribute name]> - attribute names are accepted with temporary attribute settings here.  
+These settings are L<temporarily set|/Supported one shot attributes> for a single 
+"_process_the_data" call and then the original attribute values are restored.  For this to 
+work the the attribute must have the following prefixed methods; get_$name, set_$name, 
+clear_$name, and has_$name. - optional
 
 =back
 
-=item B<$conversion_ref> This allows a public method to accept different key names for the 
+B<$conversion_ref> This allows a public method to accept different key names for the 
 various keys listed above and then convert them later to the generic terms used by this class. 
 - optional
 
-=item B<Example>
+B<Example>
 
 	$passed_ref ={
 		print_ref =>{ 
@@ -1386,15 +1394,8 @@ various keys listed above and then convert them later to the generic terms used 
 
 =back
 
-=item B<Action:> This method begins by scrubing the top level of the inputs and 
-ensures that the minimum requirements for the recursive data parser are met.  
-If needed it will use a conversion ref (also provided by the caller) to change 
-input hash keys to the generic hash keys used by this class.  This function then 
-calls the actual recursive function.  For a better understanding of the recursive 
-steps see L</Recursive Parsing Flow>.
-
-=item B<Returns:> the $passed_ref (only) with the key names restored to their 
-L<original|/B<$conversion_ref> This allows a public> versions.
+B<Returns:> the $passed_ref (only) with the key names restored to the ones L<passed to this 
+method|/B<$conversion_ref> This allows a public>.
 
 =back
 
@@ -1402,23 +1403,23 @@ L<original|/B<$conversion_ref> This allows a public> versions.
 
 =over
 
-=item B<Definition:> There are times when a role will wish to reconstruct the data branch 
+B<Definition:> There are times when a role will wish to reconstruct the data branch 
 that lead from the 'zeroth' node to where the data walker is currently at.  This private 
 method takes a seed reference and uses the  L<branch ref|/A position trace is generated> 
 to recursivly append to the front of the seed until a complete branch to the zeroth 
-node is generated.
+node is generated.  I<The branch_ref list must be explicitly passed.>
 
-=item B<Accepts:> a list of arguments starting with the $seed_ref to build from.  
+B<Accepts:> a list of arguments starting with the $seed_ref to build from.  
 The remaining arguments are just the array elements of the 'branch ref'.
 
-=item B<Example>
+B<Example:>
 
 	$ref = $self->_build_branch( 
 		$seed_ref, 
 		@{ $passed_ref->{branch_ref}},
 	);
 
-=item B<Returns:> a data reference with the current path back to the start pre-pended 
+B<Returns:> a data reference with the current path back to the start pre-pended 
 to the $seed_ref
 
 =back
@@ -1427,18 +1428,16 @@ to the $seed_ref
 
 =over
 
-=item B<Definition:> In order to manage data types necessary for this class a data 
+B<Definition:> In order to manage data types necessary for this class a data 
 walker compliant 'Type' tester is provided.  This is necessary to support a few non 
 perl-standard types not generated in standard perl typing systems.  First, 'undef' 
 is the UNDEF type.  Second, strings and numbers both return as 'SCALAR' (not '' or undef).  
 B<Much of the code in this package runs on dispatch tables that are built around these 
 specific type definitions.>
 
-=item B<Accepts:> This method expects to be called by $self.  It receives a data 
-reference that can include/be undef.
+B<Accepts:> It receives a $test_ref that can be undef.
 
-=item B<Returns:> a data walker type or it confesses.  (For more details see 
-$discover_type_dispatch in the code)
+B<Returns:> a data walker type or it confesses.
 
 =back
 
@@ -1446,15 +1445,15 @@ $discover_type_dispatch in the code)
 
 =over
 
-=item B<Definition:> during the initial processing of data in 
+B<Definition:> during the initial processing of data in 
 L<_process_the_data|/_process_the_data( $passed_ref, $conversion_ref )> the existence 
 of a passed secondary ref is tested and stored in the attribute '_had_secondary'.  On 
 occasion a role might need to know if a secondary ref existed at any level if it it is 
 not represented at the current level.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> True|1 if the secondary ref ever existed
+B<Returns:> True|1 if the secondary ref ever existed
 
 =back
 
@@ -1462,13 +1461,13 @@ not represented at the current level.
 
 =over
 
-=item B<Definition:> on occasion you may need for one of the methods to know what 
+B<Definition:> on occasion you may need for one of the methods to know what 
 level is currently being parsed.  This will provide that information in integer 
 format.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> the integer value for the level
+B<Returns:> the integer value for the level
 
 =back
 
@@ -1476,9 +1475,9 @@ format.
 
 =over
 
-=item B<Definition:> private one shot attributes in roles are allowed as well.  
-If you would like to implement a private one shot attribute that is not exposed to 
-the end user then adding the '_' prefix to the attribute name and creating the 
+B<Definition:> private L<one shot|/[attribute name]> attributes in roles are allowed 
+as well.  If you would like to implement a private one shot attribute that is not exposed 
+to the end user then adding the '_' prefix to the attribute name and creating the 
 appropriate _get, _set, _clear, and _has methods will enable this.
 
 =back
@@ -1489,13 +1488,13 @@ appropriate _get, _set, _clear, and _has methods will enable this.
 
 =over
 
-=item B<Definition:> This method is used to add nodes to be sorted to the walker by 
-adjusting the attribute L</sorted_nodes>.
+B<Definition:> This method is used to add nodes to be sorted to the walker by 
+adjusting the attribute L<sorted_nodes|/sorted_nodes>.
 
-=item B<Accepts:> Node key => value pairs where the key is the Node name and the value is 
+B<Accepts:> Node key => value pairs where the key is the Node name and the value is 
 1.  This method can accept multiple key => value pairs.
 
-=item B<Returns:> nothing
+B<Returns:> nothing
 
 =back
 
@@ -1503,12 +1502,12 @@ adjusting the attribute L</sorted_nodes>.
 
 =over
 
-=item B<Definition:> This method checks if any sorting is turned on in the attribute 
-L</sorted_nodes>.
+B<Definition:> This method checks if any sorting is turned on in the attribute 
+L<sorted_nodes|/sorted_nodes>.
 
-=item B<Accepts:> Nothing
+B<Accepts:> Nothing
 
-=item B<Returns:> the count of sorted node types listed
+B<Returns:> the count of sorted node types listed
 
 =back
 
@@ -1516,12 +1515,12 @@ L</sorted_nodes>.
 
 =over
 
-=item B<Definition:> This method is used to see if a node type is sorted by testing the 
-attribute L</sorted_nodes>.
+B<Definition:> This method is used to see if a node type is sorted by testing the 
+attribute L<sorted_nodes|/sorted_nodes>.
 
-=item B<Accepts:> the name of one node type
+B<Accepts:> the name of one node type
 
-=item B<Returns:> true if that node is sorted as determined by L</sorted_nodes>
+B<Returns:> true if that node is sorted as determined by L<sorted_nodes|/sorted_nodes>
 
 =back
 
@@ -1529,12 +1528,12 @@ attribute L</sorted_nodes>.
 
 =over
 
-=item B<Definition:> This method will clear all values in the attribute 
-L</sorted_nodes>.  I<and therefore turn off those sorts>.
+B<Definition:> This method will clear all values in the attribute 
+L<sorted_nodes|/sorted_nodes>.  I<and therefore turn off all cleared sorts>.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> nothing
+B<Returns:> nothing
 
 =back
 
@@ -1542,12 +1541,12 @@ L</sorted_nodes>.  I<and therefore turn off those sorts>.
 
 =over
 
-=item B<Definition:> This method will clear the key / value pairs in L</sorted_nodes> 
+B<Definition:> This method will clear the key / value pairs in L<sorted_nodes|/sorted_nodes> 
 for the listed items.
 
-=item B<Accepts:> a list of NODETYPES to delete
+B<Accepts:> a list of NODETYPES to delete
 
-=item B<Returns:> In list context it returns a list of values in the hash for the deleted 
+B<Returns:> In list context it returns a list of values in the hash for the deleted 
 keys. In scalar context it returns the value for the last key specified
 
 =back
@@ -1556,12 +1555,12 @@ keys. In scalar context it returns the value for the last key specified
 
 =over
 
-=item B<Definition:> This method will completely reset the attribute L</sorted_nodes> to 
+B<Definition:> This method will completely reset the attribute L<sorted_nodes|/sorted_nodes> to 
 $hashref.
 
-=item B<Accepts:> a hashref of NODETYPE keys with the value of 1.
+B<Accepts:> a hashref of NODETYPE keys with the value of 1.
 
-=item B<Returns:> nothing
+B<Returns:> nothing
 
 =back
 
@@ -1569,11 +1568,11 @@ $hashref.
 
 =over
 
-=item B<Definition:> This method will return a hashref of the attribute L</sorted_nodes>
+B<Definition:> This method will return a hashref of the attribute L<sorted_nodes|/sorted_nodes>
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> a hashref
+B<Returns:> a hashref
 
 =back
 
@@ -1581,12 +1580,12 @@ $hashref.
 
 =over
 
-=item B<Definition:> This method adds additional skip definition(s) to the 
-L</skipped_nodes> attribute.
+B<Definition:> This method adds additional skip definition(s) to the 
+L<skipped_nodes|/skipped_nodes> attribute.
 
-=item B<Accepts:> a list of key value pairs as used in 'skipped_nodes'
+B<Accepts:> a list of key value pairs as used in 'skipped_nodes'
 
-=item B<Returns:> nothing
+B<Returns:> nothing
 
 =back
 
@@ -1594,12 +1593,12 @@ L</skipped_nodes> attribute.
 
 =over
 
-=item B<Definition:> This method checks if any nodes are set to be skipped in the 
-attribute L</skipped_nodes>.
+B<Definition:> This method checks if any nodes are set to be skipped in the 
+attribute L<skipped_nodes|/skipped_nodes>.
 
-=item B<Accepts:> Nothing
+B<Accepts:> Nothing
 
-=item B<Returns:> the count of skipped node types listed
+B<Returns:> the count of skipped node types listed
 
 =back
 
@@ -1607,12 +1606,12 @@ attribute L</skipped_nodes>.
 
 =over
 
-=item B<Definition:> This method checks if a specific node type is set to be skipped in  
-the L</skipped_nodes> attribute.
+B<Definition:> This method checks if a specific node type is set to be skipped in  
+the L<skipped_nodes|/skipped_nodes> attribute.
 
-=item B<Accepts:> a string
+B<Accepts:> a string
 
-=item B<Returns:> Boolean value indicating if the specific $string is set
+B<Returns:> Boolean value indicating if the specific $string is set
 
 =back
 
@@ -1620,12 +1619,12 @@ the L</skipped_nodes> attribute.
 
 =over
 
-=item B<Definition:> This method deletes specificily identified node skips from the 
-L</skipped_nodes> attribute.
+B<Definition:> This method deletes specificily identified node skips from the 
+L<skipped_nodes|/skipped_nodes> attribute.
 
-=item B<Accepts:> a list of NODETYPES to delete
+B<Accepts:> a list of NODETYPES to delete
 
-=item B<Returns:> In list context it returns a list of values in the hash for the deleted 
+B<Returns:> In list context it returns a list of values in the hash for the deleted 
 keys. In scalar context it returns the value for the last key specified
 
 =back
@@ -1634,11 +1633,11 @@ keys. In scalar context it returns the value for the last key specified
 
 =over
 
-=item B<Definition:> This method clears all data in the L</skipped_nodes> attribute.
+B<Definition:> This method clears all data in the L<skipped_nodes|/skipped_nodes> attribute.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> nothing
+B<Returns:> nothing
 
 =back
 
@@ -1646,12 +1645,12 @@ keys. In scalar context it returns the value for the last key specified
 
 =over
 
-=item B<Definition:> This method will completely reset the attribute L</skipped_nodes> to 
+B<Definition:> This method will completely reset the attribute L<skipped_nodes|/skipped_nodes> to 
 $hashref.
 
-=item B<Accepts:> a hashref of NODETYPE keys with the value of 1.
+B<Accepts:> a hashref of NODETYPE keys with the value of 1.
 
-=item B<Returns:> nothing
+B<Returns:> nothing
 
 =back
 
@@ -1659,24 +1658,24 @@ $hashref.
 
 =over
 
-=item B<Definition:> This method will return a hashref of the attribute L</skipped_nodes>
+B<Definition:> This method will return a hashref of the attribute L<skipped_nodes|/skipped_nodes>
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> a hashref
+B<Returns:> a hashref
 
 =back
 
-=head3 set_skip_level( $int)
+=head3 set_skip_level( $int )
 
 =over
 
-=item B<Definition:> This method is used to reset the L</skip_level>
+B<Definition:> This method is used to reset the L<skip_level|/skip_level>
 attribute after the instance is created.
 
-=item B<Accepts:> an integer (negative numbers and 0 will be ignored)
+B<Accepts:> an integer (negative numbers and 0 will be ignored)
 
-=item B<Returns:> nothing
+B<Returns:> nothing
 
 =back
 
@@ -1684,12 +1683,12 @@ attribute after the instance is created.
 
 =over
 
-=item B<Definition:> This method returns the current L</skip_level> 
+B<Definition:> This method returns the current L<skip_level|/skip_level> 
 attribute.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> an integer
+B<Returns:> an integer
 
 =back
 
@@ -1697,12 +1696,11 @@ attribute.
 
 =over
 
-=item B<Definition:> This method is used to test if the L</skip_level> attribute 
-is set.
+B<Definition:> This method is used to test if the L<skip_level|/skip_level> attribute is set.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> $Bool value indicating if the 'skip_level' attribute has been set
+B<Returns:> $Bool value indicating if the 'skip_level' attribute has been set
 
 =back
 
@@ -1710,11 +1708,11 @@ is set.
 
 =over
 
-=item B<Definition:> This method clears the L</skip_level> attribute.
+B<Definition:> This method clears the L<skip_level|/skip_level> attribute.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> nothing (always successful)
+B<Returns:> nothing (always successful)
 
 =back
 
@@ -1722,12 +1720,12 @@ is set.
 
 =over
 
-=item B<Definition:> This method is used to change (completly) the 'skip_node_tests' 
-attribute after the instance is created.  See L</skip_node_tests> for an example.
+B<Definition:> This method is used to change (completly) the 'skip_node_tests' 
+attribute after the instance is created.  See L<skip_node_tests|/skip_node_tests> for an example.
 
-=item B<Accepts:> an array ref of array refs
+B<Accepts:> an array ref of array refs
 
-=item B<Returns:> nothing
+B<Returns:> nothing
 
 =back
 
@@ -1735,12 +1733,12 @@ attribute after the instance is created.  See L</skip_node_tests> for an example
 
 =over
 
-=item B<Definition:> This method returns the current master list from the 
-L</skip_node_tests> attribute.
+B<Definition:> This method returns the current master list from the 
+L<skip_node_tests|/skip_node_tests> attribute.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> an array ref of array refs
+B<Returns:> an array ref of array refs
 
 =back
 
@@ -1748,12 +1746,12 @@ L</skip_node_tests> attribute.
 
 =over
 
-=item B<Definition:> This method is used to test if the L</skip_node_tests> attribute 
+B<Definition:> This method is used to test if the L<skip_node_tests|/skip_node_tests> attribute 
 is set.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> The number of sub array refs there are in the list
+B<Returns:> The number of sub array refs there are in the list
 
 =back
 
@@ -1761,11 +1759,11 @@ is set.
 
 =over
 
-=item B<Definition:> This method clears the L</skip_node_tests> attribute.
+B<Definition:> This method clears the L<skip_node_tests|/skip_node_tests> attribute.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> nothing (always successful)
+B<Returns:> nothing (always successful)
 
 =back
 
@@ -1773,13 +1771,13 @@ is set.
 
 =over
 
-=item B<Definition:> This method adds additional skip_node_test definition(s) to the the 
-L</skip_node_tests> attribute list.
+B<Definition:> This method adds additional skip_node_test definition(s) to the the 
+L<skip_node_tests|/skip_node_tests> attribute list.
 
-=item B<Accepts:> a list of array refs as used in 'skip_node_tests'.  These are 'pushed 
+B<Accepts:> a list of array refs as used in 'skip_node_tests'.  These are 'pushed 
 onto the existing list.
 
-=item B<Returns:> nothing
+B<Returns:> nothing
 
 =back
 
@@ -1787,12 +1785,12 @@ onto the existing list.
 
 =over
 
-=item B<Definition:> This method is used to change the L</change_array_size> attribute 
+B<Definition:> This method is used to (re)set the L<change_array_size|/change_array_size> attribute 
 after the instance is created.
 
-=item B<Accepts:> a Boolean value
+B<Accepts:> a Boolean value
 
-=item B<Returns:> nothing
+B<Returns:> nothing
 
 =back
 
@@ -1800,12 +1798,12 @@ after the instance is created.
 
 =over
 
-=item B<Definition:> This method returns the current state of the L</change_array_size> 
+B<Definition:> This method returns the current state of the L<change_array_size|/change_array_size> 
 attribute.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> $Bool value representing the state of the 'change_array_size' 
+B<Returns:> $Bool value representing the state of the 'change_array_size' 
 attribute
 
 =back
@@ -1814,12 +1812,12 @@ attribute
 
 =over
 
-=item B<Definition:> This method is used to test if the L</change_array_size> 
+B<Definition:> This method is used to test if the L<change_array_size|/change_array_size> 
 attribute is set.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> $Bool value indicating if the 'change_array_size' attribute 
+B<Returns:> $Bool value indicating if the 'change_array_size' attribute 
 has been set
 
 =back
@@ -1828,11 +1826,11 @@ has been set
 
 =over
 
-=item B<Definition:> This method clears the L</change_array_size> attribute.
+B<Definition:> This method clears the L<change_array_size|/change_array_size> attribute.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> nothing
+B<Returns:> nothing
 
 =back
 
@@ -1840,12 +1838,12 @@ has been set
 
 =over
 
-=item B<Definition:> This method is used to change the L</fixed_primary> attribute 
+B<Definition:> This method is used to change the L<fixed_primary|/fixed_primary> attribute 
 after the instance is created.
 
-=item B<Accepts:> a Boolean value
+B<Accepts:> a Boolean value
 
-=item B<Returns:> nothing
+B<Returns:> nothing
 
 =back
 
@@ -1853,12 +1851,12 @@ after the instance is created.
 
 =over
 
-=item B<Definition:> This method returns the current state of the L</fixed_primary> 
+B<Definition:> This method returns the current state of the L<fixed_primary|/fixed_primary> 
 attribute.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> $Bool value representing the state of the 'fixed_primary' attribute
+B<Returns:> $Bool value representing the state of the 'fixed_primary' attribute
 
 =back
 
@@ -1866,12 +1864,11 @@ attribute.
 
 =over
 
-=item B<Definition:> This method is used to test if the L</fixed_primary> attribute 
-is set.
+B<Definition:> This method is used to test if the L<fixed_primary|/fixed_primary> attribute is set.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> $Bool value indicating if the 'fixed_primary' attribute has been set
+B<Returns:> $Bool value indicating if the 'fixed_primary' attribute has been set
 
 =back
 
@@ -1879,11 +1876,11 @@ is set.
 
 =over
 
-=item B<Definition:> This method clears the L</fixed_primary> attribute.
+B<Definition:> This method clears the L<fixed_primary|/fixed_primary> attribute.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> nothing
+B<Returns:> nothing
 
 =back
 
@@ -1892,20 +1889,20 @@ is set.
 =head2 node
 
 Each branch point of a data reference is considered a node.  The original top level 
-reference is the 'zeroth' node.  Recursion 'Base state' nodes are understood to have 
-zero elements so an additional node called 'END' type is recognized after a scalar.
+reference is the 'zeroth' node.  Recursion 'Base state' node types are considered 
+to not have any possible branches.  Currently that list is SCALAR and UNDEF.
 
 =head2 Supported node walking types
 
 =over
 
-=item ARRAY
+ARRAY
 
-=item HASH
+HASH
 
-=item SCALAR
+SCALAR
 
-=item UNDEF
+UNDEF
 
 =back
 
@@ -1921,25 +1918,26 @@ use 'OBJECT' in their definitions.
 
 =over
 
-=item sorted_nodes
+sorted_nodes
 
-=item skipped_nodes
+skipped_nodes
 
-=item skip_level
+skip_level
 
-=item skip_node_tests
+skip_node_tests
 
-=item change_array_size
+change_array_size
 
-=item fixed_primary
+fixed_primary
 
-=item L<explanation|/Attributes>
+L<explanation|/Attributes>
 
 =back
 
 =head2 Dispatch Tables
 
-This class uses the role L<Data::Walk::Extracted::Dispatch> to implement dispatch 
+This class uses the role L<Data::Walk::Extracted::Dispatch
+|https://metacpan.org/module/Data::Walk::Extracted::Dispatch> to implement dispatch 
 tables.  When there is a decision point, that role is used to make the class 
 extensible.
 
@@ -1948,7 +1946,7 @@ extensible.
 This is not an extention of L<Data::Walk|https://metacpan.org/module/Data::Walk>
 
 The core class has no external effect.  All output comes from 
-L<addtions to the class|/Requirements to build a role that uses this class>.
+L<addtions to the class|/Extending Data::Walk::Extracted>.
 
 This module uses the 'L<defined or|http://perldoc.perl.org/perlop.html#Logical-Defined-Or>' 
 (  //= ) and so requires perl 5.010 or higher.
@@ -1958,24 +1956,24 @@ Many coders will tell you Moose and data manipulation don't belong together.  Th
 most certainly right in speed intensive circumstances.
 
 Recursive parsing is not a good fit for all data since very deep data structures will 
-burn a fair amount of perl memory!  Meaning that as the module recursively parses through 
-the levels perl leaves behind snapshots of the previous level that allow perl to keep 
+fill up a fair amount of memory!  Meaning that as the module recursively parses through 
+the levels it leaves behind snapshots of the previous level that allow it to keep 
 track of it's location.
 
 The L<primary_ref|/B<primary_ref> - a> and L<secondary_ref|/B<secondary_ref> - a> are 
 effectivly deep cloned during this process.  To leave the primary_ref pointer intact see 
-L</fixed_primary>
+L<fixed_primary|/fixed_primary>
 
 =head1 GLOBAL VARIABLES
 
 =over
 
-=item B<$ENV{Smart_Comments}>
+B<$ENV{Smart_Comments}>
 
-The module uses L<Smart::Comments> if the '-ENV' option is set.  The 'use' is 
-encapsulated in an if block triggered by an environmental variable to comfort 
-non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN block will 
-load and turn on smart comment reporting.  There are three levels of 'Smartness' 
+The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if the '-ENV' 
+option is set.  The 'use' is encapsulated in an if block triggered by an environmental 
+variable to comfort non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN 
+block will load and turn on smart comment reporting.  There are three levels of 'Smartness' 
 available in this module '###',  '####', and '#####'.
 
 =back
@@ -1984,7 +1982,7 @@ available in this module '###',  '####', and '#####'.
 
 =over
 
-=item L<Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
+L<Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
 
 =back
 
@@ -1992,17 +1990,17 @@ available in this module '###',  '####', and '#####'.
 
 =over
 
-=item * provide full recursion through Objects
+B<1.> provide full recursion through Objects
 
-=item * Support recursion through CodeRefs
+B<2.> Support recursion through CodeRefs (Closures)
 
-=item * Add a Data::Walk::Diff Role to the package
+B<3.> Add a Data::Walk::Diff Role to the package
 
-=item * Add a Data::Walk::Top Role to the package
+B<4.> Add a Data::Walk::Top Role to the package
 
-=item * Add a Data::Walk::Thin Role to the package
+B<5.> Add a Data::Walk::Thin Role to the package
 
-=item * Add a Data::Walk::Substitute Role to the package
+B<6.> Add a Data::Walk::Substitute Role to the package
 
 =back
 
@@ -2010,9 +2008,9 @@ available in this module '###',  '####', and '#####'.
 
 =over
 
-=item Jed Lund
+Jed Lund
 
-=item jandrew@cpan.org
+jandrew@cpan.org
 
 =back
 
@@ -2028,24 +2026,26 @@ LICENSE file included with this module.
 
 =over
 
-=item L<5.010> (for use of 
+L<version|https://metacpan.org/module/version>
+
+L<5.010|http://perldoc.perl.org/perl5100delta.html> (for use of 
 L<defined or|http://perldoc.perl.org/perlop.html#Logical-Defined-Or> //)
 
-=item L<Moose>
+L<Class::Inspector|https://metacpan.org/module/Class::Inspector>
 
-=item L<MooseX::StrictConstructor>
+L<Scalar::Util|https://metacpan.org/module/Scalar::Util>
 
-=item L<Class::Inspector>
+L<Carp|https://metacpan.org/module/Carp>
 
-=item L<Scalar::Util>
+L<Moose|https://metacpan.org/module/Moose>
 
-=item L<Carp>
+L<MooseX::StrictConstructor|https://metacpan.org/module/MooseX::StrictConstructor>
 
-=item L<MooseX::Types::Moose>
+L<MooseX::Types::Moose|https://metacpan.org/module/MooseX::Types::Moose>
 
-=item L<Data::Walk::Extracted::Types>
+L<Data::Walk::Extracted::Types|https://metacpan.org/module/Data::Walk::Extracted::Types>
 
-=item L<Data::Walk::Extracted::Dispatch>
+L<Data::Walk::Extracted::Dispatch|https://metacpan.org/module/Data::Walk::Extracted::Dispatch>
 
 =back
 
@@ -2053,23 +2053,23 @@ L<defined or|http://perldoc.perl.org/perlop.html#Logical-Defined-Or> //)
 
 =over
 
-=item L<Smart::Comments> - is used if the -ENV option is set
+L<Smart::Comments|https://metacpan.org/module/Smart::Comments> - is used if the -ENV option is set
 
-=item L<Data::Walk>
+L<Data::Walk|https://metacpan.org/module/Data::Walk>
 
-=item L<Data::Walker>
+L<Data::Walker|https://metacpan.org/module/Data::Walker>
 
-=item L<Data::Dumper> - Dumper
+L<Data::Dumper|https://metacpan.org/module/Data::Dumper> - Dumper
 
-=item L<YAML> - Dump
+L<YAML|https://metacpan.org/module/YAML> - Dump
 
-=item L<Data::Walk::Print> - available Data::Walk::Extracted Role
+L<Data::Walk::Print|https://metacpan.org/module/Data::Walk::Print> - available Data::Walk::Extracted Role
 
-=item L<Data::Walk::Prune> - available Data::Walk::Extracted Role
+L<Data::Walk::Prune|https://metacpan.org/module/Data::Walk::Prune> - available Data::Walk::Extracted Role
 
-=item L<Data::Walk::Graft> - available Data::Walk::Extracted Role
+L<Data::Walk::Graft|https://metacpan.org/module/Data::Walk::Graft> - available Data::Walk::Extracted Role
 
-=item L<Data::Walk::Clone> - available Data::Walk::Extracted Role
+L<Data::Walk::Clone|https://metacpan.org/module/Data::Walk::Clone> - available Data::Walk::Extracted Role
 
 =back
 

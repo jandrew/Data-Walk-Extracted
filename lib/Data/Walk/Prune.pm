@@ -11,7 +11,7 @@ use MooseX::Types::Moose qw(
         Bool
         Item
     );######<---------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.011_003');
+use version; our $VERSION = qv('0.012.001');
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;
 	### Smart-Comments turned on for Data-Walk-Prune ...
@@ -247,9 +247,9 @@ Data::Walk::Prune - A way to say what should be removed
 	#!perl
 	use Modern::Perl;
 	use Moose::Util qw( with_traits );
-	use Data::Walk::Extracted 0.019;
-	use Data::Walk::Prune 0.011;
-	use Data::Walk::Print 0.015;
+	use Data::Walk::Extracted 0.020;
+	use Data::Walk::Prune 0.012;
+	use Data::Walk::Print 0.020;
 
 	my  $edward_scissorhands = with_traits(
 			'Data::Walk::Extracted',

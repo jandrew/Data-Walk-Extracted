@@ -1,4 +1,5 @@
 package Data::Walk::Print;
+use version; our $VERSION = qv('0.020.001');
 
 use Moose::Role;
 requires 
@@ -13,7 +14,6 @@ use MooseX::Types::Moose qw(
         Ref
 		Num
     );######<---------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.015_003');
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;
 	### Smart-Comments turned on for Data-Walk-Print ...
@@ -44,6 +44,7 @@ my	$before_pre_string_dispatch ={######<-----------------------------  ADD New t
 my 	$before_method_dispatch ={######<----------------------------------  ADD New types here
 		HASH => \&_before_hash_printing,
 		ARRAY => \&_before_array_printing,
+		OBJECT => \&_before_object_printing,
 		DEFAULT => sub{ 0 },
 		name => 'print - before_method_dispatch',
 		###### Receives: the passed_ref
@@ -57,6 +58,7 @@ my 	$after_method_dispatch ={######<-----------------------------------  ADD New
 		SCALAR => \&_after_scalar_printing,
 		HASH => \&_after_hash_printing,
 		ARRAY => \&_after_array_printing,
+		OBJECT => \&_after_object_printing,
 		name => 'print - after_method_dispatch',
 		###### Receives: the passed_ref
 		###### Returns: 1|0 if the string should be printed
@@ -75,6 +77,17 @@ has 'match_highlighting' =>(
 	clearer		=> 'clear_match_highlighting',
     default 	=> 1,
 );
+
+has 'to_string' =>(
+    is      	=> 'ro',
+    isa     	=> Bool,
+	reader		=> 'get_to_string',
+    writer  	=> 'set_to_string',
+	predicate	=> 'has_to_string',
+	clearer		=> 'clear_to_string',
+    default 	=> 0,
+);
+
 
 #########1 Public Methods     3#########4#########5#########6#########7#########8#########9
 
@@ -97,7 +110,9 @@ sub print_data{
     ##### <where> - Start recursive parsing with: $passed_ref
     $passed_ref = $self->_process_the_data( $passed_ref, $print_keys );
     ### <where> - End recursive parsing with: $passed_ref
-    return 1;
+	my $return = ( $self->get_to_string ) ? $self->_get_final_string : 1;
+	$self->_clear_final_string;
+    return $return;
 }
 
 #########1 Private Attributes 3#########4#########5#########6#########7#########8#########9
@@ -118,6 +133,20 @@ has '_match_string' =>(
     clearer     => '_clear_match_string',
     predicate   => '_has_match_string',
 	reader		=> '_get_match_string',
+);
+
+has '_final_string' =>(
+    is          => 'ro',
+    isa         => Str,
+    traits  	=> ['String'],
+    writer      => '_set_final_string',
+    clearer     => '_clear_final_string',
+    predicate   => '_has_final_string',
+	reader		=> '_get_final_string',
+    handles => {
+        _add_to_final_string => 'append',
+    },,
+    default => q{},
 );
 
 #########1 Private Methods    3#########4#########5#########6#########7#########8#########9
@@ -226,7 +255,11 @@ sub _print_pending_string{
             }
             $new_string .= "\n";
         ### <where> - printing string: $new_string
-        print  $new_string;
+		if( $self->get_to_string ){
+			$self->_add_to_final_string( $new_string );
+		}else{
+			print  $new_string;
+		}
     }
     $self->_clear_pending_string;
     $self->_clear_match_string;
@@ -276,6 +309,20 @@ sub _before_array_printing{
     ### <where> - reached _before_array_printing ...
 	#### <where> - passed ref: $passed_ref
 	$self->_add_to_pending_string( '[' );
+	$self->_add_to_match_string(
+		( $passed_ref->{secondary_type} eq 'ARRAY' ) ? 
+			'Ref Type Match' : 'Ref Type Mismatch'
+	);
+	### <where> - current pending string: $self->_get_pending_string
+	### <where> - current match string: $self->_get_match_string
+    return 1;
+}
+
+sub _before_object_printing{
+    my ( $self, $passed_ref ) = @_;
+    ### <where> - reached _before_object_printing ...
+	#### <where> - passed ref: $passed_ref
+	$self->_add_to_pending_string( 'BLESS : [' );
 	$self->_add_to_match_string(
 		( $passed_ref->{secondary_type} eq 'ARRAY' ) ? 
 			'Ref Type Match' : 'Ref Type Mismatch'
@@ -343,6 +390,19 @@ sub _after_hash_printing{
 	return 1;
 }
 
+sub _after_object_printing{
+    my ( $self, $passed_ref, $skip_method ) = @_;
+    ### <where> - reached _after_object_printing ...
+	##### <where> - passed ref: $passed_ref
+	if( $passed_ref->{skip} eq 'YES' ){
+		$self->_add_to_pending_string( $passed_ref->{primary_ref} . ',' );
+	}else{
+		$self->_add_to_pending_string( '},' );
+	}
+	### <where> - current pending string: $self->_get_pending_string
+	return 1;
+}
+
 sub _add_tabs{
     my ( $self, $current_level ) = @_;
     ### <where> - reached _add_tabs ...
@@ -371,8 +431,8 @@ Data::Walk::Print - A data printing function
 	use Modern::Perl;
 	use YAML::Any;
 	use Moose::Util qw( with_traits );
-	use Data::Walk::Extracted 0.019;
-	use Data::Walk::Print 0.015;
+	use Data::Walk::Extracted 0.020;
+	use Data::Walk::Print 0.020;
 
 	#Use YAML to compress writing the data ref
 	my  $firstref = Load(
@@ -461,25 +521,23 @@ Data::Walk::Print - A data printing function
 
 This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> is mostly written 
 as a demonstration module for 
-L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>.  
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>.  
 Both L<Data::Dumper|https://metacpan.org/module/Data::Dumper#Functions> - Dumper and 
 L<YAML|https://metacpan.org/module/YAML::Any#SUBROUTINES> - Dump functions are more mature than 
 the printing function included here.
 
 =head2 USE
 
-This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles>. One way to 
-incorporate this role into 
-L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>. 
-is 
-L<MooseX::ShortCut::BuildInstance|http://search.cpan.org/~jandrew/MooseX-ShortCut-BuildInstance/lib/MooseX/ShortCut/BuildInstance.pm>.
-or read L<Moose::Util|https://metacpan.org/module/Moose::Util> for more class building 
-information.
+This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> specifically 
+designed to be used with L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>. 
+For information on how to L<join|/my $AT_ST = with_traits(> it to the class at run time. See 
+L<Moose::Util|https://metacpan.org/module/Moose::Util> or L<MooseX::ShortCut::BuildInstance
+|https://metacpan.org/module/MooseX::ShortCut::BuildInstance> for more class building information.
 
 =head1 Attributes
 
 Data passed to -E<gt>new when creating an instance.  For modification of these attributes 
-see L</Methods>.  The -E<gt>new function will either accept fat comma lists or a 
+see L<Methods|/Methods>.  The -E<gt>new function will either accept fat comma lists or a 
 complete hash ref that has the possible attributes as the top keys.  Additionally 
 L<some attributes|/Supported one shot attributes> that have all the following 
 methods; get_$attribute, set_$attribute, has_$attribute, and clear_$attribute,
@@ -490,17 +548,31 @@ adjusted for just the run of that method call.  These are called 'one shot' attr
 
 =over
 
-=item B<Definition:> this determines if a comments string is added after each printed 
+B<Definition:> this determines if a comments string is added after each printed 
 row that indicates how the 'print_ref' matches the 'match_ref'.
 
-=item B<Default> True (1)
+B<Default> True (1)
 
-=item B<Range> This is a Boolean data type and generally accepts 1 or 0
+B<Range> This is a Boolean data type and generally accepts 1 or 0
     
 =back
 
-Attributes in 
-L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm#Attributes>
+=head2 to_string
+
+=over
+
+B<Definition:> this determines whether the output is sent to STDOUT or coallated 
+into a final string and sent as a result of L<print_data
+|/print_data( $arg_ref|%args|$data_ref )>.
+
+B<Default> True (1)
+
+B<Range> This is a Boolean data type and generally accepts 1 or 0
+    
+=back
+
+=head2 Attributes in L<Data::Walk::Extracted
+|https://metacpan.org/module/Data::Walk::Extracted#Attributes>
  - also affect the output.
 
 =head1 Methods
@@ -509,25 +581,25 @@ L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/
 
 =over
 
-=item B<Definition:> this is the method used to print a data reference
+B<Definition:> this is the method used to print a data reference
 
-=item B<Accepts:> either a single data reference or named arguments 
+B<Accepts:> either a single data reference or named arguments 
 in a fat comma list or hashref
 
 =over
 
-=item B<named variable option> - if data comes in a fat comma list or as a hash ref 
-and the keys include a 'print_ref' key then the list is processed as such.
+B<named variable option> - if data comes in a fat comma list or as a hash ref 
+and the keys include a 'print_ref' key then the list is processed as follows.
 
 =over
 
-=item B<print_ref> - this is the data reference that should be printed in a perlish way 
+B<print_ref> - this is the data reference that should be printed in a perlish way 
 - Required
 
-=item B<match_ref> - this is a reference used to compare against the 'print_ref'
+B<match_ref> - this is a reference used to compare against the 'print_ref'
 - Optional
 
-=item B<[attribute name]> - attribute names are accepted with temporary attribute settings.  
+B<[attribute name]> - attribute names are accepted with temporary attribute settings.  
 These settings are temporarily set for a single "print_data" call and then the original 
 attribute values are restored.  For this to work the the attribute must meet the 
 L<necessary criteria|/Attributes>.  These attributes can include all attributes active 
@@ -535,14 +607,13 @@ for the constructed class not just this role.
 
 =back
 
-=item B<single variable option> - if only one data_ref is sent and it fails the test 
+B<single variable option> - if only one data_ref is sent and it fails the test 
 for "exists $data_ref->{print_ref}" then the program will attempt to name it as 
 print_ref => $data_ref and then process the data as a fat comma list.
 
 =back
 
-=item B<Returns:> 1 (And prints out the data ref with matching assesment comments per 
-L</match_highlighting>)
+B<Returns:> 1 (And prints out the data ref) or a string - see L<to_string|/to_string>
 
 =back
 
@@ -550,11 +621,12 @@ L</match_highlighting>)
 
 =over
 
-=item B<Definition:> this is a way to change the L</match_highlighting> attribute
+B<Definition:> this is a way to change the L<match_highlighting|/match_highlighting> 
+attribute
 
-=item B<Accepts:> a Boolean value
+B<Accepts:> a Boolean value
 
-=item B<Returns:> ''
+B<Returns:> ''
 
 =back
 
@@ -562,11 +634,12 @@ L</match_highlighting>)
 
 =over
 
-=item B<Definition:> this is a way to view L</match_highlighting> attribute
+B<Definition:> this is a way to view the state of the L<match_highlighting|/match_highlighting> 
+attribute
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> The current 'match_highlighting' state
+B<Returns:> The current 'match_highlighting' state
 
 =back
 
@@ -574,12 +647,12 @@ L</match_highlighting>)
 
 =over
 
-=item B<Definition:> this is a way to know if the L</match_highlighting> attribute 
-is active
+B<Definition:> this is a way to know if the L<match_highlighting|/match_highlighting> 
+attribute is active
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> 1 if the attribute is active (not just if it == 1)
+B<Returns:> 1 if the attribute is active (not just if it == 1)
 
 =back
 
@@ -587,11 +660,62 @@ is active
 
 =over
 
-=item B<Definition:> this clears the L</match_highlighting> attribute
+B<Definition:> this clears the L<match_highlighting|/match_highlighting> attribute
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> '' (always successful)
+B<Returns:> '' (always successful)
+
+=back
+
+=head2 set_to_string( $bool )
+
+=over
+
+B<Definition:> this is a way to change the L<to_string|/to_string> 
+attribute
+
+B<Accepts:> a Boolean value
+
+B<Returns:> ''
+
+=back
+
+=head2 get_to_string
+
+=over
+
+B<Definition:> this is a way to view the state of the L<to_string|/to_string> 
+attribute
+
+B<Accepts:> nothing
+
+B<Returns:> The current 'to_string' state
+
+=back
+
+=head2 has_to_string
+
+=over
+
+B<Definition:> this is a way to know if the L<to_string|/to_string> 
+attribute is active
+
+B<Accepts:> nothing
+
+B<Returns:> 1 if the attribute is active (not just if it == 1)
+
+=back
+
+=head2 clear_to_string
+
+=over
+
+B<Definition:> this clears the L<to_string|/to_string> attribute
+
+B<Accepts:> nothing
+
+B<Returns:> '' (always successful)
 
 =back
 
@@ -601,11 +725,11 @@ is active
 
 =over
 
-=item B<ARRAY>
+B<ARRAY>
 
-=item B<HASH>
+B<HASH>
 
-=item B<SCALAR>
+B<SCALAR>
 
 =back
 
@@ -613,29 +737,31 @@ is active
 
 =over
 
-=item match_highlighting
+match_highlighting
 
-=item L<explanation|/Attributes>
+to_string
+
+L<explanation|/Attributes>
 
 =back
 
 =head2 Printing for skipped nodes
 
-L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm> 
-allows for some nodes to be skipped.  When a node is skipped the 
-L<print_data|/print_data( $arg_ref|%args|$data_ref )> function prints the scalar (perl pointer 
-description) of that node.
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted> allows for some 
+nodes to be skipped.  When a node is skipped the L<print_data
+|/print_data( $arg_ref|%args|$data_ref )> function prints the scalar (perl pointer description) 
+of that node.
 
 =head1 GLOBAL VARIABLES
 
 =over
 
-=item B<$ENV{Smart_Comments}>
+B<$ENV{Smart_Comments}>
 
-The module uses L<Smart::Comments> if the '-ENV' option is set.  The 'use' is 
-encapsulated in an if block triggered by an environmental variable to comfort 
-non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN block will 
-load and turn on smart comment reporting.  There are three levels of 'Smartness' 
+The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if the '-ENV' 
+option is set.  The 'use' is encapsulated in an if block triggered by an environmental 
+variable to comfort non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN 
+block will load and turn on smart comment reporting.  There are three levels of 'Smartness' 
 available in this module '###',  '####', and '#####'.
 
 =back
@@ -644,7 +770,7 @@ available in this module '###',  '####', and '#####'.
 
 =over
 
-=item L<Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
+L<Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
 
 =back
 
@@ -652,9 +778,14 @@ available in this module '###',  '####', and '#####'.
 
 =over
 
-=item * Support printing Objects / Instances
+B<1.> Convert from L<Smart::Comments|https://metacpan.org/module/Smart::Comments> debugging 
+to L<Log::Shiras|https://metacpan.org/module/Log::Shiras> debugging messages.
 
-=item * Support printing CodeRefs
+B<2.> Support printing Objects / Instances
+
+B<3.> Support printing CodeRefs
+
+B<4.> Support REF types
 
 =back
 
@@ -662,9 +793,9 @@ available in this module '###',  '####', and '#####'.
 
 =over
 
-=item Jed Lund
+Jed Lund
 
-=item jandrew@cpan.org
+jandrew@cpan.org
 
 =back
 
@@ -678,55 +809,48 @@ LICENSE file included with this module.
 
 =head1 Dependencies
 
-=over
+L<version|https://metacpan.org/module/version>
 
-=item L<Data::Walk::Extracted>
+L<Moose::Role|https://metacpan.org/module/Moose::Role>
 
-=item L<Data::Walk::Extracted::Dispatch>
-
-=item L<MooseX::Types::Moose>
-
-=item L<version>
-
-=item L<Moose::Role>
+=head2 requires
 
 =over
 
-=item B<requires>
+_process_the_data
 
-=over
+_get_had_secondary
 
-=item _process_the_data
-
-=item _get_had_secondary
-
-=item _dispatch_method
+_dispatch_method
 
 =back
 
-=back
+L<MooseX::Types::Moose|https://metacpan.org/module/MooseX::Types::Moose>
 
-=back
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>
+
+L<Data::Walk::Extracted::Dispatch|https://metacpan.org/module/Data::Walk::Extracted::Dispatch>
+
 
 =head1 SEE ALSO
 
 =over
 
-=item L<Smart::Comments> - is used if the -ENV option is set
+L<Smart::Comments|https://metacpan.org/module/Smart::Comments> - is used if the -ENV option is set
 
-=item L<Data::Walk>
+L<Data::Walk|https://metacpan.org/module/Data::Walk>
 
-=item L<Data::Walker>
+L<Data::Walker|https://metacpan.org/module/Data::Walker>
 
-=item L<Data::Dumper> - Dumper
+L<Data::Dumper|https://metacpan.org/module/Data::Dumper> - Dumper
 
-=item L<YAML> - Dump
+L<YAML|https://metacpan.org/module/YAML> - Dump
 
-=item L<Data::Walk::Clone>
+L<Data::Walk::Prune|https://metacpan.org/module/Data::Walk::Prune> - available Data::Walk::Extracted Role
 
-=item L<Data::Walk::Prune>
+L<Data::Walk::Graft|https://metacpan.org/module/Data::Walk::Graft> - available Data::Walk::Extracted Role
 
-=item L<Data::Walk::Graft>
+L<Data::Walk::Clone|https://metacpan.org/module/Data::Walk::Clone> - available Data::Walk::Extracted Role
 
 =back
 

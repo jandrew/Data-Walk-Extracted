@@ -3,7 +3,7 @@ use Moose::Role;
 use MooseX::Types::Moose qw(
         Int
     );
-use version; our $VERSION = qv('0.001_003');
+use version; our $VERSION = qv('0.002.001');
 BEGIN{
 	if( $ENV{ Smart_Comments } ){
 		use Smart::Comments -ENV;
@@ -66,21 +66,35 @@ Data::Walk::Extracted::Types - A type library for Data::Walk::Extracted
 
 =head1 DESCRIPTION
 
-This is the custom type class that ships with the L<Log::Shiras> package.  
-Wherever possible errors to coersions are passed back to the type so coersion 
-failure will be explained.
+This is the custom type class that ships with the L<Data::Walk::Extracted
+|https://metacpan.org/module/Data::Walk::Extracted> package.  Wherever 
+possible errors to coersions are passed back to the type so coersion failure 
+will be explained.
 
 There are only subtypes in this package!  B<WARNING> These types should be 
 considered in a beta state.  Future type fixing will be done with a set of tests in 
 the test suit of this package.  (currently none are implemented)
 
-See L<MooseX::Types> for general re-use of this module.
+See L<MooseX::Types|https://metacpan.org/module/MooseX::Types> for general re-use 
+of this module.
+
+=head1 Types
+
+=head2  posInt
+
+=over
+
+B<Definition: >all integers equal to or greater than 0
+
+B<Coercions: >no coersion available
+
+=back
 
 =head1 TODO
 
 =over
 
-=item write a test suit for the types to permanently define behavior!
+write a test suit for the types to permanently define behavior!
 
 =back
 
@@ -92,9 +106,9 @@ L<Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issu
 
 =over
 
-=item Jed Lund 
+Jed Lund 
 
-=item jandrew@cpan.com
+jandrew@cpan.com
 
 =back
 
@@ -110,13 +124,13 @@ LICENSE file included with this module.
 
 =over
 
-=item L<Moose::Role>
+L<version|https://metacpan.org/module/version>
 
-=item L<MooseX::Types>
+L<Moose::Role|https://metacpan.org/module/Moose::Role>
 
-=item L<MooseX::Types::Moose>
+L<MooseX::Types|https://metacpan.org/module/MooseX::Types>
 
-=item L<version>
+L<MooseX::Types::Moose|https://metacpan.org/module/MooseX::Types::Moose>
 
 =back
 
@@ -124,10 +138,10 @@ LICENSE file included with this module.
 
 =over
 
-=item L<MooseX::Types::Perl>
+L<MooseX::Types::Perl|https://metacpan.org/module/MooseX::Types::Perl>
 
 =back
 
 =cut
 
-#################### main pod documentation end #####################
+#########1 Main POD ends      3#########4#########5#########6#########7#########8#########9

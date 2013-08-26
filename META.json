@@ -46,7 +46,7 @@
          }
       }
    },
-   "release_status" : "testing",
-   "version" : "v0.019_005"
+   "release_status" : "stable",
+   "version" : "0.020.001"
 }
 

@@ -1,6 +1,6 @@
 package Data::Walk::Extracted::Dispatch;
 use Moose::Role;
-use version; our $VERSION = qv('0.001_003');
+use version; our $VERSION = qv('0.002.001');
 use Carp qw( confess );
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;
@@ -90,19 +90,19 @@ attempt a 'DEFAULT' call after which it will 'confess' to failure.
 
 =over
 
-=item B<Definition:> To make a class extensible, the majority of the decision points 
+B<Definition:> To make a class extensible, the majority of the decision points 
 can be managed by (hash) dispatch tables.  In order to have the dispatch behavior 
 common across all methods this role can be attached to the class to provided for 
 common dispatching.  If the hash key requested is not available then the dispatch 
 method will attempt to call 'DEFAULT'.  If both fail the method will 'confess'.
 
-=item B<Accepts:> This method expects to be called by $self.  It first receives the 
+B<Accepts:> This method expects to be called by $self.  It first receives the 
 dispatch table (hash) as a data reference. Next, the target hash key is accepted as 
 $call.  Finally, any arguments needed by the dispatch table are passed through in 
 @arg_list.  if the dispatch table has a name => key the value will be used in any 
 confessed error message.
 
-=item B<Returns:> defined by the dispatch (hash) table
+B<Returns:> defined by the dispatch (hash) table
 
 =back
 
@@ -112,11 +112,11 @@ confessed error message.
 
 =item B<$ENV{Smart_Comments}>
 
-The module uses L<Smart::Comments> if the '-ENV' option is set.  The 'use' is 
-encapsulated in an 'if' block triggered by an environmental variable to comfort 
-non-believers.  Setting the variable $ENV{Smart_Comments} will load and turn 
-on smart comment reporting for this role.  There are three levels of 'Smartness' 
-available in this module '### #### #####'.
+The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if 
+the '-ENV' option is set.  The 'use' is encapsulated in an 'if' block triggered 
+by an environmental variable to comfort non-believers.  Setting the variable 
+$ENV{Smart_Comments} will load and turn on smart comment reporting for this role.  
+There are three levels of 'Smartness' available in this module '### #### #####'.
 
 =back
 
@@ -138,9 +138,9 @@ L<Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issu
 
 =over
 
-=item Jed Lund
+Jed Lund
 
-=item jandrew@cpan.org
+jandrew@cpan.org
 
 =back
 
@@ -156,11 +156,11 @@ LICENSE file included with this module.
 
 =over
 
-=item L<version>
+L<version|https://metacpan.org/module/version>
 
-=item L<Carp>
+L<Carp|https://metacpan.org/module/Carp>
 
-=item L<Moose::Role>
+L<Moose::Role|https://metacpan.org/module/Moose::Role>
 
 =back
 
@@ -168,13 +168,12 @@ LICENSE file included with this module.
 
 =over
 
-=item L<Smart::Comments> - is used if the -ENV option is set
+L<Smart::Comments|https://metacpan.org/module/Smart::Comments> - is used if the -ENV option is set
 
-=item L<Data::Walk::Extracted>
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>
 
 =back
 
 =cut
 
-#################### main pod documentation end #########################################
-
+#########1 Main POD ends      3#########4#########5#########6#########7#########8#########9
