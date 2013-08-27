@@ -11,7 +11,7 @@ use MooseX::Types::Moose qw(
         Ref
         Item
     );######<---------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.013_003');
+use version; our $VERSION = qv('0.014.001');
 use Carp qw( cluck );
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;
@@ -154,14 +154,12 @@ Data::Walk::Graft - A way to say what should be added
 =head1 SYNOPSIS
     
 	#!perl
-	use Modern::Perl;
 	use Moose::Util qw( with_traits );
-	use lib '../lib', 'lib';
-	use Data::Walk::Extracted 0.019;
-	use Data::Walk::Graft 0.013;
-	use Data::Walk::Print 0.015;
+	use Data::Walk::Extracted 0.020;
+	use Data::Walk::Graft 0.014;
+	use Data::Walk::Print 0.020;
 
-	my  $gardener = with_traits( 
+	my $gardener = with_traits( 
 			'Data::Walk::Extracted', 
 			( 
 				'Data::Walk::Graft', 
@@ -263,20 +261,21 @@ Data::Walk::Graft - A way to say what should be added
 This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> contains methods for 
 adding a new branch ( or three ) to an existing data ref.  The method used to do this is 
 L<graft_data|/graft_data( %args|$arg_ref )> using
-L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>.
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>.
 Grafting is accomplished by sending a L<scion_ref|/scion_ref This is a data ref> that has 
 additions that need to be made to a L<tree_ref|/tree_ref This is the primary>.  Anything 
-in the scion ref that does not exist in the tree ref is grafted to the tree ref.
+in the scion ref that does not exist in the tree ref is grafted to the tree ref.  
+I<Anytime the scion_ref is different from the tree_ref the scion_ref branch will replace 
+the tree_ref branch!>
 
 =head2 USE
 
-This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles>. One way to 
-incorporate this role into 
-L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>. 
-is 
-L<MooseX::ShortCut::BuildInstance|http://search.cpan.org/~jandrew/MooseX-ShortCut-BuildInstance/lib/MooseX/ShortCut/BuildInstance.pm>.
-or read L<Moose::Util|https://metacpan.org/module/Moose::Util> for more class building 
-information.
+This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> specifically 
+designed to be used with L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>. 
+For information on how to L<join|/my $gardener = with_traits(> it to that 
+class at run time. See L<Moose::Util|https://metacpan.org/module/Moose::Util> or 
+L<MooseX::ShortCut::BuildInstance|https://metacpan.org/module/MooseX::ShortCut::BuildInstance> 
+for more class building information.
 
 =head2 Deep cloning the graft
 
@@ -284,10 +283,10 @@ In general grafted data refs are subject to external modification by changing th
 in that ref from another location of the code.  This module assumes that you don't want 
 to do that!  As a consequence it checks to see if a 'deep_clone' method has been provided to 
 the class that consumes this role.  If so it calls that method on the data ref to be 
-grafted.  One possiblity is to add the Role 
-L<Data::Walk::Clone|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Clone.pm> 
-to your object so that a deep_clone method is automatically available (all compatability 
-testing complete).  If you choose to add your own deep_clone method it will be called like this;
+grafted.  One possiblity is to add the Role L<Data::Walk::Clone
+|https://metacpan.org/module/Data::Walk::Clone> to your object so that a deep_clone method 
+is automatically available (all compatability testing complete).  If you choose to add your 
+own deep_clone method it will be called like this;
 
 	my $clone_value = ( $self->can( 'deep_clone' ) ) ?
 				$self->deep_clone( $scion_ref ) : $scion_ref ;
@@ -297,14 +296,14 @@ Where $self is the active object instance.
 =head2 Grafting unsupported node types
 
 If you want to add data from another ref to a current ref and the add ref contains nodes 
-that are not supported then you need to 
-L<skip|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm#skipped_nodes>
-those nodes in the cloning process.
+that are not supported then you need to L<skip
+|https://metacpan.org/module/Data::Walk::Extracted.pm#skipped_nodes> those nodes in the 
+cloning process.
 
 =head1 Attributes
 
 Data passed to -E<gt>new when creating an instance.  For modification of these attributes 
-see L</Methods>.  The -E<gt>new function will either accept fat comma lists or a 
+see L<Methods|/Methods>.  The -E<gt>new function will either accept fat comma lists or a 
 complete hash ref that has the possible attributes as the top keys.  Additionally 
 L<some attributes|/Supported one shot attributes> that have all the following 
 methods; get_$attribute, set_$attribute, has_$attribute, and clear_$attribute,
@@ -316,21 +315,21 @@ attributes.
 
 =over
 
-=item B<Definition:> When running a 'graft_data' operation any branch of the scion_ref 
+B<Definition:> When running a 'graft_data' operation any branch of the scion_ref 
 that does not terminate past the end of the tree ref or differ from the tree_ref 
 will not be used.  This attribute turns on tracking of the actual grafts made and 
 stores them for review after the method is complete.  This is a way to know if a graft 
-was actually implemented.  The potentially awkward wording of the memory toggle accessors 
-above is done to make this a possible 'one shot' attribute.
+was actually implemented.  The potentially awkward wording of the memory toggle methods 
+below is done to make this a possible 'one shot' attribute.
 
-=item B<Default> undefined = don't remember the grafts
+B<Default> undefined = don't remember the grafts
 
-=item B<Range> 1 = remember the grafts | 0 = don't remember
+B<Range> 1 = remember the grafts | 0 = don't remember
     
 =back
 
 Attributes in 
-L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm#Attributes> 
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted.pm#Attributes> 
 affect the output.
 
 =head1 Methods
@@ -339,42 +338,43 @@ affect the output.
 
 =over
 
-=item B<Definition:> This is a method to add targeted parts of a data reference.
+B<Definition:> This is a method to add defined elements to targeted parts of a data 
+reference.
 
-=item B<Accepts:> a hash ref with the keys 'scion_ref' and 'tree_ref'.  The scion 
+B<Accepts:> a hash ref with the keys 'scion_ref' and 'tree_ref'.  The scion 
 ref can contain more than one place that will be grafted to the tree data.
 
 =over
 
-=item B<tree_ref> This is the primary data ref that will be manipulated and returned 
+B<tree_ref> This is the primary data ref that will be manipulated and returned 
 changed.  If an empty 'tree_ref' is passed then the 'scion_ref' is returned in it's 
 entirety.
 
-=item B<scion_ref> This is a data ref that will be used to graft to the 'tree_ref'.  
+B<scion_ref> This is a data ref that will be used to graft to the 'tree_ref'.  
 For the scion ref to work it must contain the parts of the tree ref below the new 
 scions as well as the scion itself.  During data walking when a difference is found 
 graft_data will attempt to clone the remaining untraveled portion of the 'scion_ref' 
 and then graft the result to the 'tree_ref' at that point.  Any portion of the tree 
-ref that differs from the scion ref at that point will be replaced.  If L</graft_memory> 
-is on then a full recording of the graft with a map to the data root will be saved in 
-the object.  The word 'IGNORE' can be used in either an array position or the value 
-for a key in a hash ref.  This tells the program to ignore differences (in depth) past 
-that point.  For example if you wish to change the third element of an array node then 
-placing 'IGNORE' in the first two positions will cause 'graft_data' to skip the analysis 
-of the first two branches.  This saves replicating deep references in the scion_ref while 
-also avoiding a defacto 'prune' operation.  If an array position in the scion_ref is set 
-to 'IGNORE' in the 'scion_ref' but a graft is made below the node with IGNORE then 
-the grafted tree will contain 'IGNORE' in that element of the array (not undef).  
-Any root positions that exist in the tree_ref that do not exist in the scion_ref 
-will be ignored.  If an empty 'scion_ref' is sent then the code will L<cluck|Carp> 
-and then return the 'tree_ref'. 
+ref that differs from the scion ref at that point will be replaced.  If L<graft_memory
+|/graft_memory> is on then a full recording of the graft with a map to the data root 
+will be saved in the object.  The word 'IGNORE' can be used in either an array position 
+or the value for a key in a hash ref.  This tells the program to ignore differences (in 
+depth) past that point.  For example if you wish to change the third element of an array 
+node then placing 'IGNORE' in the first two positions will cause 'graft_data' to skip the 
+analysis of the first two branches.  This saves replicating deep references in the 
+scion_ref while also avoiding a defacto 'prune' operation.  If an array position in the 
+scion_ref is set to 'IGNORE' in the 'scion_ref' but a graft is made below the node with 
+IGNORE then the grafted tree will contain 'IGNORE' in that element of the array (not 
+undef).  Any positions that exist in the tree_ref that do not exist in the scion_ref 
+will be ignored.  If an empty 'scion_ref' is sent then the code will L<cluck
+|https://metacpan.org/module/Carp> and then return the 'tree_ref'. 
 
-=item B<[attribute name]> - attribute names are accepted with temporary attribute settings.  
+B<[attribute name]> - attribute names are accepted with temporary attribute settings.  
 These settings are temporarily set for a single "graft_data" call and then the original 
 attribute values are restored.  For this to work the the attribute must meet the 
 L<necessary criteria|/Attributes>.
 
-=item B<Example>
+B<Example>
 
 	$grafted_tree_ref = $self->graft_data(
 		tree_ref => $tree_data,
@@ -384,7 +384,7 @@ L<necessary criteria|/Attributes>.
 
 =back
 
-=item B<Returns:> The $tree_ref with any changes (possibly deep cloned)
+B<Returns:> The $tree_ref with any changes (possibly deep cloned)
 
 =back
 
@@ -392,11 +392,11 @@ L<necessary criteria|/Attributes>.
 
 =over
 
-=item B<Definition:> This will indicate if the attribute L</graft_memory> is active
+B<Definition:> This will indicate if the attribute L<graft_memory|/graft_memory> is active
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> 1 or 0
+B<Returns:> 1 or 0
 
 =back
 
@@ -404,11 +404,11 @@ L<necessary criteria|/Attributes>.
 
 =over
 
-=item B<Definition:> This will set the L</graft_memory> attribute
+B<Definition:> This will set the L<graft_memory|/graft_memory> attribute
 
-=item B<Accepts:> 1 or 0
+B<Accepts:> 1 or 0
 
-=item B<Returns:> nothing
+B<Returns:> nothing
 
 =back
 
@@ -416,11 +416,11 @@ L<necessary criteria|/Attributes>.
 
 =over
 
-=item B<Definition:> This will return the current value for the L</graft_memory> attribute.
+B<Definition:> This will return the current value for the L<graft_memory|/graft_memory> attribute.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> 1 or 0
+B<Returns:> 1 or 0
 
 =back
 
@@ -428,11 +428,11 @@ L<necessary criteria|/Attributes>.
 
 =over
 
-=item B<Definition:> This will clear the L</graft_memory> attribute.
+B<Definition:> This will clear the L<graft_memory|/graft_memory> attribute.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> nothing
+B<Returns:> nothing
 
 =back
 
@@ -440,12 +440,12 @@ L<necessary criteria|/Attributes>.
 
 =over
 
-=item B<Definition:> This will return the number of scion points grafted in the most recent 
-graft action if the L</graft_memory> attribute is on.
+B<Definition:> This will return the number of scion points grafted in the most recent 
+graft action if the L<graft_memory|/graft_memory> attribute is on.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> a positive integer
+B<Returns:> a positive integer
 
 =back
 
@@ -453,11 +453,11 @@ graft action if the L</graft_memory> attribute is on.
 
 =over
 
-=item B<Definition:> This will indicate if any grafted positions were saved.
+B<Definition:> This will indicate if any grafted positions were saved.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> 1 or 0
+B<Returns:> 1 or 0
 
 =back
 
@@ -465,11 +465,11 @@ graft action if the L</graft_memory> attribute is on.
 
 =over
 
-=item B<Definition:> This will return any saved grafted positions.
+B<Definition:> This will return any saved grafted positions.
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> an ARRAY ref of grafted positions.  This will include 
+B<Returns:> an ARRAY ref of grafted positions.  This will include 
 one full data branch to the root for each position actually grafted.
 
 =back
@@ -480,27 +480,27 @@ one full data branch to the root for each position actually grafted.
 
 =over
 
-=item B<ARRAY>
+B<ARRAY>
 
-=item B<HASH>
+B<HASH>
 
-=item B<SCALAR>
+B<SCALAR>
 
 =back
 
 =head2 Other node support
 
-Support for Objects is partially implemented and as a consequence _process_the_data won't 
-immediatly die when asked to parse an object.  It will still die but on a dispatch table 
+Support for Objects is partially implemented and as a consequence graft_data won't 
+immediatly die when asked to graft an object.  It will still die but on a dispatch table 
 call that indicates where there is missing object support not at the top of the node.
 
 =head2 Supported one shot attributes
 
 =over
 
-=item graft_memory
+graft_memory
 
-=item L<explanation|/Attributes>
+L<explanation|/Attributes>
 
 =back
 
@@ -508,12 +508,12 @@ call that indicates where there is missing object support not at the top of the 
 
 =over
 
-=item B<$ENV{Smart_Comments}>
+B<$ENV{Smart_Comments}>
 
-The module uses L<Smart::Comments> if the '-ENV' option is set.  The 'use' is 
-encapsulated in an if block triggered by an environmental variable to comfort 
-non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN block will 
-load and turn on smart comment reporting.  There are three levels of 'Smartness' 
+The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if the '-ENV' 
+option is set.  The 'use' is encapsulated in an if block triggered by an environmental 
+variable to comfort non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN 
+block will load and turn on smart comment reporting.  There are three levels of 'Smartness' 
 available in this module '###',  '####', and '#####'.
 
 =back
@@ -522,7 +522,7 @@ available in this module '###',  '####', and '#####'.
 
 =over
 
-=item L<github Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
+L<github Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
 
 =back
 
@@ -530,11 +530,18 @@ available in this module '###',  '####', and '#####'.
 
 =over
 
-=item * Support grafting through Objects / Instances nodes
+B<1.> Add L<Log::Shiras||https://metacpan.org/module/Log::Shiras> debugging in exchange for
+L<Smart::Comments|https://metacpan.org/module/Smart::Comments>
 
-=item * Support grafting through CodeRef nodes
+B<2.> Support grafting through class instance nodes (can - should you even do this?)
 
-=item * A possible depth check to ensure the scion is deeper than the tree_ref
+B<3.> Support grafting through CodeRef nodes (can - should you even do this?)
+
+B<4.> Support grafting through REF nodes
+
+B<5.> A possible depth check to ensure the scion is deeper than the tree_ref
+
+=over
 
 Implemented with an attribute that turns the feature on and off.  The goal 
 would be to eliminate unintentional swapping of small branches for large branches.  
@@ -543,13 +550,15 @@ if it makes sence yet.
 
 =back
 
+=back
+
 =head1 AUTHOR
 
 =over
 
-=item Jed Lund
+Jed Lund
 
-=item jandrew@cpan.org
+jandrew@cpan.org
 
 =back
 
@@ -565,31 +574,27 @@ LICENSE file included with this module.
 
 =over
 
-=item L<Data::Walk::Extracted>
+L<version|https://metacpan.org/module/version>
 
-=item L<Data::Walk::Extracted::Dispatch>
-
-=item L<MooseX::Types::Moose>
-
-=item L<version>
-
-=item L<Moose::Role>
+L<Moose::Role|https://metacpan.org/module/Moose::Role>
 
 =over
 
-=item B<requires>
+B<requires>
 
-=over
+_process_the_data
 
-=item _process_the_data
+_dispatch_method
 
-=item _build_branch
-
-=item _dispatch_method
+_build_branch
 
 =back
 
-=back
+L<MooseX::Types::Moose|https://metacpan.org/module/MooseX::Types::Moose>
+
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>
+
+L<Data::Walk::Extracted::Dispatch|https://metacpan.org/module/Data::Walk::Extracted::Dispatch>
 
 =back
 
@@ -597,15 +602,19 @@ LICENSE file included with this module.
 
 =over
 
-=item L<Smart::Comments> - is used if the -ENV option is set
+L<Smart::Comments|https://metacpan.org/module/Smart::Comments> - is used if the -ENV option is set
 
-=item L<Data::Walk::Clone> - manufacturers recommendation
+L<Data::Walk::Clone|https://metacpan.org/module/Data::Walk::Clone> - manufacturers recommendation
 
-=item L<Data::Walk>
+L<Data::ModeMerge|https://metacpan.org/module/Data::ModeMerge>
 
-=item L<Data::Walker>
+L<Data::Walk|https://metacpan.org/module/Data::Walk>
 
-=item L<Data::ModeMerge>
+L<Data::Walker|https://metacpan.org/module/Data::Walker>
+
+L<Data::Walk::Print|https://metacpan.org/module/Data::Walk::Print> - available Data::Walk::Extracted Role
+
+L<Data::Walk::Prune|https://metacpan.org/module/Data::Walk::Prune> - available Data::Walk::Extracted Role
 
 =back
 

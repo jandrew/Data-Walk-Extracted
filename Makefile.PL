@@ -13,9 +13,8 @@ my %WriteMakefileArgs = (
   "AUTHOR" => "Jed Lund <jandrew\@cpan.org>",
   "BUILD_REQUIRES" => {
     "Capture::Tiny" => "0.12",
-    "Modern::Perl" => 0,
     "Moose::Util" => 0,
-    "MooseX::ShortCut::BuildInstance" => "0.005",
+    "MooseX::ShortCut::BuildInstance" => "0.008",
     "Test::Moose" => 0,
     "Test::Most" => 0,
     "YAML::Any" => 0
@@ -39,7 +38,7 @@ my %WriteMakefileArgs = (
     "Smart::Comments" => 0,
     "version" => 0
   },
-  "VERSION" => "0.020.001",
+  "VERSION" => "0.020.002",
   "test" => {
     "TESTS" => "t/*.t"
   }

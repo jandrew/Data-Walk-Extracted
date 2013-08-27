@@ -9,7 +9,7 @@ use MooseX::Types::Moose qw(
         ArrayRef
         Bool
     );######<--------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.011_003');
+use version; our $VERSION = qv('0.012.001');
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;
 	### Smart-Comments turned on for Data-Walk-Clone
@@ -164,12 +164,11 @@ Data::Walk::Clone - deep data cloning with boundaries
 =head1 SYNOPSIS
     
 	#!perl
-	use Modern::Perl;
 	use Moose::Util qw( with_traits );
-	use Data::Walk::Extracted 0.019;
-	use Data::Walk::Clone 0.011;
+	use Data::Walk::Extracted 0.020;
+	use Data::Walk::Clone 0.012;
 
-	my  $dr_nisar_ahmad_wani = with_traits( 
+	my $dr_nisar_ahmad_wani = with_traits( 
 			'Data::Walk::Extracted', 
 			( 'Data::Walk::Clone',  ) 
 		)->new( 
@@ -224,7 +223,7 @@ Data::Walk::Clone - deep data cloning with boundaries
 
 This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> contains 
 methods for implementing the method L<deep_clone|/deep_clone( $arg_ref|%args|$data_ref )> using 
-L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>.  
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>.  
 This method is used to deep clone (clone many/all) levels of a data ref.  Deep cloning 
 is accomplished by sending a 'donor_ref' that has data nodes that you want copied into a 
 different memory location.  In general Data::Walk::Extracted already deep clones any 
@@ -232,44 +231,45 @@ output as part of its data walking so the primary value of this role is to manag
 deep cloning boundaries. It may be that some portion of the data should maintain common 
 memory references to the original memory references and so all of the Data::Walk::Extracted 
 skip methods will be recognized and supported.  Meaning that if a node is skipped the 
-data reference will be copied directly rather than cloned.
+data reference will be copied directly rather than cloned.  The deep clone boundaries 
+are managed using the L<skip attributes
+|https://metacpan.org/module/Data::Walk::Extracted#skipped_nodes> in Data::Walk::Extracted.
 
 =head2 USE
 
-This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles>. One way to 
-incorporate this role into 
-L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm>. 
-is 
-L<MooseX::ShortCut::BuildInstance|http://search.cpan.org/~jandrew/MooseX-ShortCut-BuildInstance/lib/MooseX/ShortCut/BuildInstance.pm>.
-or read L<Moose::Util|https://metacpan.org/module/Moose::Util> for more class building 
-information.
+This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> specifically 
+designed to be used with L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>. 
+For information on how to L<join|/my $dr_nisar_ahmad_wani = with_traits( > it to that 
+class at run time. See L<Moose::Util|https://metacpan.org/module/Moose::Util> or 
+L<MooseX::ShortCut::BuildInstance|https://metacpan.org/module/MooseX::ShortCut::BuildInstance> 
+for more class building information.
 
 =head1 Attributes
 
 Data passed to -E<gt>new when creating an instance.  For modification of these attributes 
-see L</Methods>.  The -E<gt>new function will either accept fat comma lists or a 
+see L<Methods|/Methods>.  The -E<gt>new function will either accept fat comma lists or a 
 complete hash ref that has the possible attributes as the top keys.  Additionally 
-L<some attributes|/Supported one shot attributes> that have all the following 
-methods; get_$attribute, set_$attribute, has_$attribute, and clear_$attribute,
-can be passed to L<prune_data|/prune_data( %args )> and will be 
-adjusted for just the run of that method call.  These are called 'one shot' 
+L<some attributes|https://metacpan.org/module/Data::Walk::Extracted#Supported one shot attributes> 
+that have all the following methods; get_$attribute, set_$attribute, has_$attribute, and 
+clear_$attribute, can be passed to L<deep_clone|/deep_clone( $arg_ref|%args|$data_ref )> 
+and will be adjusted for just the run of that method call.  These are called 'one shot' 
 attributes.
 
 =head2 should_clone
 
 =over
 
-=item B<Definition:> There are times when the cloning needs to be turned off.  This 
+B<Definition:> There are times when the cloning needs to be turned off.  This 
 is the switch.  If this is set to 0 then deep_clone just passes the doner ref back.
 
-=item B<Default> undefined = everything is cloned
+B<Default> undefined = everything is cloned
 
-=item B<Range> Boolean values (0|1)
+B<Range> Boolean values (0|1)
     
 =back
 
 Attributes in 
-L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/Data/Walk/Extracted.pm#Attributes>
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted.pm#Attributes>
  - also affect the output.
 
 =head1 Methods
@@ -278,38 +278,38 @@ L<Data::Walk::Extracted|http://search.cpan.org/~jandrew/Data-Walk-Extracted/lib/
 
 =over
 
-=item B<Definition:> This takes a 'donor_ref' and deep clones it.
+B<Definition:> This takes a 'donor_ref' and deep clones it.
 
-=item B<Accepts:> either a single data reference or named arguments 
+B<Accepts:> either a single data reference or named arguments 
 in a fat comma list or hashref
 
 =over
 
-=item B<Hash option> - if data comes in a fat comma list or as a hash ref 
+B<Hash option> - if data comes in a fat comma list or as a hash ref 
 and the keys include a 'donor_ref' key then the list is processed as such.
 
 =over
 
-=item B<donor_ref> - this is the data reference that should be deep cloned - required
+B<donor_ref> - this is the data reference that should be deep cloned - required
 
-=item B<[attribute name]> - attribute names are accepted with temporary attribute 
+B<[attribute name]> - attribute names are accepted with temporary attribute 
 settings.  These settings are temporarily set for a single "deep_clone" call and 
 then the original attribute values are restored.  For this to work the the attribute 
 must meet the L<necessary criteria|/get_$attribute, set_$attribute>.
 
 =back
 
-=item B<single data reference option> - if only one data_ref is sent and it fails 
+B<single data reference option> - if only one data_ref is sent and it fails 
 the test;
 
 	exists $data_ref->{donor_ref}
 
-then the program will attempt to name it as donor_ref => $data_ref and then process 
-the data as a fat comma list.
+then the program will attempt to name it as donor_ref => $data_ref and then clone 
+the whole thing.
 
 =back
 
-=item B<Returns:> The deep cloned data reference
+B<Returns:> The deep cloned data reference
 
 =back
 
@@ -317,12 +317,12 @@ the data as a fat comma list.
 
 =over
 
-=item B<Definition:> This will get the current value of the attribute 
+B<Definition:> This will get the current value of the attribute 
 L<should_clone|/should_clone> 
 
-=item B<Accepts:>  nothing
+B<Accepts:>  nothing
 
-=item B<Returns:> a boolean value
+B<Returns:> a boolean value
 
 =back
 
@@ -330,11 +330,11 @@ L<should_clone|/should_clone>
 
 =over
 
-=item B<Definition:> This will set the attribute L<should_clone|/should_clone> 
+B<Definition:> This will set the attribute L<should_clone|/should_clone> 
 
-=item B<Accepts:> a boolean value
+B<Accepts:> a boolean value
 
-=item B<Returns:> nothing
+B<Returns:> nothing
 
 =back
 
@@ -342,12 +342,12 @@ L<should_clone|/should_clone>
 
 =over
 
-=item B<Definition:> This will return true if the attribute L<should_clone|/should_clone>
+B<Definition:> This will return true if the attribute L<should_clone|/should_clone>
 is active
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> a boolean value
+B<Returns:> a boolean value
 
 =back
 
@@ -355,12 +355,12 @@ is active
 
 =over
 
-=item B<Definition:> This will set the attribute L<should_clone|/should_clone> 
+B<Definition:> This will set the attribute L<should_clone|/should_clone> 
 to one ( 1 ).  I<The name is awkward to accomodate one shot attribute changes.>
 
-=item B<Accepts:> nothing
+B<Accepts:> nothing
 
-=item B<Returns:> nothing
+B<Returns:> nothing
 
 =back
 
@@ -370,21 +370,11 @@ to one ( 1 ).  I<The name is awkward to accomodate one shot attribute changes.>
 
 =over
 
-=item B<ARRAY>
+B<ARRAY>
 
-=item B<HASH>
+B<HASH>
 
-=item B<SCALAR>
-
-=back
-
-=head2 Supported one shot attributes
-
-=over
-
-=item clone_level
-
-=item L<explanation|/Attributes>
+B<SCALAR>
 
 =back
 
@@ -392,12 +382,12 @@ to one ( 1 ).  I<The name is awkward to accomodate one shot attribute changes.>
 
 =over
 
-=item B<$ENV{Smart_Comments}>
+B<$ENV{Smart_Comments}>
 
-The module uses L<Smart::Comments> if the '-ENV' option is set.  The 'use' is 
-encapsulated in an if block triggered by an environmental variable to comfort 
-non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN block will 
-load and turn on smart comment reporting.  There are three levels of 'Smartness' 
+The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if the '-ENV' 
+option is set.  The 'use' is encapsulated in an if block triggered by an environmental 
+variable to comfort non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN 
+block will load and turn on smart comment reporting.  There are three levels of 'Smartness' 
 available in this module '###',  '####', and '#####'.
 
 =back
@@ -406,7 +396,7 @@ available in this module '###',  '####', and '#####'.
 
 =over
 
-=item L<github Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
+L<github Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
 
 =back
 
@@ -414,9 +404,14 @@ available in this module '###',  '####', and '#####'.
 
 =over
 
-=item * Support cloning through Objects / Instances nodes
+B<1.> Add L<Log::Shiras||https://metacpan.org/module/Log::Shiras> debugging in exchange for
+L<Smart::Comments|https://metacpan.org/module/Smart::Comments>
 
-=item * Support cloning through CodeRef nodes
+B<2.> Support cloning through class instance nodes (can should you even do this?)
+
+B<3.> Support cloning through CodeRef nodes
+
+B<4.> Support cloning through REF nodes
 
 =back
 
@@ -424,9 +419,9 @@ available in this module '###',  '####', and '#####'.
 
 =over
 
-=item Jed Lund
+Jed Lund
 
-=item jandrew@cpan.org
+jandrew@cpan.org
 
 =back
 
@@ -442,31 +437,27 @@ LICENSE file included with this module.
 
 =over
 
-=item L<Data::Walk::Extracted>
+L<version|https://metacpan.org/module/version>
 
-=item L<Data::Walk::Extracted::Dispatch>
-
-=item L<MooseX::Types::Moose>
-
-=item L<version>
-
-=item L<Moose::Role>
+L<Moose::Role|https://metacpan.org/module/Moose::Role>
 
 =over
 
-=item B<requires>
+B<requires>
 
-=over
+_process_the_data
 
-=item _process_the_data
+_dispatch_method
 
-=item _get_had_secondary
-
-=item _dispatch_method
+_get_had_secondary
 
 =back
 
-=back
+L<MooseX::Types::Moose|https://metacpan.org/module/MooseX::Types::Moose>
+
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>
+
+L<Data::Walk::Extracted::Dispatch|https://metacpan.org/module/Data::Walk::Extracted::Dispatch>
 
 =back
 
@@ -474,19 +465,19 @@ LICENSE file included with this module.
 
 =over
 
-=item L<Smart::Comments> - is used if the -ENV option is set
+L<Smart::Comments|https://metacpan.org/module/Smart::Comments> - is used if the -ENV option is set
 
-=item L<Data::Walk|https://metacpan.org/module/Data::Walk>
+L<Data::Walk|https://metacpan.org/module/Data::Walk>
 
-=item L<Data::Walker|https://metacpan.org/module/Data::Walker>
+L<Data::Walker|https://metacpan.org/module/Data::Walker>
 
-=item L<Storable|https://metacpan.org/module/Storable> - dclone
+L<Storable|https://metacpan.org/module/Storable> - dclone
 
-=item L<Data::Walk::Print>
+L<Data::Walk::Print|https://metacpan.org/module/Data::Walk::Print> - available Data::Walk::Extracted Role
 
-=item L<Data::Walk::Prune>
+L<Data::Walk::Graft|https://metacpan.org/module/Data::Walk::Graft> - available Data::Walk::Extracted Role
 
-=item L<Data::Walk::Graft>
+L<Data::Walk::Prune|https://metacpan.org/module/Data::Walk::Prune> - available Data::Walk::Extracted Role
 
 =back
 

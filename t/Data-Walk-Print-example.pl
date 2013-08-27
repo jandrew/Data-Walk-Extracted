@@ -1,5 +1,4 @@
 #!perl
-use Modern::Perl;
 use YAML::Any;
 use Moose::Util qw( with_traits );
 use lib '../lib';

@@ -4,7 +4,7 @@ use Moose;
 use MooseX::StrictConstructor;
 use Class::Inspector;
 use Scalar::Util qw( reftype );
-use version; our $VERSION = qv('0.020.001');
+use version; our $VERSION = qv('0.020.002');
 use Carp qw( confess );
 use MooseX::Types::Moose qw(
         ArrayRef
@@ -972,7 +972,6 @@ roles in this package.
 	}
 
 	package main;
-	use Modern::Perl;
 	use MooseX::ShortCut::BuildInstance qw(
 			build_instance
 		);

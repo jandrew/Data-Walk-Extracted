@@ -2,10 +2,10 @@
 #######  Test File for Data::Walk::Clone  #######
 use Test::Most;
 use Test::Moose;
-use MooseX::ShortCut::BuildInstance 0.003 qw( build_instance );
+use MooseX::ShortCut::BuildInstance 0.008 qw( build_instance );
 use lib '../lib', 'lib';
-use Data::Walk::Extracted 0.019;
-use Data::Walk::Clone 0.011;
+use Data::Walk::Extracted 0.020;
+use Data::Walk::Clone 0.012;
 use Smart::Comments -ENV;
 ### Smart-Comments turned on for 005-Data-Walk-Clone.t ...
 

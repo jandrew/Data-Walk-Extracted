@@ -1,5 +1,4 @@
 #!perl
-use Modern::Perl;
 use Moose::Util qw( with_traits );
 use lib '../lib';
 use Data::Walk::Extracted 0.019;

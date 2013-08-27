@@ -428,7 +428,6 @@ Data::Walk::Print - A data printing function
 =head1 SYNOPSIS
     
 	#!perl
-	use Modern::Perl;
 	use YAML::Any;
 	use Moose::Util qw( with_traits );
 	use Data::Walk::Extracted 0.020;
@@ -571,8 +570,8 @@ B<Range> This is a Boolean data type and generally accepts 1 or 0
     
 =back
 
-=head2 Attributes in L<Data::Walk::Extracted
-|https://metacpan.org/module/Data::Walk::Extracted#Attributes>
+=head2 Attributes in 
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted.pm#Attributes>
  - also affect the output.
 
 =head1 Methods

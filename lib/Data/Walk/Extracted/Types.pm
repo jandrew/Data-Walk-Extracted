@@ -94,7 +94,9 @@ B<Coercions: >no coersion available
 
 =over
 
-write a test suit for the types to permanently define behavior!
+B<1.> write a test suit for the types to permanently define behavior!
+
+B<2.> Add L<Log::Shiras|https://metacpan.org/module/Log::Shiras> debugging statements
 
 =back
 

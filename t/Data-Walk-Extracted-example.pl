@@ -49,7 +49,6 @@ sub _mangle_data_after_method{
 }
 
 package main;
-use Modern::Perl;
 use MooseX::ShortCut::BuildInstance qw(
 		build_instance
 	);

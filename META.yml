@@ -4,9 +4,8 @@ author:
   - 'Jed Lund <jandrew@cpan.org>'
 build_requires:
   Capture::Tiny: 0.12
-  Modern::Perl: 0
   Moose::Util: 0
-  MooseX::ShortCut::BuildInstance: 0.005
+  MooseX::ShortCut::BuildInstance: 0.008
   Test::Moose: 0
   Test::Most: 0
   YAML::Any: 0
@@ -31,4 +30,4 @@ requires:
   Smart::Comments: 0
   perl: 5.010
   version: 0
-version: 0.020.001
+version: 0.020.002
