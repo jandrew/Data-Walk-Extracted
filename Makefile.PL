@@ -38,7 +38,7 @@ my %WriteMakefileArgs = (
     "Smart::Comments" => 0,
     "version" => 0
   },
-  "VERSION" => "0.020.002",
+  "VERSION" => "0.020.004",
   "test" => {
     "TESTS" => "t/*.t"
   }

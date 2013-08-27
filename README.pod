@@ -1063,14 +1063,6 @@ available in this module '###',  '####', and '#####'.
 
 =back
 
-=head1 SUPPORT
-
-=over
-
-L<Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
-
-=back
-
 =head1 TODO
 
 =over
@@ -1086,16 +1078,6 @@ B<4.> Add a Data::Walk::Top Role to the package
 B<5.> Add a Data::Walk::Thin Role to the package
 
 B<6.> Add a Data::Walk::Substitute Role to the package
-
-=back
-
-=head1 AUTHOR
-
-=over
-
-Jed Lund
-
-jandrew@cpan.org
 
 =back
 
