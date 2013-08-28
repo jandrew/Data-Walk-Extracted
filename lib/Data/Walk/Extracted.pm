@@ -4,7 +4,7 @@ use Moose;
 use MooseX::StrictConstructor;
 use Class::Inspector;
 use Scalar::Util qw( reftype );
-use version; our $VERSION = qv('0.022.004');
+use version; our $VERSION = qv('0.022.006');
 use Carp qw( confess );
 use MooseX::Types::Moose qw(
         ArrayRef

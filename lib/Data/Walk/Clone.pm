@@ -9,7 +9,7 @@ use MooseX::Types::Moose qw(
         ArrayRef
         Bool
     );######<--------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.012.002');
+use version; our $VERSION = qv('0.012.004');
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;
 	### Smart-Comments turned on for Data-Walk-Clone
@@ -232,8 +232,9 @@ deep cloning boundaries. It may be that some portion of the data should maintain
 memory references to the original memory references and so all of the Data::Walk::Extracted 
 skip methods will be recognized and supported.  Meaning that if a node is skipped the 
 data reference will be copied directly rather than cloned.  The deep clone boundaries 
-are managed using the L<skip attributes
-|https://metacpan.org/module/Data::Walk::Extracted.pmE<35>skipped_nodes> in Data::Walk::Extracted.
+are managed using the 
+L<skip attributes|https://metacpan.org/module/Data::Walk::Extracted.pmE<35>skipped_nodes> 
+in Data::Walk::Extracted.
 
 =head2 USE
 
