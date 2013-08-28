@@ -380,7 +380,7 @@ Where the tree_ref should be trimmed insert either an empty array ref or an empt
 ref.  If this position represents a value in a hash key => value pair then the hash 
 key is deleted.  If this position represents a value in an array then the position is 
 deleted/cleared depending on the attribute 'change_array_size' in 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted#change_array_size>.  
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted.pm#change_array_size>.  
 If the slice ref diverges from the tree ref then no action is taken past the divergence, 
 even if there is a mandated slice. (no auto vivication occurs!)
 

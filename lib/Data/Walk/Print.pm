@@ -521,8 +521,8 @@ Data::Walk::Print - A data printing function
 This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> is mostly written 
 as a demonstration module for 
 L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>.  
-Both L<Data::Dumper|https://metacpan.org/module/Data::Dumper#Functions> - Dumper and 
-L<YAML|https://metacpan.org/module/YAML::Any#SUBROUTINES> - Dump functions are more mature than 
+Both L<Data::Dumper|https://metacpan.org/module/Data::Dumper.pm#Functions> - Dumper and 
+L<YAML|https://metacpan.org/module/YAML::Any.pm#SUBROUTINES> - Dump functions are more mature than 
 the printing function included here.
 
 =head2 USE

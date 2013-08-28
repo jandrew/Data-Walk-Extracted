@@ -1,9 +1,8 @@
 package Data::Walk::Extracted::Types;
-use Moose::Role;
 use MooseX::Types::Moose qw(
         Int
     );
-use version; our $VERSION = qv('0.002.001');
+use version; our $VERSION = qv('0.004.001');
 BEGIN{
 	if( $ENV{ Smart_Comments } ){
 		use Smart::Comments -ENV;
@@ -127,8 +126,6 @@ LICENSE file included with this module.
 =over
 
 L<version|https://metacpan.org/module/version>
-
-L<Moose::Role|https://metacpan.org/module/Moose::Role>
 
 L<MooseX::Types|https://metacpan.org/module/MooseX::Types>
 

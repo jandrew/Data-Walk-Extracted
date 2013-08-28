@@ -9,10 +9,10 @@ use Test::Moose;
 use Capture::Tiny 0.12 qw( 
 	capture_stdout 
 );
-use MooseX::ShortCut::BuildInstance 0.005;
+use MooseX::ShortCut::BuildInstance 0.008;
 use lib '../lib', 'lib';
-use Data::Walk::Extracted 0.017;
-use Data::Walk::Print 0.015;
+use Data::Walk::Extracted 0.022;
+use Data::Walk::Print 0.020;
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;#'###'
 	### Smart-Comments turned on for the Data-Walk-Print test ...
@@ -142,7 +142,7 @@ my			$answer_ref = [
 					"\tSomeotherkey => 'value',", "},"
 				],
 				[
-					"{", '\tHelping => ARRAY\(0x.{7}\),', 
+					"{", '\tHelping => ARRAY\(0x.{7,8}\),', 
 					"\tParsing => {", "\t\tHashRef => {", "\t\t\tLOGGER => {",
 					"\t\t\t\trun => 'INFO',", "\t\t\t},", "\t\t},", "\t},",
 					"\tSomeotherkey => 'value',", "},"

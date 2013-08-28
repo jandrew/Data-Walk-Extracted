@@ -1096,7 +1096,7 @@ LICENSE file included with this module.
 L<version|https://metacpan.org/module/version>
 
 L<5.010|http://perldoc.perl.org/perl5100delta.html> (for use of 
-L<defined or|http://perldoc.perl.org/perlop.html#Logical-Defined-Or> //)
+L<defined or|http://perldoc.perl.org/perlop.htmlE<35>Logical-Defined-Or> //)
 
 L<Class::Inspector|https://metacpan.org/module/Class::Inspector>
 
