@@ -4,7 +4,7 @@ use Moose;
 use MooseX::StrictConstructor;
 use Class::Inspector;
 use Scalar::Util qw( reftype );
-use version; our $VERSION = qv('0.022.002');
+use version; our $VERSION = qv('0.022.004');
 use Carp qw( confess );
 use MooseX::Types::Moose qw(
         ArrayRef
@@ -1947,7 +1947,7 @@ This is not an extention of L<Data::Walk|https://metacpan.org/module/Data::Walk>
 The core class has no external effect.  All output comes from 
 L<addtions to the class|/Extending Data::Walk::Extracted>.
 
-This module uses the 'L<defined or|http://perldoc.perl.org/perlop.html#Logical-Defined-Or>' 
+This module uses the 'L<defined or|http://perldoc.perl.org/perlop.htmlE<35>Logical-Defined-Or>' 
 (  //= ) and so requires perl 5.010 or higher.
 
 This is a L<Moose|https://metacpan.org/module/Moose::Manual> based data handling class.  

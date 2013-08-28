@@ -11,7 +11,7 @@ use MooseX::Types::Moose qw(
         Ref
         Item
     );######<---------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.014.001');
+use version; our $VERSION = qv('0.014.002');
 use Carp qw( cluck );
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;
@@ -297,7 +297,7 @@ Where $self is the active object instance.
 
 If you want to add data from another ref to a current ref and the add ref contains nodes 
 that are not supported then you need to L<skip
-|https://metacpan.org/module/Data::Walk::Extracted.pm#skipped_nodes> those nodes in the 
+|https://metacpan.org/module/Data::Walk::Extracted.pmE<35>skipped_nodes> those nodes in the 
 cloning process.
 
 =head1 Attributes
@@ -329,7 +329,7 @@ B<Range> 1 = remember the grafts | 0 = don't remember
 =back
 
 Attributes in 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted.pm#Attributes> 
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted.pmE<35>Attributes> 
 affect the output.
 
 =head1 Methods

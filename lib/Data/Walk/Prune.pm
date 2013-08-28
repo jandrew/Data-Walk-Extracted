@@ -11,7 +11,7 @@ use MooseX::Types::Moose qw(
         Bool
         Item
     );######<---------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.012.001');
+use version; our $VERSION = qv('0.012.002');
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;
 	### Smart-Comments turned on for Data-Walk-Prune ...
@@ -356,7 +356,7 @@ B<Range> 1 = remember the cuts | 0 = don't remember
 =back
 
 Attributes in 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted.pm#Attributes>
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted.pmE<35>Attributes>
  - also affect the output.
 
 =head1 Methods
@@ -380,7 +380,7 @@ Where the tree_ref should be trimmed insert either an empty array ref or an empt
 ref.  If this position represents a value in a hash key => value pair then the hash 
 key is deleted.  If this position represents a value in an array then the position is 
 deleted/cleared depending on the attribute 'change_array_size' in 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted.pm#change_array_size>.  
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted.pmE<35>change_array_size>.  
 If the slice ref diverges from the tree ref then no action is taken past the divergence, 
 even if there is a mandated slice. (no auto vivication occurs!)
 
