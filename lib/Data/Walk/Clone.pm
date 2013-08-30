@@ -9,7 +9,7 @@ use MooseX::Types::Moose qw(
         ArrayRef
         Bool
     );######<--------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.012.004');
+use version; our $VERSION = qv('0.024.002');
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;
 	### Smart-Comments turned on for Data-Walk-Clone
@@ -165,8 +165,8 @@ Data::Walk::Clone - deep data cloning with boundaries
     
 	#!perl
 	use Moose::Util qw( with_traits );
-	use Data::Walk::Extracted 0.020;
-	use Data::Walk::Clone 0.012;
+	use Data::Walk::Extracted 0.024;
+	use Data::Walk::Clone 0.024;
 
 	my $dr_nisar_ahmad_wani = with_traits( 
 			'Data::Walk::Extracted', 
@@ -232,9 +232,8 @@ deep cloning boundaries. It may be that some portion of the data should maintain
 memory references to the original memory references and so all of the Data::Walk::Extracted 
 skip methods will be recognized and supported.  Meaning that if a node is skipped the 
 data reference will be copied directly rather than cloned.  The deep clone boundaries 
-are managed using the 
-L<skip attributes|https://metacpan.org/module/Data::Walk::Extracted.pmE<35>skipped_nodes> 
-in Data::Walk::Extracted.
+are managed using the L<skip attributes
+|https://metacpan.org/module/Data::Walk::Extracted#skipped_nodes> in Data::Walk::Extracted.
 
 =head2 USE
 
@@ -250,7 +249,7 @@ for more class building information.
 Data passed to -E<gt>new when creating an instance.  For modification of these attributes 
 see L<Methods|/Methods>.  The -E<gt>new function will either accept fat comma lists or a 
 complete hash ref that has the possible attributes as the top keys.  Additionally 
-L<some attributes|https://metacpan.org/module/Data::Walk::Extracted.pmE<35>Supported one shot attributes> 
+some L<attributes|https://metacpan.org/module/Data::Walk::Extracted#Attributes> 
 that have all the following methods; get_$attribute, set_$attribute, has_$attribute, and 
 clear_$attribute, can be passed to L<deep_clone|/deep_clone( $arg_ref|%args|$data_ref )> 
 and will be adjusted for just the run of that method call.  These are called 'one shot' 
@@ -269,9 +268,10 @@ B<Range> Boolean values (0|1)
     
 =back
 
-Attributes in 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted.pmE<35>Attributes>
- - also affect the output.
+=head2 (see also)
+
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted#Attributes> 
+Attributes
 
 =head1 Methods
 
@@ -296,7 +296,7 @@ B<donor_ref> - this is the data reference that should be deep cloned - required
 B<[attribute name]> - attribute names are accepted with temporary attribute 
 settings.  These settings are temporarily set for a single "deep_clone" call and 
 then the original attribute values are restored.  For this to work the the attribute 
-must meet the L<necessary criteria|/get_$attribute, set_$attribute>.
+must meet the L<necessary criteria|/Attributes>.
 
 =back
 
@@ -405,7 +405,7 @@ L<github Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extract
 
 =over
 
-B<1.> Add L<Log::Shiras||https://metacpan.org/module/Log::Shiras> debugging in exchange for
+B<1.> Add L<Log::Shiras|https://metacpan.org/module/Log::Shiras> debugging in exchange for
 L<Smart::Comments|https://metacpan.org/module/Smart::Comments>
 
 B<2.> Support cloning through class instance nodes (can should you even do this?)
@@ -434,6 +434,8 @@ it and/or modify it under the same terms as Perl itself.
 The full text of the license can be found in the
 LICENSE file included with this module.
 
+This software is copyrighted (c) 2013 by Jed Lund.
+
 =head1 Dependencies
 
 =over
@@ -444,13 +446,17 @@ L<Moose::Role|https://metacpan.org/module/Moose::Role>
 
 =over
 
-B<requires>
+=item B<requires>
 
-_process_the_data
+=over
 
-_dispatch_method
+=item _process_the_data
 
-_get_had_secondary
+=item _dispatch_method
+
+=item _get_had_secondary
+
+=back
 
 =back
 

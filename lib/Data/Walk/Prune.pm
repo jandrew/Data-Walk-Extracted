@@ -11,7 +11,7 @@ use MooseX::Types::Moose qw(
         Bool
         Item
     );######<---------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.012.002');
+use version; our $VERSION = qv('0.024.002');
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;
 	### Smart-Comments turned on for Data-Walk-Prune ...
@@ -246,9 +246,9 @@ Data::Walk::Prune - A way to say what should be removed
     
 	#!perl
 	use Moose::Util qw( with_traits );
-	use Data::Walk::Extracted 0.020;
-	use Data::Walk::Prune 0.012;
-	use Data::Walk::Print 0.020;
+	use Data::Walk::Extracted 0.024;
+	use Data::Walk::Prune 0.024;
+	use Data::Walk::Print 0.024;
 
 	my $edward_scissorhands = with_traits(
 			'Data::Walk::Extracted',
@@ -355,9 +355,10 @@ B<Range> 1 = remember the cuts | 0 = don't remember
     
 =back
 
-Attributes in 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted.pmE<35>Attributes>
- - also affect the output.
+=head2 (see also)
+
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted#Attributes> 
+- Attributes
 
 =head1 Methods
 
@@ -379,10 +380,10 @@ the slice_ref should match the tree_ref for positions that should remain unchang
 Where the tree_ref should be trimmed insert either an empty array ref or an empty hash 
 ref.  If this position represents a value in a hash key => value pair then the hash 
 key is deleted.  If this position represents a value in an array then the position is 
-deleted/cleared depending on the attribute 'change_array_size' in 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted.pmE<35>change_array_size>.  
-If the slice ref diverges from the tree ref then no action is taken past the divergence, 
-even if there is a mandated slice. (no auto vivication occurs!)
+deleted/cleared depending on the attribute L<change_array_size
+|https://metacpan.org/module/Data::Walk::Extracted#change_array_size> in 
+Data::Walk::Extracted.  If the slice ref diverges from the tree ref then no action is 
+taken past the divergence, even if there is a mandated slice. (no auto vivication occurs!)
 
 B<[attribute name]> - attribute names are accepted with temporary attribute settings.  
 These settings are temporarily set for a single "prune_data" call and then the original 
@@ -494,6 +495,8 @@ B<Returns:> an integer
 
 =head1 Caveat utilitor
 
+=head2 deep cloning
+
 Because this uses Data::Walk::Extracted the final $tree_ref is deep cloned where 
 the $slice_ref passed through.
 
@@ -501,21 +504,23 @@ the $slice_ref passed through.
 
 =over
 
-B<ARRAY>
+=item ARRAY
 
-B<HASH>
+=item HASH
 
-B<SCALAR>
+=item SCALAR
+
+=item UNDEF
 
 =back
 
 =head2 Supported one shot attributes
 
+L<explanation|/Attributes>
+
 =over
 
-prune_memory
-
-L<explanation|/Attributes>
+=item prune_memory
 
 =back
 
@@ -545,7 +550,7 @@ L<github Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extract
 
 =over
 
-B<1.> Add L<Log::Shiras||https://metacpan.org/module/Log::Shiras> debugging in exchange for
+B<1.> Add L<Log::Shiras|https://metacpan.org/module/Log::Shiras> debugging in exchange for
 L<Smart::Comments|https://metacpan.org/module/Smart::Comments>
 
 B<2.> Support pruning through Objects / Instances nodes
@@ -560,9 +565,9 @@ B<4.> Support pruning through REF nodes
 
 =over
 
-Jed Lund
+=item Jed Lund
 
-jandrew@cpan.org
+=item jandrew@cpan.org
 
 =back
 
@@ -574,6 +579,8 @@ it and/or modify it under the same terms as Perl itself.
 The full text of the license can be found in the
 LICENSE file included with this module.
 
+This software is copyrighted (c) 2013 by Jed Lund.
+
 =head1 Dependencies
 
 L<version|https://metacpan.org/module/version>
@@ -584,11 +591,15 @@ L<Moose::Role|https://metacpan.org/module/Moose::Role>
 
 B<requires>
 
-_process_the_data
+=over
 
-_dispatch_method
+=item _process_the_data
 
-_build_branch
+=item _dispatch_method
+
+=item _build_branch
+
+=back
 
 =back
 

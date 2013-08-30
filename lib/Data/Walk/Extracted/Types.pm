@@ -2,7 +2,7 @@ package Data::Walk::Extracted::Types;
 use MooseX::Types::Moose qw(
         Int
     );
-use version; our $VERSION = qv('0.004.001');
+use version; our $VERSION = qv('0.024.002');
 BEGIN{
 	if( $ENV{ Smart_Comments } ){
 		use Smart::Comments -ENV;

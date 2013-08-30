@@ -1,6 +1,6 @@
 package Data::Walk::Extracted::Dispatch;
 use Moose::Role;
-use version; our $VERSION = qv('0.002.001');
+use version; our $VERSION = qv('0.024.002');
 use Carp qw( confess );
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;

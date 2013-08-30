@@ -1,5 +1,5 @@
 package Data::Walk::Print;
-use version; our $VERSION = qv('0.020.002');
+use version; our $VERSION = qv('0.024.002');
 
 use Moose::Role;
 requires 
@@ -430,8 +430,8 @@ Data::Walk::Print - A data printing function
 	#!perl
 	use YAML::Any;
 	use Moose::Util qw( with_traits );
-	use Data::Walk::Extracted 0.020;
-	use Data::Walk::Print 0.020;
+	use Data::Walk::Extracted 0.024;
+	use Data::Walk::Print 0.024;
 
 	#Use YAML to compress writing the data ref
 	my  $firstref = Load(
@@ -521,8 +521,8 @@ Data::Walk::Print - A data printing function
 This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> is mostly written 
 as a demonstration module for 
 L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>.  
-Both L<Data::Dumper|https://metacpan.org/module/Data::Dumper.pmE<35>Functions> - Dumper and 
-L<YAML|https://metacpan.org/module/YAML::Any.pmE<35>SUBROUTINES> - Dump functions are more mature than 
+Both L<Data::Dumper|https://metacpan.org/module/Data::Dumper#Functions> - Dumper and 
+L<YAML|https://metacpan.org/module/YAML::Any#SUBROUTINES> - Dump functions are more mature than 
 the printing function included here.
 
 =head2 USE
@@ -570,9 +570,10 @@ B<Range> This is a Boolean data type and generally accepts 1 or 0
     
 =back
 
-=head2 Attributes in 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted.pmE<35>Attributes>
- - also affect the output.
+=head2 (see also)
+
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted#Attributes> 
+- Attributes
 
 =head1 Methods
 
@@ -724,23 +725,25 @@ B<Returns:> '' (always successful)
 
 =over
 
-B<ARRAY>
+=item ARRAY
 
-B<HASH>
+=item HASH
 
-B<SCALAR>
+=item SCALAR
+
+=item UNDEF
 
 =back
 
 =head2 Supported one shot attributes
 
+L<explanation|/Attributes>
+
 =over
 
-match_highlighting
+=item match_highlighting
 
-to_string
-
-L<explanation|/Attributes>
+=item to_string
 
 =back
 
@@ -769,7 +772,7 @@ available in this module '###',  '####', and '#####'.
 
 =over
 
-L<Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
+L<github Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
 
 =back
 
@@ -792,9 +795,9 @@ B<4.> Support REF types
 
 =over
 
-Jed Lund
+=item Jed Lund
 
-jandrew@cpan.org
+=item jandrew@cpan.org
 
 =back
 
@@ -806,21 +809,27 @@ it and/or modify it under the same terms as Perl itself.
 The full text of the license can be found in the
 LICENSE file included with this module.
 
+This software is copyrighted (c) 2013 by Jed Lund.
+
 =head1 Dependencies
 
 L<version|https://metacpan.org/module/version>
 
 L<Moose::Role|https://metacpan.org/module/Moose::Role>
 
-=head2 requires
+=over
+
+B<requires>
 
 =over
 
-_process_the_data
+=item _process_the_data
 
-_get_had_secondary
+=item _get_had_secondary
 
-_dispatch_method
+=item _dispatch_method
+
+=back
 
 =back
 

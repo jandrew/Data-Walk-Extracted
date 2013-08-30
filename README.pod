@@ -57,7 +57,6 @@ roles in this package.
 	}
 
 	package main;
-	use Modern::Perl;
 	use MooseX::ShortCut::BuildInstance qw(
 			build_instance
 		);
@@ -85,8 +84,8 @@ L<recursivly|http://en.wikipedia.org/wiki/Recursion_(computer_science)>
 travels through it(them).  Where the two references diverge the walker follows the 
 primary data reference.  At the L<beginning|/Assess and implement the before_method> 
 and L<end|/Assess and implement the after_method> of each branch or L<node|/node> 
-the code will attempt to call a L<method|/Extending Data::Walk::Extracted> on the 
-remaining unparsed data.
+in the data the code will attempt to call a L<method|/Extending Data::Walk::Extracted> 
+on the remaining unparsed data.
 
 =head2 Acknowledgement of MJD
 
@@ -97,7 +96,7 @@ money!>  With that said I diverged from MJD purity in two ways. This is object o
 code not functional code. Second, when taking action the code will search for class 
 methods provided by (your) role rather than acting on passed closures.  There is clearly 
 some overhead associated with both of these differences.  I made those choices consciously 
-and if that upsets you L<do not hassle MJD|/AUTHOR>!
+and if that upsets you do not hassle MJD!
 
 =head2 What is the unique value of this module?
 
@@ -131,13 +130,14 @@ Then, L<Write some tests for your role!|http://www.perlmonks.org/?node_id=918837
 
 The primary input method added to this class for external use is refered to as 
 the 'action' method (ex. 'mangle_data').  This action method needs to receive 
-data and L<compose|/B<Accepts:> ( $passed_ref, $conversion_ref )> it for sending 
+data and L<organize|/B<Accepts:> ( $passed_ref, $conversion_ref )> it for sending 
 to the core data walker.  The data is then passed to the L<start method
 |/_process_the_data( $passed_ref, $conversion_ref )> for the generic data walker.  
 I<Remember if more than one role is added to Data::Walk::Extracted 
 for a given instance then all methods should be named with consideration for other 
 (future?) method names.  The L<$conversion_ref|/B<$conversion_ref> This allows>. 
-allows for muliple uses of the core data walkers generic functions.> 
+allows for muliple uses of the core data walkers generic functions.  The 
+$conversion_ref is not passed deeper into the recursion flow.> 
 
 =head2 Assess and implement the before_method
 
@@ -151,16 +151,23 @@ If the test passes then the next sequence is run.
 	$passed_ref = $self->$method( $passed_ref );
 
 If the $passed_ref is modified by the 'before_method' then the recursive parser will 
-parse the new ref and not the old one.  The before_method can set
+parse the new ref and not the old one.  The before_method can set;
 
 	$passed_ref->{skip} = 'YES'
 	
-and the walker will jump to the L<after method|/Assess and implement the after_method> 
-at this point.
+Next the flow checks for the need to investigate deeper.
+
+=head2 Test for deeper investigation
+
+The code now checks if deeper investigation is required checking both the  L<skip state
+|/$passed_ref-E<gt>{skip} = 'YES'> and if the node is a L<base ref type|/base node type>.  
+If either case is true the process jumps to the L<after method
+|/Assess and implement the after_method> otherwise it begins to investigate the next 
+level.
 
 =head2 Identify node elements
 
-If the next level in is not skipped then a list is generated for all L<paths|/nodes> 
+If the next level in is not skipped then a list is generated for all L<paths|/node> 
 in the node. For example a 'HASH' node would generate a list of hash keys for that node.  
 SCALAR nodes will generate a list with only one element containing the scalar contents.  
 UNDEF nodes will generate an empty list.  If the list L<should be sorted|/sorted_nodes> 
@@ -262,13 +269,13 @@ The updated $passed_ref is passed back up to the L<next level
 Data passed to -E<gt>new when creating an instance.  For modification of these attributes 
 see L<Public Methods|/Public Methods>.  The -E<gt>new function will either accept fat 
 comma lists or a complete hash ref that has the possible attributes as the top keys.  
-Additionally some attributes that meet L<certain criteria|/[attribute name]> can be passed 
-to L<_process_the_data|/B<[attribute name]> - attribute names are> and will be adjusted 
-for just the run of that method call.  These are called L<one shot
-|/Supported one shot attributes> attributes.  Nested calls to _process_the_data will be 
-tracked and the attribute will remain in force until the parser returns to the calling 
-'one shot' level.  Previous attribute values are restored after the 'one shot' attribute 
-value expires.
+Additionally some attributes that meet L<certain criteria
+|/B<[attribute name]> - attribute names are> can be passed to L<_process_the_data
+|/_process_the_data( $passed_ref, $conversion_ref )> and will be adjusted for just the 
+run of that method call.  These are called L<one shot|/Supported one shot attributes> 
+attributes.  Nested calls to _process_the_data will be tracked and the attribute will 
+remain in force until the parser returns to the calling 'one shot' level.  Previous 
+attribute values are restored after the 'one shot' attribute value expires.
 
 =head2 sorted_nodes
 
@@ -553,17 +560,6 @@ format.
 B<Accepts:> nothing
 
 B<Returns:> the integer value for the level
-
-=back
-
-=head3 [_private 'one shot' attributes]
-
-=over
-
-B<Definition:> private L<one shot|/[attribute name]> attributes in roles are allowed 
-as well.  If you would like to implement a private one shot attribute that is not exposed 
-to the end user then adding the '_' prefix to the attribute name and creating the 
-appropriate _get, _set, _clear, and _has methods will enable this.
 
 =back
 
@@ -973,25 +969,29 @@ B<Returns:> nothing
 
 =head2 node
 
-Each branch point of a data reference is considered a node.  The original top level 
-reference is the 'zeroth' node.  Recursion 'Base state' node types are considered 
-to not have any possible branches.  Currently that list is SCALAR and UNDEF.
+Each branch point of a data reference is considered a node.  The possible paths 
+deeper into the data structure from the node are followed 'vertically first' in 
+recursive parsing.  The original top level reference is considered the 'zeroth' 
+node.
+
+=head2 base node type
+
+Recursion 'base' node L<types|/_extracted_ref_type( $test_ref )> are considered 
+to not have any possible deeper branches.  Currently that list is SCALAR and UNDEF.
 
 =head2 Supported node walking types
 
 =over
 
-ARRAY
+=item ARRAY
 
-HASH
+=item HASH
 
-SCALAR
+=item SCALAR
 
-UNDEF
+=item UNDEF
 
-=back
-
-=head3 Other node support
+I<Other node support>
 
 Support for Objects is partially implemented and as a consequence '_process_the_data' 
 won't immediatly die when asked to parse an object.  It will still die but on a 
@@ -999,23 +999,25 @@ dispatch table call that indicates where there is missing object support, not at
 top of the node.  This allows for some of the L<skip attributes|/skipped_nodes> to 
 use 'OBJECT' in their definitions.
 
+=back
+
 =head2 Supported one shot attributes
+
+L<explanation|/B<[attribute name]> - attribute names are>
 
 =over
 
-sorted_nodes
+=item sorted_nodes
 
-skipped_nodes
+=item skipped_nodes
 
-skip_level
+=item skip_level
 
-skip_node_tests
+=item skip_node_tests
 
-change_array_size
+=item change_array_size
 
-fixed_primary
-
-L<explanation|/Attributes>
+=item fixed_primary
 
 =back
 
@@ -1031,9 +1033,9 @@ extensible.
 This is not an extention of L<Data::Walk|https://metacpan.org/module/Data::Walk>
 
 The core class has no external effect.  All output comes from 
-L<addtions to the class|/Extending Data::Walk::Extracted>.
+L<additions to the class|/Extending Data::Walk::Extracted>.
 
-This module uses the 'L<defined or|http://perldoc.perl.org/perlop.htmlE<35>Logical-Defined-Or>' 
+This module uses the 'L<defined or|http://perldoc.perl.org/perlop.html#Logical-Defined-Or>' 
 (  //= ) and so requires perl 5.010 or higher.
 
 This is a L<Moose|https://metacpan.org/module/Moose::Manual> based data handling class.  
@@ -1079,6 +1081,9 @@ B<5.> Add a Data::Walk::Thin Role to the package
 
 B<6.> Add a Data::Walk::Substitute Role to the package
 
+B<7.> Add L<Log::Shiras|https://metacpan.org/module/Log::Shiras> debugging in exchange for
+L<Smart::Comments|https://metacpan.org/module/Smart::Comments>
+
 =back
 
 =head1 COPYRIGHT
@@ -1089,6 +1094,8 @@ it and/or modify it under the same terms as Perl itself.
 The full text of the license can be found in the
 LICENSE file included with this module.
 
+This software is copyrighted (c) 2013 by Jed Lund.
+
 =head1 Dependencies
 
 =over
@@ -1096,7 +1103,7 @@ LICENSE file included with this module.
 L<version|https://metacpan.org/module/version>
 
 L<5.010|http://perldoc.perl.org/perl5100delta.html> (for use of 
-L<defined or|http://perldoc.perl.org/perlop.htmlE<35>Logical-Defined-Or> //)
+L<defined or|http://perldoc.perl.org/perlop.html#Logical-Defined-Or> //)
 
 L<Class::Inspector|https://metacpan.org/module/Class::Inspector>
 

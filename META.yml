@@ -7,17 +7,40 @@ build_requires:
   Moose::Util: 0
   MooseX::ShortCut::BuildInstance: 0.008
   Test::Moose: 0
+  Test::More: 0
   Test::Most: 0
   YAML::Any: 0
 configure_requires:
   ExtUtils::MakeMaker: 6.30
 dynamic_config: 0
-generated_by: 'Dist::Zilla version 4.300016, CPAN::Meta::Converter version 2.120921'
+generated_by: 'Dist::Zilla version 4.300037, CPAN::Meta::Converter version 2.120921'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
   version: 1.4
 name: Data-Walk-Extracted
+provides:
+  Data::Walk::Clone:
+    file: lib/Data/Walk/Clone.pm
+    version: v0.24.2
+  Data::Walk::Extracted:
+    file: lib/Data/Walk/Extracted.pm
+    version: v0.24.2
+  Data::Walk::Extracted::Dispatch:
+    file: lib/Data/Walk/Extracted/Dispatch.pm
+    version: v0.24.2
+  Data::Walk::Extracted::Types:
+    file: lib/Data/Walk/Extracted/Types.pm
+    version: v0.24.2
+  Data::Walk::Graft:
+    file: lib/Data/Walk/Graft.pm
+    version: v0.24.2
+  Data::Walk::Print:
+    file: lib/Data/Walk/Print.pm
+    version: v0.24.2
+  Data::Walk::Prune:
+    file: lib/Data/Walk/Prune.pm
+    version: v0.24.2
 requires:
   Carp: 0
   Class::Inspector: 0
@@ -28,6 +51,7 @@ requires:
   MooseX::Types::Moose: 0
   Scalar::Util: 0
   Smart::Comments: 0
+  lib: 0
   perl: 5.010
   version: 0
-version: 0.022.006
+version: 0.024.002

@@ -11,7 +11,7 @@ use MooseX::Types::Moose qw(
         Ref
         Item
     );######<---------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.014.002');
+use version; our $VERSION = qv('0.024.002');
 use Carp qw( cluck );
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;
@@ -155,9 +155,9 @@ Data::Walk::Graft - A way to say what should be added
     
 	#!perl
 	use Moose::Util qw( with_traits );
-	use Data::Walk::Extracted 0.020;
-	use Data::Walk::Graft 0.014;
-	use Data::Walk::Print 0.020;
+	use Data::Walk::Extracted 0.024;
+	use Data::Walk::Graft 0.024;
+	use Data::Walk::Print 0.024;
 
 	my $gardener = with_traits( 
 			'Data::Walk::Extracted', 
@@ -297,7 +297,7 @@ Where $self is the active object instance.
 
 If you want to add data from another ref to a current ref and the add ref contains nodes 
 that are not supported then you need to L<skip
-|https://metacpan.org/module/Data::Walk::Extracted.pmE<35>skipped_nodes> those nodes in the 
+|https://metacpan.org/module/Data::Walk::Extracted#skipped_nodes> those nodes in the 
 cloning process.
 
 =head1 Attributes
@@ -328,9 +328,10 @@ B<Range> 1 = remember the grafts | 0 = don't remember
     
 =back
 
-Attributes in 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted.pmE<35>Attributes> 
-affect the output.
+=head2 (see also)
+
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted#Attributes> 
+Attributes
 
 =head1 Methods
 
@@ -480,27 +481,27 @@ one full data branch to the root for each position actually grafted.
 
 =over
 
-B<ARRAY>
+=item ARRAY
 
-B<HASH>
+=item HASH
 
-B<SCALAR>
+=item SCALAR
 
-=back
-
-=head2 Other node support
+=item Other node support
 
 Support for Objects is partially implemented and as a consequence graft_data won't 
 immediatly die when asked to graft an object.  It will still die but on a dispatch table 
 call that indicates where there is missing object support not at the top of the node.
 
+=back
+
 =head2 Supported one shot attributes
+
+L<explanation|/Attributes>
 
 =over
 
-graft_memory
-
-L<explanation|/Attributes>
+=item graft_memory
 
 =back
 
@@ -530,7 +531,7 @@ L<github Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extract
 
 =over
 
-B<1.> Add L<Log::Shiras||https://metacpan.org/module/Log::Shiras> debugging in exchange for
+B<1.> Add L<Log::Shiras|https://metacpan.org/module/Log::Shiras> debugging in exchange for
 L<Smart::Comments|https://metacpan.org/module/Smart::Comments>
 
 B<2.> Support grafting through class instance nodes (can - should you even do this?)
@@ -556,9 +557,9 @@ if it makes sence yet.
 
 =over
 
-Jed Lund
+=item Jed Lund
 
-jandrew@cpan.org
+=item jandrew@cpan.org
 
 =back
 
@@ -569,6 +570,8 @@ it and/or modify it under the same terms as Perl itself.
 
 The full text of the license can be found in the
 LICENSE file included with this module.
+
+This software is copyrighted (c) 2013 by Jed Lund.
 
 =head1 Dependencies
 
@@ -582,11 +585,15 @@ L<Moose::Role|https://metacpan.org/module/Moose::Role>
 
 B<requires>
 
-_process_the_data
+=over
 
-_dispatch_method
+=item _process_the_data
 
-_build_branch
+=item _dispatch_method
+
+=item _build_branch
+
+=back
 
 =back
 

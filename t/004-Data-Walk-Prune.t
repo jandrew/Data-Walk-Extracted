@@ -5,10 +5,10 @@ BEGIN{
 }
 use Test::Most;
 use Test::Moose;
-use MooseX::ShortCut::BuildInstance 0.003 qw( build_instance );
+use MooseX::ShortCut::BuildInstance 0.008 qw( build_instance );
 use lib '../lib', 'lib';
-use Data::Walk::Extracted 0.019;
-use Data::Walk::Prune 0.011;
+use Data::Walk::Extracted 0.024;
+use Data::Walk::Prune 0.024;
 
 my  ( $wait, $newclass, $edward_scissorhands, $treeref, $sliceref, $answerref );
 
