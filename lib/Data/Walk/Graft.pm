@@ -11,7 +11,7 @@ use MooseX::Types::Moose qw(
         Ref
         Item
     );######<---------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.024.002');
+use version; our $VERSION = qv('0.024.004');
 use Carp qw( cluck );
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;
@@ -155,9 +155,9 @@ Data::Walk::Graft - A way to say what should be added
     
 	#!perl
 	use Moose::Util qw( with_traits );
-	use Data::Walk::Extracted 0.024;
-	use Data::Walk::Graft 0.024;
-	use Data::Walk::Print 0.024;
+	use Data::Walk::Extracted;
+	use Data::Walk::Graft;
+	use Data::Walk::Print;
 
 	my $gardener = with_traits( 
 			'Data::Walk::Extracted', 
@@ -262,20 +262,21 @@ This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> contains me
 adding a new branch ( or three ) to an existing data ref.  The method used to do this is 
 L<graft_data|/graft_data( %args|$arg_ref )> using
 L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>.
-Grafting is accomplished by sending a L<scion_ref|/scion_ref This is a data ref> that has 
-additions that need to be made to a L<tree_ref|/tree_ref This is the primary>.  Anything 
-in the scion ref that does not exist in the tree ref is grafted to the tree ref.  
-I<Anytime the scion_ref is different from the tree_ref the scion_ref branch will replace 
-the tree_ref branch!>
+Grafting is accomplished by sending a $scion_ref that has additions that need to be made 
+to a $tree_ref.  Anything in the scion ref that does not exist in the tree ref is grafted 
+to the tree ref.  I<Anytime the scion_ref is different from the tree_ref the scion_ref branch 
+will replace the tree_ref branch!>
 
 =head2 USE
 
 This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> specifically 
-designed to be used with L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>. 
-For information on how to L<join|/my $gardener = with_traits(> it to that 
-class at run time. See L<Moose::Util|https://metacpan.org/module/Moose::Util> or 
-L<MooseX::ShortCut::BuildInstance|https://metacpan.org/module/MooseX::ShortCut::BuildInstance> 
-for more class building information.
+designed to be used with L<Data::Walk::Extracted
+|https://metacpan.org/module/Data::Walk::Extracted#Extending-Data::Walk::Extracted>.  
+It can be combined traditionaly to the ~::Extracted class using L<Moose
+|https://metacpan.org/module/Moose::Manual::Roles> methods or for information on how to join 
+this role to Data::Walk::Extracted at run time see L<Moose::Util
+|https://metacpan.org/module/Moose::Util> or L<MooseX::ShortCut::BuildInstance
+|https://metacpan.org/module/MooseX::ShortCut::BuildInstance> for more information.
 
 =head2 Deep cloning the graft
 
@@ -305,22 +306,23 @@ cloning process.
 Data passed to -E<gt>new when creating an instance.  For modification of these attributes 
 see L<Methods|/Methods>.  The -E<gt>new function will either accept fat comma lists or a 
 complete hash ref that has the possible attributes as the top keys.  Additionally 
-L<some attributes|/Supported one shot attributes> that have all the following 
-methods; get_$attribute, set_$attribute, has_$attribute, and clear_$attribute,
-can be passed to L<graft_data|/graft_data( %args|$arg_ref )> and will pass through to 
-any L<deep_clone|/Deep cloning the graft> call as well.  These attributes are called 'one shot' 
-attributes.
+some attributes that have all the following methods; get_$attribute, set_$attribute, 
+has_$attribute, and clear_$attribute, can be passed to L<graft_data
+|/graft_data( %args|$arg_ref )> and will be adjusted for just the run of that 
+method call.  These are called 'one shot' attributes.  The class and each role (where 
+applicable) in this package have a list of L<supported one shot attributes
+|/Supported one shot attributes>.
 
 =head2 graft_memory
 
 =over
 
-B<Definition:> When running a 'graft_data' operation any branch of the scion_ref 
+B<Definition:> When running a 'graft_data' operation any branch of the $scion_ref 
 that does not terminate past the end of the tree ref or differ from the tree_ref 
 will not be used.  This attribute turns on tracking of the actual grafts made and 
 stores them for review after the method is complete.  This is a way to know if a graft 
-was actually implemented.  The potentially awkward wording of the memory toggle methods 
-below is done to make this a possible 'one shot' attribute.
+was actually implemented.  The potentially awkward wording of the associated methods 
+is done to make this an eligible 'one shot' attribute.
 
 B<Default> undefined = don't remember the grafts
 

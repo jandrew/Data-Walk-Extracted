@@ -1,9 +1,9 @@
 #!perl
 use Moose::Util qw( with_traits );
 use lib '../lib', 'lib';
-use Data::Walk::Extracted 0.024;
-use Data::Walk::Graft 0.024;
-use Data::Walk::Print 0.024;
+use Data::Walk::Extracted;
+use Data::Walk::Graft;
+use Data::Walk::Print;
 
 my  $gardener = with_traits( 
         'Data::Walk::Extracted', 

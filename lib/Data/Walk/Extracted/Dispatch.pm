@@ -1,6 +1,6 @@
 package Data::Walk::Extracted::Dispatch;
 use Moose::Role;
-use version; our $VERSION = qv('0.024.002');
+use version; our $VERSION = qv('0.024.004');
 use Carp qw( confess );
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;
@@ -124,13 +124,16 @@ There are three levels of 'Smartness' available in this module '### #### #####'.
 
 =over
 
+B<1.> Add L<Log::Shiras|https://metacpan.org/module/Log::Shiras> debugging in exchange for
+L<Smart::Comments|https://metacpan.org/module/Smart::Comments>
+
 =back
 
 =head1 SUPPORT
 
 =over
 
-L<Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
+L<github Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
 
 =back
 
@@ -138,9 +141,9 @@ L<Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issu
 
 =over
 
-Jed Lund
+=item Jed Lund
 
-jandrew@cpan.org
+=item jandrew@cpan.org
 
 =back
 
@@ -151,6 +154,8 @@ it and/or modify it under the same terms as Perl itself.
 
 The full text of the license can be found in the
 LICENSE file included with this module.
+
+This software is copyrighted (c) 2013 by Jed Lund.
 
 =head1 Dependencies
 

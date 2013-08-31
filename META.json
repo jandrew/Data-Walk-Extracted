@@ -50,34 +50,34 @@
    "provides" : {
       "Data::Walk::Clone" : {
          "file" : "lib/Data/Walk/Clone.pm",
-         "version" : "v0.24.2"
+         "version" : "v0.24.4"
       },
       "Data::Walk::Extracted" : {
          "file" : "lib/Data/Walk/Extracted.pm",
-         "version" : "v0.24.2"
+         "version" : "v0.24.4"
       },
       "Data::Walk::Extracted::Dispatch" : {
          "file" : "lib/Data/Walk/Extracted/Dispatch.pm",
-         "version" : "v0.24.2"
+         "version" : "v0.24.4"
       },
       "Data::Walk::Extracted::Types" : {
          "file" : "lib/Data/Walk/Extracted/Types.pm",
-         "version" : "v0.24.2"
+         "version" : "v0.24.4"
       },
       "Data::Walk::Graft" : {
          "file" : "lib/Data/Walk/Graft.pm",
-         "version" : "v0.24.2"
+         "version" : "v0.24.4"
       },
       "Data::Walk::Print" : {
          "file" : "lib/Data/Walk/Print.pm",
-         "version" : "v0.24.2"
+         "version" : "v0.24.4"
       },
       "Data::Walk::Prune" : {
          "file" : "lib/Data/Walk/Prune.pm",
-         "version" : "v0.24.2"
+         "version" : "v0.24.4"
       }
    },
    "release_status" : "stable",
-   "version" : "0.024.002"
+   "version" : "0.024.004"
 }
 

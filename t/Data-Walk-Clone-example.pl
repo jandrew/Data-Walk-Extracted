@@ -1,8 +1,8 @@
 #!perl
 use Moose::Util qw( with_traits );
 use lib '../lib';
-use Data::Walk::Extracted 0.024;
-use Data::Walk::Clone 0.024;
+use Data::Walk::Extracted;
+use Data::Walk::Clone;
 
 my  $dr_nisar_ahmad_wani = with_traits( 
 		'Data::Walk::Extracted', 

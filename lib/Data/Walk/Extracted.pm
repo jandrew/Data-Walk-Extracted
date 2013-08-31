@@ -4,7 +4,7 @@ use Moose;
 use MooseX::StrictConstructor;
 use Class::Inspector;
 use Scalar::Util qw( reftype );
-use version; our $VERSION = qv('0.024.002');
+use version; our $VERSION = qv('0.024.004');
 use Carp qw( confess );
 use MooseX::Types::Moose qw(
         ArrayRef
@@ -20,10 +20,10 @@ if( $ENV{ Smart_Comments } ){
 	### Smart-Comments turned on for Data-Walk-Extracted ...
 }
 use lib '../../../lib';
-use Data::Walk::Extracted::Types 0.002 qw(
+use Data::Walk::Extracted::Types 0.024 qw(
 		posInt
 	);
-with 'Data::Walk::Extracted::Dispatch' =>{ -VERSION => 0.002 };
+with 'Data::Walk::Extracted::Dispatch' =>{ -VERSION => 0.024 };
 
 #########1 Package Variables  3#########4#########5#########6#########7#########8#########9
 
@@ -1030,12 +1030,12 @@ that is useful as well as providing the necessary set up for the generic walker.
 of these elements can be combined with this class using a L<Moose role
 |https://metacpan.org/module/Moose::Manual::Roles>, by 
 L<extending the class|https://metacpan.org/module/Moose::Manual::Classes>, or it can be 
-L<joined|/$AT_ST = build_instance> to the class at run time. See 
-L<MooseX::ShortCut::BuildInstance|https://metacpan.org/module/MooseX::ShortCut::BuildInstance>.
-or L<Moose::Util|https://metacpan.org/module/Moose::Util> for more class building 
-information.  See the L<parsing flow|/Recursive Parsing Flow> to understand the details 
-of how the methods are used.  See L<methods used to write roles|/Methods used to write roles> 
-for the available methods to implement the roles.
+joined to the class at run time. See L<MooseX::ShortCut::BuildInstance
+|https://metacpan.org/module/MooseX::ShortCut::BuildInstance>.  or L<Moose::Util
+|https://metacpan.org/module/Moose::Util> for more class building information.  See the 
+L<parsing flow|/Recursive Parsing Flow> to understand the details of how the methods are 
+used.  See L<methods used to write roles|/Methods used to write roles> for the available 
+methods to implement the roles.
 
 Then, L<Write some tests for your role!|http://www.perlmonks.org/?node_id=918837>
 
@@ -1045,14 +1045,13 @@ Then, L<Write some tests for your role!|http://www.perlmonks.org/?node_id=918837
 
 The primary input method added to this class for external use is refered to as 
 the 'action' method (ex. 'mangle_data').  This action method needs to receive 
-data and L<organize|/B<Accepts:> ( $passed_ref, $conversion_ref )> it for sending 
-to the core data walker.  The data is then passed to the L<start method
+data and organize it for sending to the L<start method
 |/_process_the_data( $passed_ref, $conversion_ref )> for the generic data walker.  
 I<Remember if more than one role is added to Data::Walk::Extracted 
 for a given instance then all methods should be named with consideration for other 
-(future?) method names.  The L<$conversion_ref|/B<$conversion_ref> This allows>. 
-allows for muliple uses of the core data walkers generic functions.  The 
-$conversion_ref is not passed deeper into the recursion flow.> 
+(future?) method names.  The '$conversion_ref' allows for muliple uses of the core 
+data walkers generic functions.  The $conversion_ref is not passed deeper into the 
+recursion flow.> 
 
 =head2 Assess and implement the before_method
 
@@ -1070,12 +1069,12 @@ parse the new ref and not the old one.  The before_method can set;
 
 	$passed_ref->{skip} = 'YES'
 	
-Next the flow checks for the need to investigate deeper.
+Then the flow checks for the need to investigate deeper.
 
 =head2 Test for deeper investigation
 
-The code now checks if deeper investigation is required checking both the  L<skip state
-|/$passed_ref-E<gt>{skip} = 'YES'> and if the node is a L<base ref type|/base node type>.  
+The code now checks if deeper investigation is required checking both that the 'skip' key 
+= 'YES' in the $passed_ref or if the node is a L<base ref type|/base node type>.  
 If either case is true the process jumps to the L<after method
 |/Assess and implement the after_method> otherwise it begins to investigate the next 
 level.
@@ -1085,19 +1084,22 @@ level.
 If the next level in is not skipped then a list is generated for all L<paths|/node> 
 in the node. For example a 'HASH' node would generate a list of hash keys for that node.  
 SCALAR nodes will generate a list with only one element containing the scalar contents.  
-UNDEF nodes will generate an empty list.  If the list L<should be sorted|/sorted_nodes> 
+UNDEF nodes will generate an empty list.  
+
+=head2 Sort the node as required
+
+If the list L<should be sorted|/sorted_nodes> 
 then the list is sorted. B<ARRAYS are hard sorted.> I<This means that the actual items in 
 the (primary) passed data ref are permanantly sorted.>
 
-=head2 Iterate through each element
+=head2 Process each element
 
-For each identified element of the node a new 
-L<$passed_ref|/B<$passed_ref> This ref contains key value pairs as follows;> 
-is generated containing data that represents just that sub element.  The secondary_ref 
-is only constructed if it has a matching type and element to the primary ref.  Matching 
-for hashrefs is done by key matching only.  Matching for arrayrefs is done by position 
-exists testing only.  I<No position content compare is done!> Scalars are matched on 
-content.  The list of items generated for this element is as follows;
+For each identified element of the node a new $data_ref is generated containing data that 
+represents just that sub element.  The secondary_ref is only constructed if it has a 
+matching type and element to the primary ref.  Matching for hashrefs is done by key 
+matching only.  Matching for arrayrefs is done by position exists testing only.  I<No 
+position content compare is done!> Scalars are matched on content.  The list of items 
+generated for this element is as follows;
 
 =over
 
@@ -1107,7 +1109,7 @@ B<after_method =E<gt>> --E<gt>name of after method for this role hereE<lt>--
 
 B<primary_ref =E<gt>> the piece of the primary data ref below this element
 
-B<primary_type =E<gt>> the lower primary 
+B<primary_type =E<gt>> the lower primary (walker) 
 L<ref type|/_extracted_ref_type( $test_ref )>
 
 B<match =E<gt>> YES|NO (This indicates if the secondary ref meets matching critera
@@ -1156,7 +1158,7 @@ L<pop|http://perldoc.perl.org/functions/pop.html>ed off and the returned data re
 is used to L<replace|/fixed_primary> the sub elements of the primary_ref and secondary_ref 
 associated with that list element in the current level of the $passed_ref.  If there are 
 still pending items in the node element list then the program L<processes them too
-|/Iterate through each element>
+|/Process each element>
 
 
 =head2 Assess and implement the after_method
@@ -1184,8 +1186,8 @@ The updated $passed_ref is passed back up to the L<next level
 Data passed to -E<gt>new when creating an instance.  For modification of these attributes 
 see L<Public Methods|/Public Methods>.  The -E<gt>new function will either accept fat 
 comma lists or a complete hash ref that has the possible attributes as the top keys.  
-Additionally some attributes that meet L<certain criteria
-|/B<[attribute name]> - attribute names are> can be passed to L<_process_the_data
+Additionally some attributes that have the following prefixed methods; get_$name, set_$name, 
+clear_$name, and has_$name can be passed to L<_process_the_data
 |/_process_the_data( $passed_ref, $conversion_ref )> and will be adjusted for just the 
 run of that method call.  These are called L<one shot|/Supported one shot attributes> 
 attributes.  Nested calls to _process_the_data will be tracked and the attribute will 
@@ -1196,11 +1198,10 @@ attribute values are restored after the 'one shot' attribute value expires.
 
 =over
 
-B<Definition:> If the L<primary_type|/primary_type => of the L<$primary_ref
-|/B<primary_ref> - a dataref that the> is a key in this attribute hash ref then the 
- node L<list|/Identify node elements> is sorted. If the value of that key is a CODEREF 
-then the sort L<sort|http://perldoc.perl.org/functions/sort.html> function will called 
-as follows.
+B<Definition:> If the primary_type of the L<$element_ref|/Process each element> 
+is a key in this attribute hash ref then the node L<list|/Identify node elements> is 
+sorted. If the value of that key is a CODEREF then the sort L<sort
+|http://perldoc.perl.org/functions/sort.html> function will called as follows.
 
 	@node_list = sort $coderef @node_list
 
@@ -1226,10 +1227,9 @@ B<Example:>
 
 =over
 
-B<Definition:> If the L<primary_type|/primary_type => of the L<$primary_ref
-|/B<primary_ref> - a dataref that the> is a key in this attribute hash ref then the 
-'before_method' and 'after_method' are run at that node but no L<parsing
-|/Identify node elements> is done.
+B<Definition:> If the primary_type of the L<$element_ref|/Process each element> 
+is a key in this attribute hash ref then the 'before_method' and 'after_method' are 
+run at that node but no L<parsing|/Identify node elements> is done.
 
 B<Default> {} #Nothing is skipped
 
@@ -1247,9 +1247,11 @@ B<Example:>
 
 =over
 
-B<Definition:> This attribute is set to skip (or not) node parsing at a given 
-level.  Because the process doesn't start checking until after it enters the data ref 
-it effectivly ignores a skip_level set to 0 (The base node level).
+B<Definition:> This attribute is set to skip (or not) node parsing at the set level.  
+Because the process doesn't start checking until after it enters the data ref 
+it effectivly ignores a skip_level set to 0 (The base node level).  I<The test checks 
+against the value in last position of the prior L<trace|/A position trace is generated> 
+array ref + 1>.
 
 B<Default> undef = Nothing is skipped
 
@@ -1288,7 +1290,7 @@ B<Example:>
 		[ 'HASH', 'KeyWord', 'ANY', 'ANY'], 
 		# Skip the node below the value of any hash key eq 'Keyword'
 		[ 'ARRAY', 'ANY', '3', '4'], ], 
-		# Skip the nodes below arrays at position three on level four
+		# Skip the node stored in arrays at position three on level four
 	]
 
 B<Range> An infinite number of skip tests added to an array
@@ -1302,12 +1304,12 @@ B<Default> [] = no nodes are skipped
 =over
 
 B<Definition:> This attribute will not be used by this class directly.  However 
-the L<Data::Walk::Prune|https://metacpan.org/module/Data::Walk::Prune> role 
-and the L<Data::Walk::Graft|https://metacpan.org/module/Data::Walk::Prune> Role 
-both use it so it is placed here so there will be no conflicts.  This is usually used to 
-define whether an array size shinks when an element is removed.
+the L<Data::Walk::Prune|https://metacpan.org/module/Data::Walk::Prune#prune_data-args> 
+role may share it with other roles in the future so it is placed here so there will be 
+no conflicts.  This is usually used to define whether an array size shinks when an element 
+is removed.
 
-B<Default> 1 (This usually means that the array will shrink when a position is removed)
+B<Default> 1 (This probably means that the array will shrink when a position is removed)
 
 B<Range> Boolean values.
 
@@ -1353,11 +1355,21 @@ B<$passed_ref> this ref contains key value pairs as follows;
 
 =over
 
-B<primary_ref> - a dataref that the walker will walk. - required (L<the key can be renamed
-|/$conversion_ref This allows a public>)
+B<primary_ref> - a dataref that the walker will walk - required
+
+=over
+
+review the $conversion_ref functionality in this function for renaming of this key.
+
+=back
 
 B<secondary_ref> - a dataref that is used for comparision while walking. - optional 
-(L<the key can be renamed|/$conversion_ref This allows a public>)
+
+=over
+
+review the $conversion_ref functionality in this function for renaming of this key.
+
+=back
 
 B<before_method> - a method name that will perform some action at the beginning 
 of each node - optional
@@ -1365,11 +1377,9 @@ of each node - optional
 B<after_method> - a method name that will perform some action at the end 
 of each node - optional
 
-B<[attribute name]> - attribute names are accepted with temporary attribute settings here.  
-These settings are L<temporarily set|/Supported one shot attributes> for a single 
-"_process_the_data" call and then the original attribute values are restored.  For this to 
-work the the attribute must have the following prefixed methods; get_$name, set_$name, 
-clear_$name, and has_$name. - optional
+B<[attribute name]> - L<supported|/Supported one shot attributes> attribute names are 
+accepted with temporary attribute settings here.  These settings are temporarily set for 
+a single "_process_the_data" call and then the original attribute values are restored.  
 
 =back
 
@@ -1401,8 +1411,8 @@ B<Example>
 
 =back
 
-B<Returns:> the $passed_ref (only) with the key names restored to the ones L<passed to this 
-method|/B<$conversion_ref> This allows a public>.
+B<Returns:> the $passed_ref (only) with the key names restored to the ones passed to this 
+method using the $conversion_ref.
 
 =back
 
@@ -1412,9 +1422,10 @@ method|/B<$conversion_ref> This allows a public>.
 
 B<Definition:> There are times when a role will wish to reconstruct the data branch 
 that lead from the 'zeroth' node to where the data walker is currently at.  This private 
-method takes a seed reference and uses the  L<branch ref|/A position trace is generated> 
-to recursivly append to the front of the seed until a complete branch to the zeroth 
-node is generated.  I<The branch_ref list must be explicitly passed.>
+method takes a seed reference and uses data found in the L<branch ref
+|/A position trace is generated> to recursivly append to the front of the seed until a 
+complete branch to the zeroth node is generated.  I<The branch_ref list must be 
+explicitly passed.>
 
 B<Accepts:> a list of arguments starting with the $seed_ref to build from.  
 The remaining arguments are just the array elements of the 'branch ref'.
@@ -1918,7 +1929,7 @@ use 'OBJECT' in their definitions.
 
 =head2 Supported one shot attributes
 
-L<explanation|/B<[attribute name]> - attribute names are>
+L<explanation|/Attributes>
 
 =over
 
@@ -1962,9 +1973,8 @@ fill up a fair amount of memory!  Meaning that as the module recursively parses 
 the levels it leaves behind snapshots of the previous level that allow it to keep 
 track of it's location.
 
-The L<primary_ref|/B<primary_ref> - a> and L<secondary_ref|/B<secondary_ref> - a> are 
-effectivly deep cloned during this process.  To leave the primary_ref pointer intact see 
-L<fixed_primary|/fixed_primary>
+The passed data references are effectivly deep cloned during this process.  To leave 
+the primary_ref pointer intact see L<fixed_primary|/fixed_primary>
 
 =head1 GLOBAL VARIABLES
 
@@ -1984,7 +1994,7 @@ available in this module '###',  '####', and '#####'.
 
 =over
 
-L<Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
+L<github Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
 
 =back
 

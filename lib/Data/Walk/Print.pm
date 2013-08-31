@@ -1,5 +1,5 @@
 package Data::Walk::Print;
-use version; our $VERSION = qv('0.024.002');
+use version; our $VERSION = qv('0.024.004');
 
 use Moose::Role;
 requires 
@@ -430,8 +430,8 @@ Data::Walk::Print - A data printing function
 	#!perl
 	use YAML::Any;
 	use Moose::Util qw( with_traits );
-	use Data::Walk::Extracted 0.024;
-	use Data::Walk::Print 0.024;
+	use Data::Walk::Extracted;
+	use Data::Walk::Print;
 
 	#Use YAML to compress writing the data ref
 	my  $firstref = Load(
@@ -528,20 +528,25 @@ the printing function included here.
 =head2 USE
 
 This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> specifically 
-designed to be used with L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>. 
-For information on how to L<join|/my $AT_ST = with_traits(> it to the class at run time. See 
-L<Moose::Util|https://metacpan.org/module/Moose::Util> or L<MooseX::ShortCut::BuildInstance
-|https://metacpan.org/module/MooseX::ShortCut::BuildInstance> for more class building information.
+designed to be used with L<Data::Walk::Extracted
+|https://metacpan.org/module/Data::Walk::Extracted#Extending-Data::Walk::Extracted>.  
+It can be combined traditionaly to the ~::Extracted class using L<Moose
+|https://metacpan.org/module/Moose::Manual::Roles> methods or for information on how to join 
+this role to Data::Walk::Extracted at run time see L<Moose::Util
+|https://metacpan.org/module/Moose::Util> or L<MooseX::ShortCut::BuildInstance
+|https://metacpan.org/module/MooseX::ShortCut::BuildInstance> for more information.
 
 =head1 Attributes
 
 Data passed to -E<gt>new when creating an instance.  For modification of these attributes 
 see L<Methods|/Methods>.  The -E<gt>new function will either accept fat comma lists or a 
 complete hash ref that has the possible attributes as the top keys.  Additionally 
-L<some attributes|/Supported one shot attributes> that have all the following 
-methods; get_$attribute, set_$attribute, has_$attribute, and clear_$attribute,
-can be passed to L<print_data|/print_data( $arg_ref|%args|$data_ref )> and will be 
-adjusted for just the run of that method call.  These are called 'one shot' attributes.
+some attributes that have all the following methods; get_$attribute, set_$attribute, 
+has_$attribute, and clear_$attribute, can be passed to L<print_data
+|/print_data( $arg_ref|%args|$data_ref )> and will be adjusted for just the run of that 
+method call.  These are called 'one shot' attributes.  The class and each role (where 
+applicable) in this package have a list of L<supported one shot attributes
+|/Supported one shot attributes>.
 
 =head2 match_highlighting
 

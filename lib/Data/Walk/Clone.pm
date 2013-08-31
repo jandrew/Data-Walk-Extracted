@@ -9,7 +9,7 @@ use MooseX::Types::Moose qw(
         ArrayRef
         Bool
     );######<--------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.024.002');
+use version; our $VERSION = qv('0.024.004');
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;
 	### Smart-Comments turned on for Data-Walk-Clone
@@ -165,8 +165,8 @@ Data::Walk::Clone - deep data cloning with boundaries
     
 	#!perl
 	use Moose::Util qw( with_traits );
-	use Data::Walk::Extracted 0.024;
-	use Data::Walk::Clone 0.024;
+	use Data::Walk::Extracted;
+	use Data::Walk::Clone;
 
 	my $dr_nisar_ahmad_wani = with_traits( 
 			'Data::Walk::Extracted', 
@@ -238,22 +238,24 @@ are managed using the L<skip attributes
 =head2 USE
 
 This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> specifically 
-designed to be used with L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>. 
-For information on how to L<join|/my $dr_nisar_ahmad_wani = with_traits( > it to that 
-class at run time. See L<Moose::Util|https://metacpan.org/module/Moose::Util> or 
-L<MooseX::ShortCut::BuildInstance|https://metacpan.org/module/MooseX::ShortCut::BuildInstance> 
-for more class building information.
+designed to be used with L<Data::Walk::Extracted
+|https://metacpan.org/module/Data::Walk::Extracted#Extending-Data::Walk::Extracted>.  
+It can be combined traditionaly to the ~::Extracted class using L<Moose
+|https://metacpan.org/module/Moose::Manual::Roles> methods or for information on how to join 
+this role to Data::Walk::Extracted at run time see L<Moose::Util
+|https://metacpan.org/module/Moose::Util> or L<MooseX::ShortCut::BuildInstance
+|https://metacpan.org/module/MooseX::ShortCut::BuildInstance> for more information.
 
 =head1 Attributes
 
 Data passed to -E<gt>new when creating an instance.  For modification of these attributes 
 see L<Methods|/Methods>.  The -E<gt>new function will either accept fat comma lists or a 
 complete hash ref that has the possible attributes as the top keys.  Additionally 
-some L<attributes|https://metacpan.org/module/Data::Walk::Extracted#Attributes> 
-that have all the following methods; get_$attribute, set_$attribute, has_$attribute, and 
-clear_$attribute, can be passed to L<deep_clone|/deep_clone( $arg_ref|%args|$data_ref )> 
-and will be adjusted for just the run of that method call.  These are called 'one shot' 
-attributes.
+some attributes that have all the following methods; get_$attribute, set_$attribute, 
+has_$attribute, and clear_$attribute, can be passed to L<deep_clone
+|/deep_clone( $arg_ref|%args|$data_ref )> and will be adjusted for just the run of that 
+method call.  These are called 'one shot' attributes.  The class and each role (where 
+applicable) in this package have a list of 'supported one shot attributes'.
 
 =head2 should_clone
 
@@ -371,11 +373,11 @@ B<Returns:> nothing
 
 =over
 
-B<ARRAY>
+=item ARRAY
 
-B<HASH>
+=item HASH
 
-B<SCALAR>
+=item SCALAR
 
 =back
 
@@ -420,9 +422,9 @@ B<4.> Support cloning through REF nodes
 
 =over
 
-Jed Lund
+=item Jed Lund
 
-jandrew@cpan.org
+=item jandrew@cpan.org
 
 =back
 
@@ -446,7 +448,7 @@ L<Moose::Role|https://metacpan.org/module/Moose::Role>
 
 =over
 
-=item B<requires>
+B<requires>
 
 =over
 

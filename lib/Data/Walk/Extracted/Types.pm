@@ -2,13 +2,7 @@ package Data::Walk::Extracted::Types;
 use MooseX::Types::Moose qw(
         Int
     );
-use version; our $VERSION = qv('0.024.002');
-BEGIN{
-	if( $ENV{ Smart_Comments } ){
-		use Smart::Comments -ENV;
-		### Smart-Comments turned on for Data-Walk-Types ...
-	}
-}
+use version; our $VERSION = qv('0.024.004');
 
 use MooseX::Types -declare => [ qw(
         posInt
@@ -101,7 +95,7 @@ B<2.> Add L<Log::Shiras|https://metacpan.org/module/Log::Shiras> debugging state
 
 =head1 SUPPORT
 
-L<Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
+L<github Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extracted/issues>
 
 =head1 AUTHOR
 
