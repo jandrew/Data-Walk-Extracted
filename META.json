@@ -1,10 +1,10 @@
 {
-   "abstract" : "An extracted dataref walker\r",
+   "abstract" : "An extracted dataref walker",
    "author" : [
       "Jed Lund <jandrew@cpan.org>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Dist::Zilla version 4.300037, CPAN::Meta::Converter version 2.120921",
+   "generated_by" : "Dist::Zilla version 5.015, CPAN::Meta::Converter version 2.143240",
    "license" : [
       "perl_5"
    ],
@@ -25,14 +25,18 @@
             "Class::Inspector" : "0",
             "Moose" : "0",
             "Moose::Role" : "0",
+            "MooseX::HasDefaults::RO" : "0",
             "MooseX::StrictConstructor" : "0",
-            "MooseX::Types" : "0",
-            "MooseX::Types::Moose" : "0",
             "Scalar::Util" : "0",
             "Smart::Comments" : "0",
+            "Type::Library" : "0",
+            "Type::Utils" : "0",
+            "Types::Standard" : "0",
             "lib" : "0",
             "perl" : "5.010",
-            "version" : "0"
+            "strict" : "0",
+            "version" : "0.77",
+            "warnings" : "0"
          }
       },
       "test" : {
@@ -40,6 +44,7 @@
             "Capture::Tiny" : "0.12",
             "Moose::Util" : "0",
             "MooseX::ShortCut::BuildInstance" : "0.008",
+            "MooseX::Types::Moose" : "0",
             "Test::Moose" : "0",
             "Test::More" : "0",
             "Test::Most" : "0",
@@ -50,34 +55,46 @@
    "provides" : {
       "Data::Walk::Clone" : {
          "file" : "lib/Data/Walk/Clone.pm",
-         "version" : "v0.24.4"
+         "version" : "v0.26.4"
       },
       "Data::Walk::Extracted" : {
          "file" : "lib/Data/Walk/Extracted.pm",
-         "version" : "v0.24.4"
+         "version" : "v0.26.4"
       },
       "Data::Walk::Extracted::Dispatch" : {
          "file" : "lib/Data/Walk/Extracted/Dispatch.pm",
-         "version" : "v0.24.4"
+         "version" : "v0.26.4"
       },
       "Data::Walk::Extracted::Types" : {
          "file" : "lib/Data/Walk/Extracted/Types.pm",
-         "version" : "v0.24.4"
+         "version" : "v0.26.4"
       },
       "Data::Walk::Graft" : {
          "file" : "lib/Data/Walk/Graft.pm",
-         "version" : "v0.24.4"
+         "version" : "v0.26.4"
       },
       "Data::Walk::Print" : {
          "file" : "lib/Data/Walk/Print.pm",
-         "version" : "v0.24.4"
+         "version" : "v0.26.4"
       },
       "Data::Walk::Prune" : {
          "file" : "lib/Data/Walk/Prune.pm",
-         "version" : "v0.24.4"
+         "version" : "v0.26.4"
       }
    },
    "release_status" : "stable",
-   "version" : "0.024.004"
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/jandrew/Data-Walk-Extracted/issues"
+      },
+      "homepage" : "https://github.com/jandrew/Data-Walk-Extracted",
+      "repository" : {
+         "type" : "git",
+         "url" : "https://github.com/jandrew/Data-Walk-Extracted.git",
+         "web" : "https://github.com/jandrew/Data-Walk-Extracted"
+      }
+   },
+   "version" : "v0.26.4",
+   "x_authority" : "cpan:JANDREW"
 }
 

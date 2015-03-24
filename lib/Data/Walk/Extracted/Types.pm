@@ -1,16 +1,18 @@
 package Data::Walk::Extracted::Types;
-use MooseX::Types::Moose qw(
-        Int
-    );
-use version; our $VERSION = qv('0.024.004');
-
-use MooseX::Types -declare => [ qw(
-        posInt
-    ) ];
+use version; our $VERSION = qv("v0.26.4");
+use strict;
+use warnings;
+use Type::Utils -all;
+use Type::Library
+	-base,
+	-declare => qw(
+		PosInt
+	);
+use Types::Standard -types;
 
 #########1 SubType Library    3#########4#########5#########6#########7#########8#########9
 
-subtype posInt, as Int,
+declare PosInt, as Int,
     where{ $_ >= 0 },
     message{ "$_ is not a positive integer" };
 
@@ -19,8 +21,6 @@ subtype posInt, as Int,
 
 
 #########1 Phinish strong     3#########4#########5#########6#########7#########8#########9
-
-no Moose::Role;
 
 1;
 # The preceding line will help the module return a true value

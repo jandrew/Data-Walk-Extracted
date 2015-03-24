@@ -1,6 +1,20 @@
-=head1 Data::Walk::Extracted
+=pod
 
-An extracted dataref walker
+=head1 NAME
+
+Data::Walk::Extracted - An extracted dataref walker
+
+=begin html
+
+<a href="https://travis-ci.org/jandrew/Data-Walk-Extracted"><img alt="Build Status" src="https://travis-ci.org/jandrew/Data-Walk-Extracted.png?branch=master" alt='Travis Build'/></a>
+
+<a href="https://img.shields.io/badge"><img src="https://img.shields.io/badge/perl-5.10+-brightgreen.svg" alt="perl version"></a>
+
+<a href='https://coveralls.io/r/jandrew/Data-Walk-Extracted?branch=master'><img src='https://coveralls.io/repos/jandrew/Data-Walk-Extracted/badge.svg?branch=master' alt='Coverage Status' /></a>
+
+<a href='http://cpants.cpanauthors.org/dist/Data-Walk-Extracted'><img src='http://cpants.cpanauthors.org/dist/Data-Walk-Extracted.png' alt='kwalitee' height="19"/></a>
+
+=end html
 
 =head1 SYNOPSIS
 
@@ -1075,6 +1089,38 @@ available in this module '###',  '####', and '#####'.
 
 =back
 
+=head1 Build/Install from Source
+	
+B<1.> Download a compressed file with the code
+	
+B<2.> Extract the code from the compressed file.  If you are using tar this should work:
+
+        tar -zxvf DateTimeX-Format-Excel-v1.xx.tar.gz
+
+B<3.> Change (cd) into the extracted directory
+
+B<4.> Run the following commands
+
+=over
+
+(For Windows find what version of make was used to compile your perl)
+
+	perl  -V:make
+
+(then for Windows substitute the correct make function (s/make/dmake/g)?)
+	
+=back
+
+	>perl Makefile.PL
+
+	>make
+
+	>make test
+
+	>make install # As sudo/root
+
+	>make clean
+
 =head1 SUPPORT
 
 =over
@@ -1175,28 +1221,4 @@ L<Data::Walk::Clone|https://metacpan.org/module/Data::Walk::Clone> - available D
 
 =back
 
-=head1 Install from Source
-
-(for example git)
-
-=over
-
-B<1.> Download a compressed file with the code
-	
-B<2.> Extract the code from the compressed file
-
-B<3.> cd into the extracted directory
-
-=back
-
-(For Windows find what version of make was used to compile your perl)
-
-	perl  -V:make
-
-Then (modifying make based on the previous step)
-
-	perl Makefile.PL
-	make
-	make test
-	make install
-	make clean
+=cut

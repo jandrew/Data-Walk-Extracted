@@ -1,17 +1,17 @@
 package Data::Walk::Graft;
+use version; our $VERSION = qv("v0.26.4");
 use Moose::Role;
 requires 
 	'_process_the_data',
 	'_dispatch_method',
 	'_build_branch';
-use MooseX::Types::Moose qw(
-        HashRef
-        ArrayRef
-        Bool
-        Ref
-        Item
-    );######<---------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.024.004');
+use	Types::Standard qw(
+		Bool
+		ArrayRef
+		is_ArrayRef
+		HashRef
+		is_HashRef
+	);
 use Carp qw( cluck );
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;

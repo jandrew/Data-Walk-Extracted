@@ -4,13 +4,15 @@
 use Test::Most;
 use Test::Moose;
 use MooseX::ShortCut::BuildInstance 0.008 qw( build_instance );
-use lib '../lib', 'lib';
-use Data::Walk::Extracted::Dispatch 0.024;
-use Data::Walk::Extracted 0.024;
-use Data::Walk::Print 0.024;
-use Data::Walk::Prune 0.024;
-use Data::Walk::Clone 0.024;
-use Data::Walk::Graft 0.024;
+use lib	
+		'../../../lib',
+		'../../lib';
+use Data::Walk::Extracted::Dispatch 0.026;
+use Data::Walk::Extracted 0.026;
+use Data::Walk::Print 0.026;
+use Data::Walk::Prune 0.026;
+use Data::Walk::Clone 0.026;
+use Data::Walk::Graft 0.026;
 
 my  ( 
 			$wait,

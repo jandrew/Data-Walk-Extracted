@@ -3,9 +3,11 @@
 use Test::Most;
 use Test::Moose;
 use MooseX::ShortCut::BuildInstance 0.008 qw( build_instance );
-use lib '../lib', 'lib';
-use Data::Walk::Extracted 0.024;
-use Data::Walk::Clone 0.024;
+use lib	
+		'../../../lib',
+		'../../lib';
+use Data::Walk::Extracted 0.026;
+use Data::Walk::Clone 0.026;
 use Smart::Comments -ENV;
 ### Smart-Comments turned on for 005-Data-Walk-Clone.t ...
 

@@ -1,27 +1,33 @@
 package Data::Walk::Extracted;
-use 5.010;
-use Moose;
-use MooseX::StrictConstructor;
-use Class::Inspector;
-use Scalar::Util qw( reftype );
-use version; our $VERSION = qv('0.024.004');
-use Carp qw( confess );
-use MooseX::Types::Moose qw(
-        ArrayRef
-        HashRef
-        Object
-        CodeRef
-        Str
-        Int
-        Bool
-    );
+use	version 0.77; our $VERSION = qv("v0.26.4");
+use	5.010;
+use	Moose;
+use	MooseX::StrictConstructor;
+use	MooseX::HasDefaults::RO;
+use	Class::Inspector;
+use	Scalar::Util qw( reftype );
+use	Carp qw( confess );
+use	Types::Standard qw(
+		Str
+		is_Str
+		ArrayRef
+		is_ArrayRef
+		HashRef
+		is_HashRef
+		Int
+		Bool
+		CodeRef
+		is_CodeRef
+		Object
+		is_Object
+	);
 if( $ENV{ Smart_Comments } ){
-	use Smart::Comments -ENV;
+	use	Smart::Comments -ENV;
 	### Smart-Comments turned on for Data-Walk-Extracted ...
 }
-use lib '../../../lib';
-use Data::Walk::Extracted::Types 0.024 qw(
-		posInt
+use	lib '../../../lib';
+use	Data::Walk::Extracted::Types 0.024 qw(
+		PosInt
 	);
 with 'Data::Walk::Extracted::Dispatch' =>{ -VERSION => 0.024 };
 
@@ -275,7 +281,7 @@ has 'fixed_primary' =>(
 
 has '_current_level' =>(
 	is			=> 'ro',
-	isa			=> posInt,
+	isa			=> PosInt,
 	default		=> 0,
 	writer		=> '_set_current_level',
 	reader		=> '_get_current_level',
@@ -916,6 +922,18 @@ __END__
 =head1 NAME
 
 Data::Walk::Extracted - An extracted dataref walker
+
+=begin html
+
+<a href="https://travis-ci.org/jandrew/Data-Walk-Extracted"><img alt="Build Status" src="https://travis-ci.org/jandrew/Data-Walk-Extracted.png?branch=master" alt='Travis Build'/></a>
+
+<a href="https://img.shields.io/badge"><img src="https://img.shields.io/badge/perl-5.10+-brightgreen.svg" alt="perl version"></a>
+
+<a href='https://coveralls.io/r/jandrew/Data-Walk-Extracted?branch=master'><img src='https://coveralls.io/repos/jandrew/Data-Walk-Extracted/badge.svg?branch=master' alt='Coverage Status' /></a>
+
+<a href='http://cpants.cpanauthors.org/dist/Data-Walk-Extracted'><img src='http://cpants.cpanauthors.org/dist/Data-Walk-Extracted.png' alt='kwalitee' height="19"/></a>
+
+=end html
 
 =head1 SYNOPSIS
 
@@ -1989,6 +2007,38 @@ block will load and turn on smart comment reporting.  There are three levels of 
 available in this module '###',  '####', and '#####'.
 
 =back
+
+=head1 Build/Install from Source
+	
+B<1.> Download a compressed file with the code
+	
+B<2.> Extract the code from the compressed file.  If you are using tar this should work:
+
+        tar -zxvf DateTimeX-Format-Excel-v1.xx.tar.gz
+
+B<3.> Change (cd) into the extracted directory
+
+B<4.> Run the following commands
+
+=over
+
+(For Windows find what version of make was used to compile your perl)
+
+	perl  -V:make
+
+(then for Windows substitute the correct make function (s/make/dmake/g)?)
+	
+=back
+
+	>perl Makefile.PL
+
+	>make
+
+	>make test
+
+	>make install # As sudo/root
+
+	>make clean
 
 =head1 SUPPORT
 

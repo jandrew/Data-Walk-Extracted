@@ -1,19 +1,17 @@
 package Data::Walk::Print;
-use version; our $VERSION = qv('0.024.004');
+use version; our $VERSION = qv("v0.26.4");
 
 use Moose::Role;
 requires 
 	'_get_had_secondary', 
 	'_process_the_data',
 	'_dispatch_method';
-use MooseX::Types::Moose qw(
-        HashRef
-        ArrayRef
-        Bool
-        Str
-        Ref
-		Num
-    );######<---------------------------------------------------------  ADD New types here
+use	Types::Standard qw(
+		Str
+		Bool
+		is_HashRef
+		is_Num
+	);
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;
 	### Smart-Comments turned on for Data-Walk-Print ...

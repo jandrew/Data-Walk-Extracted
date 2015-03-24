@@ -1,17 +1,12 @@
 package Data::Walk::Prune;
+use version; our $VERSION = qv("v0.26.4");
 
 use Moose::Role;
 requires 
 	'_process_the_data', 
 	'_dispatch_method', 
 	'_build_branch';
-use MooseX::Types::Moose qw(
-        HashRef
-        ArrayRef
-        Bool
-        Item
-    );######<---------------------------------------------------------  ADD New types here
-use version; our $VERSION = qv('0.024.004');
+use	Types::Standard -types;
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;
 	### Smart-Comments turned on for Data-Walk-Prune ...

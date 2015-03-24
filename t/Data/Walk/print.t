@@ -10,9 +10,11 @@ use Capture::Tiny 0.12 qw(
 	capture_stdout 
 );
 use MooseX::ShortCut::BuildInstance 0.008;
-use lib '../lib', 'lib';
-use Data::Walk::Extracted 0.024;
-use Data::Walk::Print 0.024;
+use lib	
+		'../../../lib',
+		'../../lib';
+use Data::Walk::Extracted 0.026;
+use Data::Walk::Print 0.026;
 if( $ENV{ Smart_Comments } ){
 	use Smart::Comments -ENV;#'###'
 	### Smart-Comments turned on for the Data-Walk-Print test ...
