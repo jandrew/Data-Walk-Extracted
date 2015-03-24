@@ -21,10 +21,11 @@ my	$args ={
 	};
 ### <where> - args: $args
 my	@tests =(
-		[  $dir . 'Data/walk/print.t', 	'print_test' ],
-		[  $dir . 'Data/walk/prune.t', 	'prune_test' ],
-		[  $dir . 'Data/walk/clone.t', 	'clone_test' ],
-		[  $dir . 'Data/walk/graft.t', 	'graft_test' ],
+		[  $dir . 'Data/Walk/print.t', 	'print_test' ],
+		[  $dir . 'Data/Walk/prune.t', 	'prune_test' ],
+		[  $dir . 'Data/Walk/clone.t', 	'clone_test' ],
+		[  $dir . 'Data/Walk/graft.t', 	'graft_test' ],
+		[  $dir . 'Data/Walk/all.t', 	'master_test' ],
 	);
 use	TAP::Harness;
 my	$harness = TAP::Harness->new( $args );

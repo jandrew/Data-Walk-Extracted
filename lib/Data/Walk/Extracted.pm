@@ -931,7 +931,7 @@ Data::Walk::Extracted - An extracted dataref walker
 
 <a href='https://coveralls.io/r/jandrew/Data-Walk-Extracted?branch=master'><img src='https://coveralls.io/repos/jandrew/Data-Walk-Extracted/badge.svg?branch=master' alt='Coverage Status' /></a>
 
-<a href='http://cpants.cpanauthors.org/dist/Data-Walk-Extracted'><img src='http://cpants.cpanauthors.org/dist/Data-Walk-Extracted.png' alt='kwalitee' height="19"/></a>
+<a href='http://cpants.cpanauthors.org/dist/Data-Walk-Extracted'><img src='http://cpants.cpanauthors.org/dist/Data-Walk-Extracted.png' alt='kwalitee' height="20"/></a>
 
 =end html
 
