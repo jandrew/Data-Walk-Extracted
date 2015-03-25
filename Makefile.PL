@@ -43,13 +43,12 @@ my %WriteMakefileArgs = (
     "MooseX::ShortCut::BuildInstance" => "0.008",
     "MooseX::Types::Moose" => 0,
     "Test::Moose" => 0,
-    "Test::More" => 0,
     "Test::Most" => 0,
     "YAML::Any" => 0
   },
-  "VERSION" => "v0.26.4",
+  "VERSION" => "v0.26.6",
   "test" => {
-    "TESTS" => "t/*.t t/Data/Walk/*.t"
+    "TESTS" => "t/Data/Walk/*.t"
   }
 );
 
@@ -68,7 +67,6 @@ my %FallbackPrereqs = (
   "Scalar::Util" => 0,
   "Smart::Comments" => 0,
   "Test::Moose" => 0,
-  "Test::More" => 0,
   "Test::Most" => 0,
   "Type::Library" => 0,
   "Type::Utils" => 0,

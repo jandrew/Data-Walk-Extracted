@@ -1,5 +1,5 @@
 package Data::Walk::Prune;
-use version; our $VERSION = qv("v0.26.4");
+use version; our $VERSION = qv("v0.26.6");
 
 use Moose::Role;
 requires 

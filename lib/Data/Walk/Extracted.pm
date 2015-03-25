@@ -1,5 +1,5 @@
 package Data::Walk::Extracted;
-use	version 0.77; our $VERSION = qv("v0.26.4");
+use	version 0.77; our $VERSION = qv("v0.26.6");
 use	5.010;
 use	Moose;
 use	MooseX::StrictConstructor;
@@ -927,7 +927,7 @@ Data::Walk::Extracted - An extracted dataref walker
 
 <a href="https://travis-ci.org/jandrew/Data-Walk-Extracted"><img alt="Build Status" src="https://travis-ci.org/jandrew/Data-Walk-Extracted.png?branch=master" alt='Travis Build'/></a>
 
-<a href="https://img.shields.io/badge"><img src="https://img.shields.io/badge/perl-5.10+-brightgreen.svg" alt="perl version"></a>
+<a href="https://www.perl.org"><img src="https://img.shields.io/badge/perl-5.10+-brightgreen.svg" alt="perl version"></a>
 
 <a href='https://coveralls.io/r/jandrew/Data-Walk-Extracted?branch=master'><img src='https://coveralls.io/repos/jandrew/Data-Walk-Extracted/badge.svg?branch=master' alt='Coverage Status' /></a>
 
