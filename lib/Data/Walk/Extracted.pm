@@ -1,5 +1,5 @@
 package Data::Walk::Extracted;
-use	version 0.77; our $VERSION = qv("v0.26.6");
+use	version 0.77; our $VERSION = qv("v0.26.8");
 use	5.010;
 use	Moose;
 use	MooseX::StrictConstructor;

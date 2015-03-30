@@ -144,7 +144,7 @@ my			$answer_ref = [
 					"\tSomeotherkey => 'value',", "},"
 				],
 				[
-					"{", '\tHelping => ARRAY\(0x.{7,25}\),', 
+					"{", '\tHelping => ARRAY\(0x.{5,25}\),', 
 					"\tParsing => {", "\t\tHashRef => {", "\t\t\tLOGGER => {",
 					"\t\t\t\trun => 'INFO',", "\t\t\t},", "\t\t},", "\t},",
 					"\tSomeotherkey => 'value',", "},"
