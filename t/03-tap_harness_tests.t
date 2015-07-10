@@ -21,6 +21,8 @@ my	$args ={
 	};
 ### <where> - args: $args
 my	@tests =(
+		[  $dir . '01-load.t', 			'load_test' ],
+		[  $dir . '02-pod.t',				'pod_test' ],
 		[  $dir . 'Data/Walk/print.t', 	'print_test' ],
 		[  $dir . 'Data/Walk/prune.t', 	'prune_test' ],
 		[  $dir . 'Data/Walk/clone.t', 	'clone_test' ],

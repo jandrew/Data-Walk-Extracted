@@ -1,0 +1,11 @@
+^t/01-load.t
+^t/02-pod.t
+^t/03-tap_harness_tests.t
+^DevelopmentNotes.txt
+^MANIFEST.SKIP
+^.gitignore
+^.git
+^.build
+^MYMETA
+^Data-Walk-Extracted.*
+^.travis.yml

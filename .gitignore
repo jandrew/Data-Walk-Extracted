@@ -1,0 +1,16 @@
+#gitignore file
+.build/
+Data-Walk-Extracted*/
+*.tar.gz
+DevelopmentNotes.txt
+Makefile.old
+Diff.pm
+Substitute.pm
+Top.pm
+Trim.pm
+Thin.pm
+007-Data-Walk-Diff.t
+008-Data-Walk-Substitute.t
+009-Data-Walk-Exists.t
+Data-Walk-Diff-example.pl
+Data-Walk-Extracted-example.pl

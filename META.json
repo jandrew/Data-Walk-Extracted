@@ -4,7 +4,7 @@
       "Jed Lund <jandrew@cpan.org>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Dist::Zilla version 5.015, CPAN::Meta::Converter version 2.143240",
+   "generated_by" : "Dist::Zilla version 5.035, CPAN::Meta::Converter version 2.143240",
    "license" : [
       "perl_5"
    ],
@@ -16,7 +16,7 @@
    "prereqs" : {
       "configure" : {
          "requires" : {
-            "ExtUtils::MakeMaker" : "6.30"
+            "ExtUtils::MakeMaker" : "0"
          }
       },
       "runtime" : {
@@ -54,31 +54,31 @@
    "provides" : {
       "Data::Walk::Clone" : {
          "file" : "lib/Data/Walk/Clone.pm",
-         "version" : "v0.26.8"
+         "version" : "v0.26.10"
       },
       "Data::Walk::Extracted" : {
          "file" : "lib/Data/Walk/Extracted.pm",
-         "version" : "v0.26.8"
+         "version" : "v0.26.10"
       },
       "Data::Walk::Extracted::Dispatch" : {
          "file" : "lib/Data/Walk/Extracted/Dispatch.pm",
-         "version" : "v0.26.8"
+         "version" : "v0.26.10"
       },
       "Data::Walk::Extracted::Types" : {
          "file" : "lib/Data/Walk/Extracted/Types.pm",
-         "version" : "v0.26.8"
+         "version" : "v0.26.10"
       },
       "Data::Walk::Graft" : {
          "file" : "lib/Data/Walk/Graft.pm",
-         "version" : "v0.26.8"
+         "version" : "v0.26.10"
       },
       "Data::Walk::Print" : {
          "file" : "lib/Data/Walk/Print.pm",
-         "version" : "v0.26.8"
+         "version" : "v0.26.10"
       },
       "Data::Walk::Prune" : {
          "file" : "lib/Data/Walk/Prune.pm",
-         "version" : "v0.26.8"
+         "version" : "v0.26.10"
       }
    },
    "release_status" : "stable",
@@ -93,7 +93,7 @@
          "web" : "https://github.com/jandrew/Data-Walk-Extracted"
       }
    },
-   "version" : "v0.26.8",
+   "version" : "v0.26.10",
    "x_authority" : "cpan:JANDREW"
 }
 
