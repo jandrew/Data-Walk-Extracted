@@ -1,5 +1,5 @@
 package Data::Walk::Extracted::Types;
-use version; our $VERSION = qv("v0.26.8");
+use version; our $VERSION = version->declare('v0.26.10');
 use strict;
 use warnings;
 use Type::Utils -all;

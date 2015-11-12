@@ -3,21 +3,21 @@ abstract: 'An extracted dataref walker'
 author:
   - 'Jed Lund <jandrew@cpan.org>'
 build_requires:
-  Capture::Tiny: 0.12
-  Moose::Util: 0
-  MooseX::ShortCut::BuildInstance: 0.008
-  MooseX::Types::Moose: 0
-  Test::Moose: 0
-  Test::Most: 0
-  YAML::Any: 0
+  Capture::Tiny: '0.12'
+  Moose::Util: '0'
+  MooseX::ShortCut::BuildInstance: '0.008'
+  MooseX::Types::Moose: '0'
+  Test::Moose: '0'
+  Test::Most: '0'
+  YAML::Any: '0'
 configure_requires:
-  ExtUtils::MakeMaker: 0
+  ExtUtils::MakeMaker: '0'
 dynamic_config: 0
-generated_by: 'Dist::Zilla version 5.035, CPAN::Meta::Converter version 2.143240'
+generated_by: 'Dist::Zilla version 5.037, CPAN::Meta::Converter version 2.150001'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
-  version: 1.4
+  version: '1.4'
 name: Data-Walk-Extracted
 provides:
   Data::Walk::Clone:
@@ -42,22 +42,22 @@ provides:
     file: lib/Data/Walk/Prune.pm
     version: v0.26.10
 requires:
-  Carp: 0
-  Class::Inspector: 0
-  Moose: 0
-  Moose::Role: 0
-  MooseX::HasDefaults::RO: 0
-  MooseX::StrictConstructor: 0
-  Scalar::Util: 0
-  Smart::Comments: 0
-  Type::Library: 0
-  Type::Utils: 0
-  Types::Standard: 0
-  lib: 0
-  perl: 5.010
-  strict: 0
-  version: 0.77
-  warnings: 0
+  Carp: '0'
+  Class::Inspector: '0'
+  Moose: '0'
+  Moose::Role: '0'
+  MooseX::HasDefaults::RO: '0'
+  MooseX::StrictConstructor: '0'
+  Scalar::Util: '0'
+  Smart::Comments: '0'
+  Type::Library: '0'
+  Type::Utils: '0'
+  Types::Standard: '0'
+  lib: '0'
+  perl: '5.010'
+  strict: '0'
+  version: '0.77'
+  warnings: '0'
 resources:
   bugtracker: https://github.com/jandrew/Data-Walk-Extracted/issues
   homepage: https://github.com/jandrew/Data-Walk-Extracted

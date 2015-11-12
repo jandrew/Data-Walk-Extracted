@@ -145,7 +145,7 @@ my			$answer_ref = [
 				],
 				[
 					"{", '\tHelping => ARRAY\(0x.{5,25}\),', 
-					"\tParsing => {", "\t\tHashRef => {", "\t\t\tLOGGER => {",
+					"\tParsing => \{", "\t\tHashRef => \{", "\t\t\tLOGGER => \{",
 					"\t\t\t\trun => 'INFO',", "\t\t\t},", "\t\t},", "\t},",
 					"\tSomeotherkey => 'value',", "},"
 				],
@@ -343,6 +343,9 @@ lives_ok{
 			@answer = split "\n", $capture;
 ### <where> - checking the answers for test: $test_case
 map{
+#~ explain		$answer[$x];
+			s/(?<!\.)\{/\\\{/g;
+#~ explain		$_;
 like		$answer[$x], qr/$_/,			'Test matching line -' . (1 + $x++) . "- of the output for test: $test_case";
 }			@{$answer_ref->[$test_case]};
 			$test_case++;
