@@ -9,7 +9,7 @@ Revision history for Data-Walk-Extracted
 {{$NEXT}}
 
 	! Rolled the version again to handle the duplicate version release
-
+	
 v0.26.10  2016-05-31 17:47:47-07:00 America/Los_Angeles
 
 	+ Update travis.yml to build and test against 5.22 as well
