@@ -1,4 +1,4 @@
-#!perl
+#!/usr/bin/env perl
 #~ use Smart::Comments '###';
 my	$dir 	= './';
 my	$up		= '../';
@@ -12,7 +12,7 @@ for my $next ( <*> ){
 }
 ### <where> - dir is: $dir
 ### <where> - up is: $up
-		
+
 my	$args ={
 		#~ verbosity => 1,
 		lib =>[
