@@ -7,19 +7,22 @@ Revision history for Data-Walk-Extracted
 	* Place holder
 
 {{$NEXT}}
-	
-	* Another cool change
 
-v0.26.10  2015-11-12 13:59:09-08:00 America/Los_Angeles
-	
+	+ Changed the github reported version to pull from sheilds.io github tags
+	! bumped the minimum Moose requirement to 2.1803
+		https://github.com/jandrew/Data-Walk-Extracted/issues/2
+		closes issue #2 in github
+
+v0.26.10  2015-11-12 17:40:46-08:00 America/Los_Angeles
+
 	+ Fixed depricated regex matching in the print.t test
-	+ Changed the way the version is labled
-	+ Added additional badges for user assesment
+	+ Changed the way the version is labeled
+	+ Added additional badges for user assessment
 
 v0.26.8   2015-03-30 07:16:37-07:00 America/Los_Angeles
 
 	! Fixed a test fail for regex mismatch in print.t
-	
+
 v0.26.6   2015-03-24 17:48:11-07:00 America/Los_Angeles
 
 	+ Fixed a broken 03-tap_harness_tests.t for the Travis builds
@@ -116,19 +119,19 @@ v0.015_005 2012-08-29 12:05:41 America/Los_Angeles
 
 v0.015_003 2012-08-28 17:22:53 America/Los_Angeles
 
-	changed the _extracted_ref_type to use hash key lookups rather than if then statements.  
-	This isn't really a standard disptach table since the ref type hasn't been determined 
+	changed the _extracted_ref_type to use hash key lookups rather than if then statements.
+	This isn't really a standard disptach table since the ref type hasn't been determined
 	yet.
 
-	Added multilayer support to one-shot attributes.  This allows the one shot attribute to stay 
-	in force for complete method call from a Role if the role makes a nested walking call to 
+	Added multilayer support to one-shot attributes.  This allows the one shot attribute to stay
+	in force for complete method call from a Role if the role makes a nested walking call to
 	another Role.
 
 	Another re-write of the guts of Data::Walk::Extracted to untangle the path of recursion.
 
 	The re-write of Data::Walk::Extracted includes the addition of a "Zeroth" branch_ref element.
 
-	The re-write of Data::Walk::Extracted prompted the addition of some dispatch tables to 
+	The re-write of Data::Walk::Extracted prompted the addition of some dispatch tables to
 	Data::Walk::Print.
 
 	Added a DEFAULT failover to the dispatch method choices
@@ -145,28 +148,28 @@ v0.011_001 2012-07-09 14:14:53 America/Los_Angeles
 
 	Changes includes additions to use this package in Log::Shiras
 
-	Added a method for tracking actual subtractions 
-	in the prune_data method.  This includes a 'remember_prune_items' attribute 
-	and a 'get_pruned_positions' method.  See the POD for Data::Walk::Prune for 
+	Added a method for tracking actual subtractions
+	in the prune_data method.  This includes a 'remember_prune_items' attribute
+	and a 'get_pruned_positions' method.  See the POD for Data::Walk::Prune for
 	more details.
 
-	Added another role Data::Walk::Clone to allow for targeted cloning of data 
+	Added another role Data::Walk::Clone to allow for targeted cloning of data
 	structures.
 
-	moved the _dispatch_method to Data::Walk::Extracted so that dispatch tables by 
+	moved the _dispatch_method to Data::Walk::Extracted so that dispatch tables by
 	Role could be added without duplicating that code.
 
-	Changed the graft_data function to clone the reference and allow for clone 
+	Changed the graft_data function to clone the reference and allow for clone
 	definition (Using Data::Walk::Clone)
 
-	built in a 'Single shot settings' processor of attributes passed in the method call for 
-	the _process_the_data method in Data::Walk::Extracted.  This will allow for possible 
+	built in a 'Single shot settings' processor of attributes passed in the method call for
+	the _process_the_data method in Data::Walk::Extracted.  This will allow for possible
 	attribute calls in the method that will only affect that one pass of the method call.
 
 	Added graft memory like the prune memory
 
-	created the private method _build_branch in Data::Walk::Extracted to build the branch 
-	to the current branchref point if requested.   This is used by Data::Walk::Graft and 
+	created the private method _build_branch in Data::Walk::Extracted to build the branch
+	to the current branchref point if requested.   This is used by Data::Walk::Graft and
 	Data::Walk::Prune
 
 	Refactored Data::Walk::Extracted to use dispatch tables
@@ -177,29 +180,29 @@ v0.011_001 2012-07-09 14:14:53 America/Los_Angeles
 
 v0.007_005 2012-05-17 08:24:20 America/Los_Angeles
 
-	Updated the POD to be consistent.  
+	Updated the POD to be consistent.
 
 	Switched testing from Test::And::Ouput to use Capture::Tiny.
 
 v0.007_001 2012-04-19 08:46:23 America/Los_Angeles
 
-	Reworked the guts to allow multiple Rolls to be added to the same base class .  
-	This is a major re-write to the ::Extracted class interface to support this but 
-	only a minor changes to the Role interfaces.  Among other changes the ::Extracted 
-	class does not add a default role anymore.  The ::Extracted class no longer has 
-	public method for processing data either.  Additionally the MooseX::StrictConstructor 
+	Reworked the guts to allow multiple Rolls to be added to the same base class .
+	This is a major re-write to the ::Extracted class interface to support this but
+	only a minor changes to the Role interfaces.  Among other changes the ::Extracted
+	class does not add a default role anymore.  The ::Extracted class no longer has
+	public method for processing data either.  Additionally the MooseX::StrictConstructor
 	(Module/Pragma) was added to the class.
 
 	Data::Walk::Graft is added to the package
 
 	Testing for Data::Walk::Print is switched from Test::Output to Test::And::Output.
-	
+
 v0.05_07  2012-04-04 11:34:36 America/Los_Angeles
 
-	Removed YAML from the test files since it was an 
+	Removed YAML from the test files since it was an
 	unnessesary dependancy that caused test fails.
 
-	Also updated some links in the POD and included 
+	Also updated some links in the POD and included
 	Data::ModeMerge in the See Also section
 
 v0.05_03  2012-04-03 13:54:29 America/Los_Angeles
