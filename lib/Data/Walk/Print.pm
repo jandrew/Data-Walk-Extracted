@@ -1,5 +1,5 @@
 package Data::Walk::Print;
-use version; our $VERSION = version->declare('v0.26.14');
+use version; our $VERSION = version->declare('v0.26.16');
 
 use Moose::Role;
 requires

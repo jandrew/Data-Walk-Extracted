@@ -1,5 +1,5 @@
 package Data::Walk::Extracted;
-use	version 0.77; our $VERSION = version->declare('v0.26.14');
+use	version 0.77; our $VERSION = version->declare('v0.26.16');
 use	5.010;
 use	Moose 2.1803;
 use	MooseX::StrictConstructor;
@@ -8,18 +8,9 @@ use	Class::Inspector;
 use	Scalar::Util qw( reftype );
 use	Carp qw( confess );
 use	Types::Standard qw(
-		Str
-		is_Str
-		ArrayRef
-		is_ArrayRef
-		HashRef
-		is_HashRef
-		Int
-		Bool
-		CodeRef
-		is_CodeRef
-		Object
-		is_Object
+		Str							is_Str					ArrayRef				is_ArrayRef
+		HashRef					is_HashRef			Int							Bool
+		CodeRef					is_CodeRef			Object					is_Object
 	);
 if( $ENV{ Smart_Comments } ){
 	use	Smart::Comments -ENV;
@@ -29,7 +20,7 @@ use	lib '../../../lib';
 use	Data::Walk::Extracted::Types 0.024 qw(
 		PosInt
 	);
-with 'Data::Walk::Extracted::Dispatch' =>{ -VERSION => 0.024 };
+with 'Data::Walk::Extracted::Dispatch' =>{ -VERSION => 0.026 };
 
 #########1 Package Variables  3#########4#########5#########6#########7#########8#########9
 
@@ -2030,7 +2021,7 @@ B<1.> Download a compressed file with the code
 
 B<2.> Extract the code from the compressed file.  If you are using tar this should work:
 
-        tar -zxvf DateTimeX-Format-Excel-v1.xx.tar.gz
+        tar -zxvf Data-Walk-Extracted-v0.xx.xx.tar.gz
 
 B<3.> Change (cd) into the extracted directory
 
@@ -2042,7 +2033,7 @@ B<4.> Run the following commands
 
 	perl  -V:make
 
-(then for Windows substitute the correct make function (s/make/dmake/g)?)
+(then for Windows substitute the correct make function (ex. s/make/dmake/g))
 
 =back
 

@@ -1111,7 +1111,7 @@ B<1.> Download a compressed file with the code
 
 B<2.> Extract the code from the compressed file.  If you are using tar this should work:
 
-        tar -zxvf DateTimeX-Format-Excel-v1.xx.tar.gz
+        tar -zxvf Data-Walk-Extracted-v0.xx.xx.tar.gz
 
 B<3.> Change (cd) into the extracted directory
 
@@ -1123,7 +1123,7 @@ B<4.> Run the following commands
 
 	perl  -V:make
 
-(then for Windows substitute the correct make function (s/make/dmake/g)?)
+(then for Windows substitute the correct make function (ex. s/make/dmake/g))
 
 =back
 

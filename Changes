@@ -10,6 +10,11 @@ Revision history for Data-Walk-Extracted
 
 	* Another cool change
 
+v0.26.16  2016-06-01 15:16:04-07:00 America/Los_Angeles
+
+	! Updated the contributors section
+	+ Added installation instructions
+
 v0.26.14  2016-05-31 18:42:08-07:00 America/Los_Angeles
 
 	! Really bump the Moose requirement to 2.1803 this time
