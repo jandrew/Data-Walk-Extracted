@@ -19,7 +19,7 @@ my %WriteMakefileArgs = (
   "PREREQ_PM" => {
     "Carp" => 0,
     "Class::Inspector" => 0,
-    "Moose" => 0,
+    "Moose" => "2.1803",
     "Moose::Role" => 0,
     "MooseX::HasDefaults::RO" => 0,
     "MooseX::StrictConstructor" => 0,
@@ -42,7 +42,7 @@ my %WriteMakefileArgs = (
     "Test::Most" => 0,
     "YAML::Any" => 0
   },
-  "VERSION" => "v0.26.12",
+  "VERSION" => "v0.26.14",
   "test" => {
     "TESTS" => "t/Data/Walk/*.t"
   }
@@ -53,7 +53,7 @@ my %FallbackPrereqs = (
   "Capture::Tiny" => "0.12",
   "Carp" => 0,
   "Class::Inspector" => 0,
-  "Moose" => 0,
+  "Moose" => "2.1803",
   "Moose::Role" => 0,
   "Moose::Util" => 0,
   "MooseX::HasDefaults::RO" => 0,

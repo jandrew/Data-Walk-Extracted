@@ -1,7 +1,7 @@
 package Data::Walk::Extracted;
-use	version 0.77; our $VERSION = version->declare('v0.26.12');
+use	version 0.77; our $VERSION = version->declare('v0.26.14');
 use	5.010;
-use	Moose;
+use	Moose 2.1803;
 use	MooseX::StrictConstructor;
 use	MooseX::HasDefaults::RO;
 use	Class::Inspector;

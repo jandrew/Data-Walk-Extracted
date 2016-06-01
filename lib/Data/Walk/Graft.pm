@@ -1,5 +1,5 @@
 package Data::Walk::Graft;
-use version; our $VERSION = version->declare('v0.26.12');
+use version; our $VERSION = version->declare('v0.26.14');
 use Moose::Role;
 requires
 	'_process_the_data',
