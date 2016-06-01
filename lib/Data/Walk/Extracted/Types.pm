@@ -1,5 +1,5 @@
 package Data::Walk::Extracted::Types;
-use version; our $VERSION = version->declare('v0.26.10');
+use version; our $VERSION = version->declare('v0.26.12');
 use strict;
 use warnings;
 use Type::Utils -all;
@@ -34,7 +34,7 @@ __END__
 Data::Walk::Extracted::Types - A type library for Data::Walk::Extracted
 
 =head1 SYNOPSIS
-    
+
     package Data::Walk::Extracted::MyRole;
 	use Moose::Role;
 	use Data::Walk::Extracted::Types qw(
@@ -43,11 +43,11 @@ Data::Walk::Extracted::Types - A type library for Data::Walk::Extracted
     use Log::Shiras::Types qw(
         posInt #See Code for other options
     );
-    
+
     has 'someattribute' =>(
             isa     => posInt,#Note the lack of quotes
         );
-    
+
     sub valuetestmethod{
         my ( $self, $value ) = @_;
         return is_posInt( $value );
@@ -60,15 +60,15 @@ Data::Walk::Extracted::Types - A type library for Data::Walk::Extracted
 =head1 DESCRIPTION
 
 This is the custom type class that ships with the L<Data::Walk::Extracted
-|https://metacpan.org/module/Data::Walk::Extracted> package.  Wherever 
-possible errors to coersions are passed back to the type so coersion failure 
+|https://metacpan.org/module/Data::Walk::Extracted> package.  Wherever
+possible errors to coersions are passed back to the type so coersion failure
 will be explained.
 
-There are only subtypes in this package!  B<WARNING> These types should be 
-considered in a beta state.  Future type fixing will be done with a set of tests in 
+There are only subtypes in this package!  B<WARNING> These types should be
+considered in a beta state.  Future type fixing will be done with a set of tests in
 the test suit of this package.  (currently none are implemented)
 
-See L<MooseX::Types|https://metacpan.org/module/MooseX::Types> for general re-use 
+See L<MooseX::Types|https://metacpan.org/module/MooseX::Types> for general re-use
 of this module.
 
 =head1 Types
@@ -101,7 +101,7 @@ L<github Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extract
 
 =over
 
-Jed Lund 
+Jed Lund
 
 jandrew@cpan.com
 

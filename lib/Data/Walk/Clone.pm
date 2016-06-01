@@ -1,9 +1,9 @@
 package Data::Walk::Clone;
-use version; our $VERSION = version->declare('v0.26.10');
+use version; our $VERSION = version->declare('v0.26.12');
 use Moose::Role;
-requires 
-	'_process_the_data', 
-	'_dispatch_method', 
+requires
+	'_process_the_data',
+	'_dispatch_method',
 	'_get_had_secondary';
 use	Types::Standard qw(
 		HashRef
@@ -43,7 +43,7 @@ my 	$seed_clone_dispatch ={######<------------------------------------  ADD New 
 			}
 			return $_[1];
 		},
-		SCALAR => sub{ 
+		SCALAR => sub{
 			$_[1]->{secondary_ref} = $_[1]->{primary_ref};
 			return $_[1];
 		},
@@ -74,15 +74,15 @@ sub deep_clone{#Used to convert names for Data::Walk:Extracted
     ### <where> - Made it to deep_clone
     ##### <where> - Passed input  : @_
     my  $self = $_[0];
-    my  $passed_ref = 
+    my  $passed_ref =
 		( @_ == 2 ) ?
-			( 	( is_HashRef( $_[1] ) and exists $_[1]->{donor_ref} ) ? 
+			( 	( is_HashRef( $_[1] ) and exists $_[1]->{donor_ref} ) ?
 					$_[1] : { donor_ref =>  $_[1] } ) :
 			{ @_[1 .. $#_] } ;
     ##### <where> - Passed hashref: $passed_ref
-	@$passed_ref{ 
+	@$passed_ref{
 		'before_method', 'after_method',
-	} = ( 
+	} = (
 		'_clone_before_method',	'_clone_after_method',
 	);
 	##### <where> - Start recursive parsing with  : $passed_ref
@@ -162,16 +162,16 @@ __END__
 Data::Walk::Clone - deep data cloning with boundaries
 
 =head1 SYNOPSIS
-    
+
 	#!perl
 	use Moose::Util qw( with_traits );
 	use Data::Walk::Extracted;
 	use Data::Walk::Clone;
 
-	my $dr_nisar_ahmad_wani = with_traits( 
-			'Data::Walk::Extracted', 
-			( 'Data::Walk::Clone',  ) 
-		)->new( 
+	my $dr_nisar_ahmad_wani = with_traits(
+			'Data::Walk::Extracted',
+			( 'Data::Walk::Clone',  )
+		)->new(
 			skip_node_tests =>[  [ 'HASH', 'LowerKey2', 'ALL',   'ALL' ] ],
 		);
 	my  $donor_ref = {
@@ -206,8 +206,8 @@ Data::Walk::Clone - deep data cloning with boundaries
 		$donor_ref->{Helping}->[1]->{MyKey}->{MiddleKey}->{LowerKey2}		){
 		print "The data is not cloned at the skip point\n";
 	}
-		
-	if( 
+
+	if(
 		$injaz_ref->{Helping}->[1]->{MyKey}->{MiddleKey} ne
 		$donor_ref->{Helping}->[1]->{MyKey}->{MiddleKey}		){
 		print "The data is cloned above the skip point\n";
@@ -221,58 +221,58 @@ Data::Walk::Clone - deep data cloning with boundaries
 
 =head1 DESCRIPTION
 
-This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> contains 
-methods for implementing the method L<deep_clone|/deep_clone( $arg_ref|%args|$data_ref )> using 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>.  
-This method is used to deep clone (clone many/all) levels of a data ref.  Deep cloning 
-is accomplished by sending a 'donor_ref' that has data nodes that you want copied into a 
-different memory location.  In general Data::Walk::Extracted already deep clones any 
-output as part of its data walking so the primary value of this role is to manage 
-deep cloning boundaries. It may be that some portion of the data should maintain common 
-memory references to the original memory references and so all of the Data::Walk::Extracted 
-skip methods will be recognized and supported.  Meaning that if a node is skipped the 
-data reference will be copied directly rather than cloned.  The deep clone boundaries 
+This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> contains
+methods for implementing the method L<deep_clone|/deep_clone( $arg_ref|%args|$data_ref )> using
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>.
+This method is used to deep clone (clone many/all) levels of a data ref.  Deep cloning
+is accomplished by sending a 'donor_ref' that has data nodes that you want copied into a
+different memory location.  In general Data::Walk::Extracted already deep clones any
+output as part of its data walking so the primary value of this role is to manage
+deep cloning boundaries. It may be that some portion of the data should maintain common
+memory references to the original memory references and so all of the Data::Walk::Extracted
+skip methods will be recognized and supported.  Meaning that if a node is skipped the
+data reference will be copied directly rather than cloned.  The deep clone boundaries
 are managed using the L<skip attributes
 |https://metacpan.org/module/Data::Walk::Extracted#skipped_nodes> in Data::Walk::Extracted.
 
 =head2 USE
 
-This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> specifically 
+This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> specifically
 designed to be used with L<Data::Walk::Extracted
-|https://metacpan.org/module/Data::Walk::Extracted#Extending-Data::Walk::Extracted>.  
+|https://metacpan.org/module/Data::Walk::Extracted#Extending-Data::Walk::Extracted>.
 It can be combined traditionaly to the ~::Extracted class using L<Moose
-|https://metacpan.org/module/Moose::Manual::Roles> methods or for information on how to join 
+|https://metacpan.org/module/Moose::Manual::Roles> methods or for information on how to join
 this role to Data::Walk::Extracted at run time see L<Moose::Util
 |https://metacpan.org/module/Moose::Util> or L<MooseX::ShortCut::BuildInstance
 |https://metacpan.org/module/MooseX::ShortCut::BuildInstance> for more information.
 
 =head1 Attributes
 
-Data passed to -E<gt>new when creating an instance.  For modification of these attributes 
-see L<Methods|/Methods>.  The -E<gt>new function will either accept fat comma lists or a 
-complete hash ref that has the possible attributes as the top keys.  Additionally 
-some attributes that have all the following methods; get_$attribute, set_$attribute, 
+Data passed to -E<gt>new when creating an instance.  For modification of these attributes
+see L<Methods|/Methods>.  The -E<gt>new function will either accept fat comma lists or a
+complete hash ref that has the possible attributes as the top keys.  Additionally
+some attributes that have all the following methods; get_$attribute, set_$attribute,
 has_$attribute, and clear_$attribute, can be passed to L<deep_clone
-|/deep_clone( $arg_ref|%args|$data_ref )> and will be adjusted for just the run of that 
-method call.  These are called 'one shot' attributes.  The class and each role (where 
+|/deep_clone( $arg_ref|%args|$data_ref )> and will be adjusted for just the run of that
+method call.  These are called 'one shot' attributes.  The class and each role (where
 applicable) in this package have a list of 'supported one shot attributes'.
 
 =head2 should_clone
 
 =over
 
-B<Definition:> There are times when the cloning needs to be turned off.  This 
+B<Definition:> There are times when the cloning needs to be turned off.  This
 is the switch.  If this is set to 0 then deep_clone just passes the doner ref back.
 
 B<Default> undefined = everything is cloned
 
 B<Range> Boolean values (0|1)
-    
+
 =back
 
 =head2 (see also)
 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted#Attributes> 
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted#Attributes>
 Attributes
 
 =head1 Methods
@@ -283,31 +283,31 @@ Attributes
 
 B<Definition:> This takes a 'donor_ref' and deep clones it.
 
-B<Accepts:> either a single data reference or named arguments 
+B<Accepts:> either a single data reference or named arguments
 in a fat comma list or hashref
 
 =over
 
-B<Hash option> - if data comes in a fat comma list or as a hash ref 
+B<Hash option> - if data comes in a fat comma list or as a hash ref
 and the keys include a 'donor_ref' key then the list is processed as such.
 
 =over
 
 B<donor_ref> - this is the data reference that should be deep cloned - required
 
-B<[attribute name]> - attribute names are accepted with temporary attribute 
-settings.  These settings are temporarily set for a single "deep_clone" call and 
-then the original attribute values are restored.  For this to work the the attribute 
+B<[attribute name]> - attribute names are accepted with temporary attribute
+settings.  These settings are temporarily set for a single "deep_clone" call and
+then the original attribute values are restored.  For this to work the the attribute
 must meet the L<necessary criteria|/Attributes>.
 
 =back
 
-B<single data reference option> - if only one data_ref is sent and it fails 
+B<single data reference option> - if only one data_ref is sent and it fails
 the test;
 
 	exists $data_ref->{donor_ref}
 
-then the program will attempt to name it as donor_ref => $data_ref and then clone 
+then the program will attempt to name it as donor_ref => $data_ref and then clone
 the whole thing.
 
 =back
@@ -320,8 +320,8 @@ B<Returns:> The deep cloned data reference
 
 =over
 
-B<Definition:> This will get the current value of the attribute 
-L<should_clone|/should_clone> 
+B<Definition:> This will get the current value of the attribute
+L<should_clone|/should_clone>
 
 B<Accepts:>  nothing
 
@@ -333,7 +333,7 @@ B<Returns:> a boolean value
 
 =over
 
-B<Definition:> This will set the attribute L<should_clone|/should_clone> 
+B<Definition:> This will set the attribute L<should_clone|/should_clone>
 
 B<Accepts:> a boolean value
 
@@ -358,7 +358,7 @@ B<Returns:> a boolean value
 
 =over
 
-B<Definition:> This will set the attribute L<should_clone|/should_clone> 
+B<Definition:> This will set the attribute L<should_clone|/should_clone>
 to one ( 1 ).  I<The name is awkward to accomodate one shot attribute changes.>
 
 B<Accepts:> nothing
@@ -387,10 +387,10 @@ B<Returns:> nothing
 
 B<$ENV{Smart_Comments}>
 
-The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if the '-ENV' 
-option is set.  The 'use' is encapsulated in an if block triggered by an environmental 
-variable to comfort non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN 
-block will load and turn on smart comment reporting.  There are three levels of 'Smartness' 
+The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if the '-ENV'
+option is set.  The 'use' is encapsulated in an if block triggered by an environmental
+variable to comfort non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN
+block will load and turn on smart comment reporting.  There are three levels of 'Smartness'
 available in this module '###',  '####', and '#####'.
 
 =back

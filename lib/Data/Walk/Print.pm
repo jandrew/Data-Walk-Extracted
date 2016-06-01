@@ -1,9 +1,9 @@
 package Data::Walk::Print;
-use version; our $VERSION = version->declare('v0.26.10');
+use version; our $VERSION = version->declare('v0.26.12');
 
 use Moose::Role;
-requires 
-	'_get_had_secondary', 
+requires
+	'_get_had_secondary',
 	'_process_the_data',
 	'_dispatch_method';
 use	Types::Standard qw(
@@ -34,10 +34,10 @@ my	$before_pre_string_dispatch ={######<-----------------------------  ADD New t
 		name => 'print - before pre string dispatch',
 		###### Receives: the current $passed_ref and the last branch_ref array
 		###### Returns: nothing
-		###### Action: adds the necessary pre string and match string 
+		###### Action: adds the necessary pre string and match string
 		######           for the currently pending position
 	};
-		
+
 
 my 	$before_method_dispatch ={######<----------------------------------  ADD New types here
 		HASH => \&_before_hash_printing,
@@ -47,7 +47,7 @@ my 	$before_method_dispatch ={######<----------------------------------  ADD New
 		name => 'print - before_method_dispatch',
 		###### Receives: the passed_ref
 		###### Returns: 1|0 if the string should be printed
-		###### Action: adds the necessary before string and match string to the currently 
+		###### Action: adds the necessary before string and match string to the currently
 		######           pending line
 	};
 
@@ -60,7 +60,7 @@ my 	$after_method_dispatch ={######<-----------------------------------  ADD New
 		name => 'print - after_method_dispatch',
 		###### Receives: the passed_ref
 		###### Returns: 1|0 if the string should be printed
-		###### Action: adds the necessary after string and match string to the currently 
+		###### Action: adds the necessary after string and match string to the currently
 		######           pending line
 	};
 
@@ -93,17 +93,17 @@ sub print_data{
     ### <where> - Made it to print
     ##### <where> - Passed input  : @_
     my  $self = $_[0];
-    my  $passed_ref = 
-            ( 	@_ == 2 and 
-                (   ( is_HashRef( $_[1] ) and 
+    my  $passed_ref =
+            ( 	@_ == 2 and
+                (   ( is_HashRef( $_[1] ) and
 					!( exists $_[1]->{print_ref} ) ) or
-				!is_HashRef( $_[1] )						) ) ? 
+				!is_HashRef( $_[1] )						) ) ?
 					{ print_ref => $_[1] }  :
-            ( 	@_ == 2 and is_HashRef( $_[1] ) ) ? 
-					$_[1] : 
+            ( 	@_ == 2 and is_HashRef( $_[1] ) ) ?
+					$_[1] :
 					{ @_[1 .. $#_] } ;
     ##### <where> - Passed hashref: $passed_ref
-    @$passed_ref{ 'before_method', 'after_method' } = 
+    @$passed_ref{ 'before_method', 'after_method' } =
         ( '_print_before_method', '_print_after_method' );
     ##### <where> - Start recursive parsing with: $passed_ref
     $passed_ref = $self->_process_the_data( $passed_ref, $print_keys );
@@ -160,7 +160,7 @@ sub _print_before_method{
 		$self->_set_match_string( '#<--- ' );
 	}
 	### <where> - add before pre-string ...
-	if( $self->_get_current_level ){ 
+	if( $self->_get_current_level ){
 		### <where> - only available at level 1 + ...
 		$self->_dispatch_method(
 			$before_pre_string_dispatch,
@@ -195,7 +195,7 @@ sub _print_after_method{
 	##### <where> - self: $self
 	my  $should_print = $self->_dispatch_method(
 		$after_method_dispatch,
-		$passed_ref->{primary_type}, 
+		$passed_ref->{primary_type},
 		$passed_ref,
 	);
 	### <where> - Should Print: $should_print
@@ -212,9 +212,9 @@ sub _add_to_pending_string{
     my ( $self, $string ) = @_;
     ### <where> - reached _add_to_pending_string
     ### <where> - adding: $string
-    $self->_set_pending_string( 
+    $self->_set_pending_string(
         (($self->_has_pending_string) ?
-            $self->_get_pending_string : '') . 
+            $self->_get_pending_string : '') .
         ( ( $string ) ? $string : '' )
     );
     return 1;
@@ -224,9 +224,9 @@ sub _add_to_match_string{
     my ( $self, $string ) = @_;
     ### <where> - reached _add_to_match_string
     ### <where> - adding: $string
-    $self->_set_match_string( 
+    $self->_set_match_string(
         (($self->_has_match_string) ?
-            $self->_get_match_string : '') . 
+            $self->_get_match_string : '') .
         ( ( $string ) ? $string : '' )
     );
     return 1;
@@ -270,7 +270,7 @@ sub _before_hash_pre_string{
 	#### <where> - passed ref: $passed_ref
 	$self->_add_to_pending_string( $branch_ref->[1] . ' => ' );
 	$self->_add_to_match_string(
-		( $passed_ref->{secondary_type} ne 'DNE' ) ? 
+		( $passed_ref->{secondary_type} ne 'DNE' ) ?
 			'Hash Key Match - ' : 'Hash Key Mismatch - '
 	);
 	### <where> - current pending string: $self->_get_pending_string
@@ -282,7 +282,7 @@ sub _before_array_pre_string{
     ### <where> - reached _before_array_pre_string ...
 	#### <where> - passed ref: $passed_ref
 	$self->_add_to_match_string(
-		( $passed_ref->{secondary_type} ne 'DNE' ) ? 
+		( $passed_ref->{secondary_type} ne 'DNE' ) ?
 			'Position Exists - ' : 'No Matching Position - '
 	);
 	### <where> - current pending string: $self->_get_pending_string
@@ -294,7 +294,7 @@ sub _before_hash_printing{
     ### <where> - reached _before_hash_printing ...
 	$self->_add_to_pending_string( '{' );
 	$self->_add_to_match_string(
-		( $passed_ref->{secondary_type} eq 'HASH' ) ? 
+		( $passed_ref->{secondary_type} eq 'HASH' ) ?
 			'Ref Type Match' : 'Ref Type Mismatch'
 	);
 	### <where> - current pending string: $self->_get_pending_string
@@ -308,7 +308,7 @@ sub _before_array_printing{
 	#### <where> - passed ref: $passed_ref
 	$self->_add_to_pending_string( '[' );
 	$self->_add_to_match_string(
-		( $passed_ref->{secondary_type} eq 'ARRAY' ) ? 
+		( $passed_ref->{secondary_type} eq 'ARRAY' ) ?
 			'Ref Type Match' : 'Ref Type Mismatch'
 	);
 	### <where> - current pending string: $self->_get_pending_string
@@ -322,7 +322,7 @@ sub _before_object_printing{
 	#### <where> - passed ref: $passed_ref
 	$self->_add_to_pending_string( 'BLESS : [' );
 	$self->_add_to_match_string(
-		( $passed_ref->{secondary_type} eq 'ARRAY' ) ? 
+		( $passed_ref->{secondary_type} eq 'ARRAY' ) ?
 			'Ref Type Match' : 'Ref Type Mismatch'
 	);
 	### <where> - current pending string: $self->_get_pending_string
@@ -337,13 +337,13 @@ sub _after_scalar_printing{
 	$self->_add_to_pending_string(
 		(
 			( is_Num( $passed_ref->{primary_ref} )  ) ?
-				$passed_ref->{primary_ref} : 
-				"'$passed_ref->{primary_ref}'" 
+				$passed_ref->{primary_ref} :
+				"'$passed_ref->{primary_ref}'"
 		) . ','
 	);
 	$self->_add_to_match_string(
-		( $passed_ref->{match} eq 'YES' ) ? 
-			'Scalar Value Matches' : 
+		( $passed_ref->{match} eq 'YES' ) ?
+			'Scalar Value Matches' :
 			'Scalar Value Does NOT Match'
 	);
 	### <where> - current pending string: $self->_get_pending_string
@@ -355,8 +355,8 @@ sub _after_undef_printing{
     my ( $self, $passed_ref, ) = @_;
     ### <where> - reached _after_scalar_printing ...
 	##### <where> - passed ref: $passed_ref
-	$self->_add_to_pending_string( 
-		"undef," 
+	$self->_add_to_pending_string(
+		"undef,"
 	);
 	### <where> - current pending string: $self->_get_pending_string
 	return 1;
@@ -424,7 +424,7 @@ __END__
 Data::Walk::Print - A data printing function
 
 =head1 SYNOPSIS
-    
+
 	#!perl
 	use YAML::Any;
 	use Moose::Util qw( with_traits );
@@ -467,20 +467,20 @@ Data::Walk::Print - A data printing function
 						- bavalue3
 						BottomKey1: 12354'
 	);
-	my $AT_ST = with_traits( 
-			'Data::Walk::Extracted', 
+	my $AT_ST = with_traits(
+			'Data::Walk::Extracted',
 			( 'Data::Walk::Print' ),
 		)->new(
 			match_highlighting => 1,#This is the default
 		);
 	$AT_ST->print_data(
 		print_ref	=>  $firstref,
-		match_ref	=>  $secondref, 
+		match_ref	=>  $secondref,
 		sorted_nodes =>{
 			HASH => 1, #To force order for demo purposes
 		}
 	);
-    
+
 	#################################################################################
 	#     Output of SYNOPSIS
 	# 01:{#<--- Ref Type Match
@@ -513,36 +513,36 @@ Data::Walk::Print - A data printing function
 	# 28:},
 	#################################################################################
 
- 
+
 =head1 DESCRIPTION
 
-This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> is mostly written 
-as a demonstration module for 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>.  
-Both L<Data::Dumper|https://metacpan.org/module/Data::Dumper#Functions> - Dumper and 
-L<YAML|https://metacpan.org/module/YAML::Any#SUBROUTINES> - Dump functions are more mature than 
+This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> is mostly written
+as a demonstration module for
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>.
+Both L<Data::Dumper|https://metacpan.org/module/Data::Dumper#Functions> - Dumper and
+L<YAML|https://metacpan.org/module/YAML::Any#SUBROUTINES> - Dump functions are more mature than
 the printing function included here.
 
 =head2 USE
 
-This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> specifically 
+This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> specifically
 designed to be used with L<Data::Walk::Extracted
-|https://metacpan.org/module/Data::Walk::Extracted#Extending-Data::Walk::Extracted>.  
+|https://metacpan.org/module/Data::Walk::Extracted#Extending-Data::Walk::Extracted>.
 It can be combined traditionaly to the ~::Extracted class using L<Moose
-|https://metacpan.org/module/Moose::Manual::Roles> methods or for information on how to join 
+|https://metacpan.org/module/Moose::Manual::Roles> methods or for information on how to join
 this role to Data::Walk::Extracted at run time see L<Moose::Util
 |https://metacpan.org/module/Moose::Util> or L<MooseX::ShortCut::BuildInstance
 |https://metacpan.org/module/MooseX::ShortCut::BuildInstance> for more information.
 
 =head1 Attributes
 
-Data passed to -E<gt>new when creating an instance.  For modification of these attributes 
-see L<Methods|/Methods>.  The -E<gt>new function will either accept fat comma lists or a 
-complete hash ref that has the possible attributes as the top keys.  Additionally 
-some attributes that have all the following methods; get_$attribute, set_$attribute, 
+Data passed to -E<gt>new when creating an instance.  For modification of these attributes
+see L<Methods|/Methods>.  The -E<gt>new function will either accept fat comma lists or a
+complete hash ref that has the possible attributes as the top keys.  Additionally
+some attributes that have all the following methods; get_$attribute, set_$attribute,
 has_$attribute, and clear_$attribute, can be passed to L<print_data
-|/print_data( $arg_ref|%args|$data_ref )> and will be adjusted for just the run of that 
-method call.  These are called 'one shot' attributes.  The class and each role (where 
+|/print_data( $arg_ref|%args|$data_ref )> and will be adjusted for just the run of that
+method call.  These are called 'one shot' attributes.  The class and each role (where
 applicable) in this package have a list of L<supported one shot attributes
 |/Supported one shot attributes>.
 
@@ -550,32 +550,32 @@ applicable) in this package have a list of L<supported one shot attributes
 
 =over
 
-B<Definition:> this determines if a comments string is added after each printed 
+B<Definition:> this determines if a comments string is added after each printed
 row that indicates how the 'print_ref' matches the 'match_ref'.
 
 B<Default> True (1)
 
 B<Range> This is a Boolean data type and generally accepts 1 or 0
-    
+
 =back
 
 =head2 to_string
 
 =over
 
-B<Definition:> this determines whether the output is sent to STDOUT or coallated 
+B<Definition:> this determines whether the output is sent to STDOUT or coallated
 into a final string and sent as a result of L<print_data
 |/print_data( $arg_ref|%args|$data_ref )>.
 
 B<Default> True (1)
 
 B<Range> This is a Boolean data type and generally accepts 1 or 0
-    
+
 =back
 
 =head2 (see also)
 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted#Attributes> 
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted#Attributes>
 - Attributes
 
 =head1 Methods
@@ -586,32 +586,32 @@ L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted#Attrib
 
 B<Definition:> this is the method used to print a data reference
 
-B<Accepts:> either a single data reference or named arguments 
+B<Accepts:> either a single data reference or named arguments
 in a fat comma list or hashref
 
 =over
 
-B<named variable option> - if data comes in a fat comma list or as a hash ref 
+B<named variable option> - if data comes in a fat comma list or as a hash ref
 and the keys include a 'print_ref' key then the list is processed as follows.
 
 =over
 
-B<print_ref> - this is the data reference that should be printed in a perlish way 
+B<print_ref> - this is the data reference that should be printed in a perlish way
 - Required
 
 B<match_ref> - this is a reference used to compare against the 'print_ref'
 - Optional
 
-B<[attribute name]> - attribute names are accepted with temporary attribute settings.  
-These settings are temporarily set for a single "print_data" call and then the original 
-attribute values are restored.  For this to work the the attribute must meet the 
-L<necessary criteria|/Attributes>.  These attributes can include all attributes active 
+B<[attribute name]> - attribute names are accepted with temporary attribute settings.
+These settings are temporarily set for a single "print_data" call and then the original
+attribute values are restored.  For this to work the the attribute must meet the
+L<necessary criteria|/Attributes>.  These attributes can include all attributes active
 for the constructed class not just this role.
 
 =back
 
-B<single variable option> - if only one data_ref is sent and it fails the test 
-for "exists $data_ref->{print_ref}" then the program will attempt to name it as 
+B<single variable option> - if only one data_ref is sent and it fails the test
+for "exists $data_ref->{print_ref}" then the program will attempt to name it as
 print_ref => $data_ref and then process the data as a fat comma list.
 
 =back
@@ -624,7 +624,7 @@ B<Returns:> 1 (And prints out the data ref) or a string - see L<to_string|/to_st
 
 =over
 
-B<Definition:> this is a way to change the L<match_highlighting|/match_highlighting> 
+B<Definition:> this is a way to change the L<match_highlighting|/match_highlighting>
 attribute
 
 B<Accepts:> a Boolean value
@@ -637,7 +637,7 @@ B<Returns:> ''
 
 =over
 
-B<Definition:> this is a way to view the state of the L<match_highlighting|/match_highlighting> 
+B<Definition:> this is a way to view the state of the L<match_highlighting|/match_highlighting>
 attribute
 
 B<Accepts:> nothing
@@ -650,7 +650,7 @@ B<Returns:> The current 'match_highlighting' state
 
 =over
 
-B<Definition:> this is a way to know if the L<match_highlighting|/match_highlighting> 
+B<Definition:> this is a way to know if the L<match_highlighting|/match_highlighting>
 attribute is active
 
 B<Accepts:> nothing
@@ -675,7 +675,7 @@ B<Returns:> '' (always successful)
 
 =over
 
-B<Definition:> this is a way to change the L<to_string|/to_string> 
+B<Definition:> this is a way to change the L<to_string|/to_string>
 attribute
 
 B<Accepts:> a Boolean value
@@ -688,7 +688,7 @@ B<Returns:> ''
 
 =over
 
-B<Definition:> this is a way to view the state of the L<to_string|/to_string> 
+B<Definition:> this is a way to view the state of the L<to_string|/to_string>
 attribute
 
 B<Accepts:> nothing
@@ -701,7 +701,7 @@ B<Returns:> The current 'to_string' state
 
 =over
 
-B<Definition:> this is a way to know if the L<to_string|/to_string> 
+B<Definition:> this is a way to know if the L<to_string|/to_string>
 attribute is active
 
 B<Accepts:> nothing
@@ -752,9 +752,9 @@ L<explanation|/Attributes>
 
 =head2 Printing for skipped nodes
 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted> allows for some 
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted> allows for some
 nodes to be skipped.  When a node is skipped the L<print_data
-|/print_data( $arg_ref|%args|$data_ref )> function prints the scalar (perl pointer description) 
+|/print_data( $arg_ref|%args|$data_ref )> function prints the scalar (perl pointer description)
 of that node.
 
 =head1 GLOBAL VARIABLES
@@ -763,10 +763,10 @@ of that node.
 
 B<$ENV{Smart_Comments}>
 
-The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if the '-ENV' 
-option is set.  The 'use' is encapsulated in an if block triggered by an environmental 
-variable to comfort non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN 
-block will load and turn on smart comment reporting.  There are three levels of 'Smartness' 
+The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if the '-ENV'
+option is set.  The 'use' is encapsulated in an if block triggered by an environmental
+variable to comfort non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN
+block will load and turn on smart comment reporting.  There are three levels of 'Smartness'
 available in this module '###',  '####', and '#####'.
 
 =back
@@ -783,7 +783,7 @@ L<github Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extract
 
 =over
 
-B<1.> Convert from L<Smart::Comments|https://metacpan.org/module/Smart::Comments> debugging 
+B<1.> Convert from L<Smart::Comments|https://metacpan.org/module/Smart::Comments> debugging
 to L<Log::Shiras|https://metacpan.org/module/Log::Shiras> debugging messages.
 
 B<2.> Support printing Objects / Instances

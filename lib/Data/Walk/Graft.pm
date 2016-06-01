@@ -1,7 +1,7 @@
 package Data::Walk::Graft;
-use version; our $VERSION = version->declare('v0.26.10');
+use version; our $VERSION = version->declare('v0.26.12');
 use Moose::Role;
-requires 
+requires
 	'_process_the_data',
 	'_dispatch_method',
 	'_build_branch';
@@ -90,7 +90,7 @@ sub _graft_before_method{
         ### <where> - Found a difference - adding new element ...
 		### <where> - can deep clone: $self->can( 'deep_clone' )
 		my 	$clone_value = ( $self->can( 'deep_clone' ) ) ?
-				$self->deep_clone( $passed_ref->{primary_ref} ) : 
+				$self->deep_clone( $passed_ref->{primary_ref} ) :
 				'CRAZY' ;#$passed_ref->{primary_ref} ;
 		### <where> - clone value: $clone_value
 			$passed_ref->{secondary_ref} = $clone_value;
@@ -100,7 +100,7 @@ sub _graft_before_method{
 			$self->_remember_graft_item(
 				$self->_build_branch(
 					$clone_value,
-					( ( is_ArrayRef( $clone_value ) ) ? [] : {} ), 
+					( ( is_ArrayRef( $clone_value ) ) ? [] : {} ),
 					@{$passed_ref->{branch_ref}},
 				)
 			);
@@ -152,27 +152,27 @@ __END__
 Data::Walk::Graft - A way to say what should be added
 
 =head1 SYNOPSIS
-    
+
 	#!perl
 	use Moose::Util qw( with_traits );
 	use Data::Walk::Extracted;
 	use Data::Walk::Graft;
 	use Data::Walk::Print;
 
-	my $gardener = with_traits( 
-			'Data::Walk::Extracted', 
-			( 
-				'Data::Walk::Graft', 
+	my $gardener = with_traits(
+			'Data::Walk::Extracted',
+			(
+				'Data::Walk::Graft',
 				'Data::Walk::Clone',
 				'Data::Walk::Print',
-			) 
+			)
 		)->new(
 			sorted_nodes =>{
 				HASH => 1,
 			},# For demonstration consistency
 			#Until Data::Walk::Extracted and ::Graft support these types
 			#(watch Data-Walk-Extracted on github)
-			skipped_nodes =>{ 
+			skipped_nodes =>{
 				OBJECT => 1,
 				CODEREF => 1,
 			},
@@ -204,7 +204,7 @@ Data::Walk::Graft - A way to say what should be added
 				'IGNORE',
 				'ValueFive',
 			],
-		}, 
+		},
 		tree_ref  => $tree_ref,
 	);
 	$gardener->print_data( $tree_ref );
@@ -258,58 +258,58 @@ Data::Walk::Graft - A way to say what should be added
 
 =head1 DESCRIPTION
 
-This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> contains methods for 
-adding a new branch ( or three ) to an existing data ref.  The method used to do this is 
+This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> contains methods for
+adding a new branch ( or three ) to an existing data ref.  The method used to do this is
 L<graft_data|/graft_data( %args|$arg_ref )> using
 L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>.
-Grafting is accomplished by sending a $scion_ref that has additions that need to be made 
-to a $tree_ref.  Anything in the scion ref that does not exist in the tree ref is grafted 
-to the tree ref.  I<Anytime the scion_ref is different from the tree_ref the scion_ref branch 
+Grafting is accomplished by sending a $scion_ref that has additions that need to be made
+to a $tree_ref.  Anything in the scion ref that does not exist in the tree ref is grafted
+to the tree ref.  I<Anytime the scion_ref is different from the tree_ref the scion_ref branch
 will replace the tree_ref branch!>
 
 =head2 USE
 
-This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> specifically 
+This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> specifically
 designed to be used with L<Data::Walk::Extracted
-|https://metacpan.org/module/Data::Walk::Extracted#Extending-Data::Walk::Extracted>.  
+|https://metacpan.org/module/Data::Walk::Extracted#Extending-Data::Walk::Extracted>.
 It can be combined traditionaly to the ~::Extracted class using L<Moose
-|https://metacpan.org/module/Moose::Manual::Roles> methods or for information on how to join 
+|https://metacpan.org/module/Moose::Manual::Roles> methods or for information on how to join
 this role to Data::Walk::Extracted at run time see L<Moose::Util
 |https://metacpan.org/module/Moose::Util> or L<MooseX::ShortCut::BuildInstance
 |https://metacpan.org/module/MooseX::ShortCut::BuildInstance> for more information.
 
 =head2 Deep cloning the graft
 
-In general grafted data refs are subject to external modification by changing the data 
-in that ref from another location of the code.  This module assumes that you don't want 
-to do that!  As a consequence it checks to see if a 'deep_clone' method has been provided to 
-the class that consumes this role.  If so it calls that method on the data ref to be 
+In general grafted data refs are subject to external modification by changing the data
+in that ref from another location of the code.  This module assumes that you don't want
+to do that!  As a consequence it checks to see if a 'deep_clone' method has been provided to
+the class that consumes this role.  If so it calls that method on the data ref to be
 grafted.  One possiblity is to add the Role L<Data::Walk::Clone
-|https://metacpan.org/module/Data::Walk::Clone> to your object so that a deep_clone method 
-is automatically available (all compatability testing complete).  If you choose to add your 
+|https://metacpan.org/module/Data::Walk::Clone> to your object so that a deep_clone method
+is automatically available (all compatability testing complete).  If you choose to add your
 own deep_clone method it will be called like this;
 
 	my $clone_value = ( $self->can( 'deep_clone' ) ) ?
 				$self->deep_clone( $scion_ref ) : $scion_ref ;
-	
+
 Where $self is the active object instance.
 
 =head2 Grafting unsupported node types
 
-If you want to add data from another ref to a current ref and the add ref contains nodes 
+If you want to add data from another ref to a current ref and the add ref contains nodes
 that are not supported then you need to L<skip
-|https://metacpan.org/module/Data::Walk::Extracted#skipped_nodes> those nodes in the 
+|https://metacpan.org/module/Data::Walk::Extracted#skipped_nodes> those nodes in the
 cloning process.
 
 =head1 Attributes
 
-Data passed to -E<gt>new when creating an instance.  For modification of these attributes 
-see L<Methods|/Methods>.  The -E<gt>new function will either accept fat comma lists or a 
-complete hash ref that has the possible attributes as the top keys.  Additionally 
-some attributes that have all the following methods; get_$attribute, set_$attribute, 
+Data passed to -E<gt>new when creating an instance.  For modification of these attributes
+see L<Methods|/Methods>.  The -E<gt>new function will either accept fat comma lists or a
+complete hash ref that has the possible attributes as the top keys.  Additionally
+some attributes that have all the following methods; get_$attribute, set_$attribute,
 has_$attribute, and clear_$attribute, can be passed to L<graft_data
-|/graft_data( %args|$arg_ref )> and will be adjusted for just the run of that 
-method call.  These are called 'one shot' attributes.  The class and each role (where 
+|/graft_data( %args|$arg_ref )> and will be adjusted for just the run of that
+method call.  These are called 'one shot' attributes.  The class and each role (where
 applicable) in this package have a list of L<supported one shot attributes
 |/Supported one shot attributes>.
 
@@ -317,22 +317,22 @@ applicable) in this package have a list of L<supported one shot attributes
 
 =over
 
-B<Definition:> When running a 'graft_data' operation any branch of the $scion_ref 
-that does not terminate past the end of the tree ref or differ from the tree_ref 
-will not be used.  This attribute turns on tracking of the actual grafts made and 
-stores them for review after the method is complete.  This is a way to know if a graft 
-was actually implemented.  The potentially awkward wording of the associated methods 
+B<Definition:> When running a 'graft_data' operation any branch of the $scion_ref
+that does not terminate past the end of the tree ref or differ from the tree_ref
+will not be used.  This attribute turns on tracking of the actual grafts made and
+stores them for review after the method is complete.  This is a way to know if a graft
+was actually implemented.  The potentially awkward wording of the associated methods
 is done to make this an eligible 'one shot' attribute.
 
 B<Default> undefined = don't remember the grafts
 
 B<Range> 1 = remember the grafts | 0 = don't remember
-    
+
 =back
 
 =head2 (see also)
 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted#Attributes> 
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted#Attributes>
 Attributes
 
 =head1 Methods
@@ -341,40 +341,40 @@ Attributes
 
 =over
 
-B<Definition:> This is a method to add defined elements to targeted parts of a data 
+B<Definition:> This is a method to add defined elements to targeted parts of a data
 reference.
 
-B<Accepts:> a hash ref with the keys 'scion_ref' and 'tree_ref'.  The scion 
+B<Accepts:> a hash ref with the keys 'scion_ref' and 'tree_ref'.  The scion
 ref can contain more than one place that will be grafted to the tree data.
 
 =over
 
-B<tree_ref> This is the primary data ref that will be manipulated and returned 
-changed.  If an empty 'tree_ref' is passed then the 'scion_ref' is returned in it's 
+B<tree_ref> This is the primary data ref that will be manipulated and returned
+changed.  If an empty 'tree_ref' is passed then the 'scion_ref' is returned in it's
 entirety.
 
-B<scion_ref> This is a data ref that will be used to graft to the 'tree_ref'.  
-For the scion ref to work it must contain the parts of the tree ref below the new 
-scions as well as the scion itself.  During data walking when a difference is found 
-graft_data will attempt to clone the remaining untraveled portion of the 'scion_ref' 
-and then graft the result to the 'tree_ref' at that point.  Any portion of the tree 
+B<scion_ref> This is a data ref that will be used to graft to the 'tree_ref'.
+For the scion ref to work it must contain the parts of the tree ref below the new
+scions as well as the scion itself.  During data walking when a difference is found
+graft_data will attempt to clone the remaining untraveled portion of the 'scion_ref'
+and then graft the result to the 'tree_ref' at that point.  Any portion of the tree
 ref that differs from the scion ref at that point will be replaced.  If L<graft_memory
-|/graft_memory> is on then a full recording of the graft with a map to the data root 
-will be saved in the object.  The word 'IGNORE' can be used in either an array position 
-or the value for a key in a hash ref.  This tells the program to ignore differences (in 
-depth) past that point.  For example if you wish to change the third element of an array 
-node then placing 'IGNORE' in the first two positions will cause 'graft_data' to skip the 
-analysis of the first two branches.  This saves replicating deep references in the 
-scion_ref while also avoiding a defacto 'prune' operation.  If an array position in the 
-scion_ref is set to 'IGNORE' in the 'scion_ref' but a graft is made below the node with 
-IGNORE then the grafted tree will contain 'IGNORE' in that element of the array (not 
-undef).  Any positions that exist in the tree_ref that do not exist in the scion_ref 
+|/graft_memory> is on then a full recording of the graft with a map to the data root
+will be saved in the object.  The word 'IGNORE' can be used in either an array position
+or the value for a key in a hash ref.  This tells the program to ignore differences (in
+depth) past that point.  For example if you wish to change the third element of an array
+node then placing 'IGNORE' in the first two positions will cause 'graft_data' to skip the
+analysis of the first two branches.  This saves replicating deep references in the
+scion_ref while also avoiding a defacto 'prune' operation.  If an array position in the
+scion_ref is set to 'IGNORE' in the 'scion_ref' but a graft is made below the node with
+IGNORE then the grafted tree will contain 'IGNORE' in that element of the array (not
+undef).  Any positions that exist in the tree_ref that do not exist in the scion_ref
 will be ignored.  If an empty 'scion_ref' is sent then the code will L<cluck
-|https://metacpan.org/module/Carp> and then return the 'tree_ref'. 
+|https://metacpan.org/module/Carp> and then return the 'tree_ref'.
 
-B<[attribute name]> - attribute names are accepted with temporary attribute settings.  
-These settings are temporarily set for a single "graft_data" call and then the original 
-attribute values are restored.  For this to work the the attribute must meet the 
+B<[attribute name]> - attribute names are accepted with temporary attribute settings.
+These settings are temporarily set for a single "graft_data" call and then the original
+attribute values are restored.  For this to work the the attribute must meet the
 L<necessary criteria|/Attributes>.
 
 B<Example>
@@ -443,7 +443,7 @@ B<Returns:> nothing
 
 =over
 
-B<Definition:> This will return the number of scion points grafted in the most recent 
+B<Definition:> This will return the number of scion points grafted in the most recent
 graft action if the L<graft_memory|/graft_memory> attribute is on.
 
 B<Accepts:> nothing
@@ -472,7 +472,7 @@ B<Definition:> This will return any saved grafted positions.
 
 B<Accepts:> nothing
 
-B<Returns:> an ARRAY ref of grafted positions.  This will include 
+B<Returns:> an ARRAY ref of grafted positions.  This will include
 one full data branch to the root for each position actually grafted.
 
 =back
@@ -491,8 +491,8 @@ one full data branch to the root for each position actually grafted.
 
 =item Other node support
 
-Support for Objects is partially implemented and as a consequence graft_data won't 
-immediatly die when asked to graft an object.  It will still die but on a dispatch table 
+Support for Objects is partially implemented and as a consequence graft_data won't
+immediatly die when asked to graft an object.  It will still die but on a dispatch table
 call that indicates where there is missing object support not at the top of the node.
 
 =back
@@ -513,10 +513,10 @@ L<explanation|/Attributes>
 
 B<$ENV{Smart_Comments}>
 
-The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if the '-ENV' 
-option is set.  The 'use' is encapsulated in an if block triggered by an environmental 
-variable to comfort non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN 
-block will load and turn on smart comment reporting.  There are three levels of 'Smartness' 
+The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if the '-ENV'
+option is set.  The 'use' is encapsulated in an if block triggered by an environmental
+variable to comfort non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN
+block will load and turn on smart comment reporting.  There are three levels of 'Smartness'
 available in this module '###',  '####', and '#####'.
 
 =back
@@ -546,9 +546,9 @@ B<5.> A possible depth check to ensure the scion is deeper than the tree_ref
 
 =over
 
-Implemented with an attribute that turns the feature on and off.  The goal 
-would be to eliminate unintentional swapping of small branches for large branches.  
-This feature has some overhead downside and may not be usefull so I'm not sure 
+Implemented with an attribute that turns the feature on and off.  The goal
+would be to eliminate unintentional swapping of small branches for large branches.
+This feature has some overhead downside and may not be usefull so I'm not sure
 if it makes sence yet.
 
 =back

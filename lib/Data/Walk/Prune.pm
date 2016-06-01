@@ -1,10 +1,10 @@
 package Data::Walk::Prune;
-use version; our $VERSION = version->declare('v0.26.10');
+use version; our $VERSION = version->declare('v0.26.12');
 
 use Moose::Role;
-requires 
-	'_process_the_data', 
-	'_dispatch_method', 
+requires
+	'_process_the_data',
+	'_dispatch_method',
 	'_build_branch';
 use	Types::Standard -types;
 if( $ENV{ Smart_Comments } ){
@@ -145,8 +145,8 @@ sub _prune_after_method{
 							$item_ref,
 					);
 					###  <where> - current branch ref is: $passed_ref->{branch_ref}
-					$rememberance_ref = $self->_build_branch( 
-						$rememberance_ref, 
+					$rememberance_ref = $self->_build_branch(
+						$rememberance_ref,
 						@{ $passed_ref->{branch_ref}},
 					);
 					###  <where> - rememberance ref: $rememberance_ref
@@ -167,8 +167,8 @@ sub _prune_the_item{
     ### <where> - Made it to _prune_the_item
     ### <where> - item ref  : $item_ref
     ##### <where> - tree ref  : $tree_ref
-	$tree_ref = $self->_dispatch_method( 
-		$prune_dispatch, 
+	$tree_ref = $self->_dispatch_method(
+		$prune_dispatch,
 		$item_ref->[0],
 		$item_ref,
 		$tree_ref,
@@ -238,7 +238,7 @@ __END__
 Data::Walk::Prune - A way to say what should be removed
 
 =head1 SYNOPSIS
-    
+
 	#!perl
 	use Moose::Util qw( with_traits );
 	use Data::Walk::Extracted;
@@ -247,8 +247,8 @@ Data::Walk::Prune - A way to say what should be removed
 
 	my $edward_scissorhands = with_traits(
 			'Data::Walk::Extracted',
-			( 
-				'Data::Walk::Prune', 
+			(
+				'Data::Walk::Prune',
 				'Data::Walk::Print',
 			),
 		)->new( change_array_size => 1, );#Default
@@ -269,7 +269,7 @@ Data::Walk::Prune - A way to say what should be removed
 			],
 		};
 	my	$result = $edward_scissorhands->prune_data(
-			tree_ref    => $firstref, 
+			tree_ref    => $firstref,
 			slice_ref   => {
 				Helping => [
 					undef,
@@ -284,7 +284,7 @@ Data::Walk::Prune - A way to say what should be removed
 			},
 		);
 	$edward_scissorhands->print_data( $result );
-    
+
 	######################################################################################
 	#     Output of SYNOPSIS
 	# 01 {
@@ -306,34 +306,34 @@ Data::Walk::Prune - A way to say what should be removed
 
 =head1 DESCRIPTION
 
-This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> implements the method 
-L<prune_data|/prune_data( %args )>.  It takes a $tree_ref and a $slice_ref and uses 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>.  To remove 
-portions of the 'tree_ref' defined by an empty hash ref (no keys) or an empty array ref 
-(no positions) at all required points of the 'slice_ref'.  The 'slice_ref' must match the 
-tree ref up to each slice point.  If the slice points are on a branch of the slice_ref that 
+This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> implements the method
+L<prune_data|/prune_data( %args )>.  It takes a $tree_ref and a $slice_ref and uses
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>.  To remove
+portions of the 'tree_ref' defined by an empty hash ref (no keys) or an empty array ref
+(no positions) at all required points of the 'slice_ref'.  The 'slice_ref' must match the
+tree ref up to each slice point.  If the slice points are on a branch of the slice_ref that
 does not exist on the tree_ref then no cut takes place.
 
 =head2 USE
 
-This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> specifically 
+This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> specifically
 designed to be used with L<Data::Walk::Extracted
-|https://metacpan.org/module/Data::Walk::Extracted#Extending-Data::Walk::Extracted>.  
+|https://metacpan.org/module/Data::Walk::Extracted#Extending-Data::Walk::Extracted>.
 It can be combined traditionaly to the ~::Extracted class using L<Moose
-|https://metacpan.org/module/Moose::Manual::Roles> methods or for information on how to join 
+|https://metacpan.org/module/Moose::Manual::Roles> methods or for information on how to join
 this role to Data::Walk::Extracted at run time see L<Moose::Util
 |https://metacpan.org/module/Moose::Util> or L<MooseX::ShortCut::BuildInstance
 |https://metacpan.org/module/MooseX::ShortCut::BuildInstance> for more information.
 
 =head1 Attributes
 
-Data passed to -E<gt>new when creating an instance.  For modification of these attributes 
-see L<Methods|/Methods>.  The -E<gt>new function will either accept fat comma lists or a 
-complete hash ref that has the possible attributes as the top keys.  Additionally 
-some attributes that have all the following methods; get_$attribute, set_$attribute, 
+Data passed to -E<gt>new when creating an instance.  For modification of these attributes
+see L<Methods|/Methods>.  The -E<gt>new function will either accept fat comma lists or a
+complete hash ref that has the possible attributes as the top keys.  Additionally
+some attributes that have all the following methods; get_$attribute, set_$attribute,
 has_$attribute, and clear_$attribute, can be passed to L<prune_data
-|/prune_data( %args )> and will be adjusted for just the run of that 
-method call.  These are called 'one shot' attributes.  The class and each role (where 
+|/prune_data( %args )> and will be adjusted for just the run of that
+method call.  These are called 'one shot' attributes.  The class and each role (where
 applicable) in this package have a list of L<supported one shot attributes
 |/Supported one shot attributes>.
 
@@ -341,20 +341,20 @@ applicable) in this package have a list of L<supported one shot attributes
 
 =over
 
-B<Definition:> When running a prune operation any branch called on the pruner 
-that does not exist in the tree will not be used.  This attribute turns on tracking 
-of the actual cuts made and stores them for review after the method is complete.  
+B<Definition:> When running a prune operation any branch called on the pruner
+that does not exist in the tree will not be used.  This attribute turns on tracking
+of the actual cuts made and stores them for review after the method is complete.
 This is a way to know if the cut was actually implemented.
 
 B<Default> undefined
 
 B<Range> 1 = remember the cuts | 0 = don't remember
-    
+
 =back
 
 =head2 (see also)
 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted#Attributes> 
+L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted#Attributes>
 - Attributes
 
 =head1 Methods
@@ -365,26 +365,26 @@ L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted#Attrib
 
 B<Definition:> This is a method used to remove targeted parts of a data reference.
 
-B<Accepts:> a hash ref with the keys 'slice_ref' and 'tree_ref' (both required).  
+B<Accepts:> a hash ref with the keys 'slice_ref' and 'tree_ref' (both required).
 The slice ref can contain more than one 'slice' location in the data reference.
 
 =over
 
 B<tree_ref> This is the primary data ref that will be manipulated and returned changed.
 
-B<slice_ref> This is a data ref that will be used to prune the 'tree_ref'.  In general 
-the slice_ref should match the tree_ref for positions that should remain unchanged.  
-Where the tree_ref should be trimmed insert either an empty array ref or an empty hash 
-ref.  If this position represents a value in a hash key => value pair then the hash 
-key is deleted.  If this position represents a value in an array then the position is 
+B<slice_ref> This is a data ref that will be used to prune the 'tree_ref'.  In general
+the slice_ref should match the tree_ref for positions that should remain unchanged.
+Where the tree_ref should be trimmed insert either an empty array ref or an empty hash
+ref.  If this position represents a value in a hash key => value pair then the hash
+key is deleted.  If this position represents a value in an array then the position is
 deleted/cleared depending on the attribute L<change_array_size
-|https://metacpan.org/module/Data::Walk::Extracted#change_array_size> in 
-Data::Walk::Extracted.  If the slice ref diverges from the tree ref then no action is 
+|https://metacpan.org/module/Data::Walk::Extracted#change_array_size> in
+Data::Walk::Extracted.  If the slice ref diverges from the tree ref then no action is
 taken past the divergence, even if there is a mandated slice. (no auto vivication occurs!)
 
-B<[attribute name]> - attribute names are accepted with temporary attribute settings.  
-These settings are temporarily set for a single "prune_data" call and then the original 
-attribute values are restored.  For this to work the the attribute must meet the 
+B<[attribute name]> - attribute names are accepted with temporary attribute settings.
+These settings are temporarily set for a single "prune_data" call and then the original
+attribute values are restored.  For this to work the the attribute must meet the
 L<necessary criteria|/Attributes>.
 
 =back
@@ -401,11 +401,11 @@ B<Returns:> The $tree_ref with any changes
 
 =back
 
-=head2 set_prune_memory( $Bool ) 
+=head2 set_prune_memory( $Bool )
 
 =over
 
-B<Definition:> This will change the setting of the L<prune_memory|/prune_memory> 
+B<Definition:> This will change the setting of the L<prune_memory|/prune_memory>
 attribute.
 
 B<Accepts:> 1 = remember | 0 = no memory
@@ -418,7 +418,7 @@ B<Returns:> nothing
 
 =over
 
-B<Definition:> This will return the current setting of the L<prune_memory|/prune_memory> 
+B<Definition:> This will return the current setting of the L<prune_memory|/prune_memory>
 attribute.
 
 B<Accepts:> nothing
@@ -443,7 +443,7 @@ B<Returns:> A $Bool value 1 = defined, 0 = not defined
 
 =over
 
-B<Definition:> This will clear the L<prune_memory|/prune_memory> attribute value 
+B<Definition:> This will clear the L<prune_memory|/prune_memory> attribute value
 (Not the actual prune memory)
 
 B<Accepts:> nothing
@@ -472,8 +472,8 @@ B<Definition:> This returns an array ref of stored cuts
 
 B<Accepts:> nothing
 
-B<Returns:> an ArrayRef - although the cuts were defined in one data ref 
-this will return one data ref per cut.  Each ref will go to the root of the 
+B<Returns:> an ArrayRef - although the cuts were defined in one data ref
+this will return one data ref per cut.  Each ref will go to the root of the
 original data ref.
 
 =back
@@ -494,7 +494,7 @@ B<Returns:> an integer
 
 =head2 deep cloning
 
-Because this uses Data::Walk::Extracted the final $tree_ref is deep cloned where 
+Because this uses Data::Walk::Extracted the final $tree_ref is deep cloned where
 the $slice_ref passed through.
 
 =head2 Supported Node types
@@ -527,10 +527,10 @@ L<explanation|/Attributes>
 
 B<$ENV{Smart_Comments}>
 
-The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if the '-ENV' 
-option is set.  The 'use' is encapsulated in an if block triggered by an environmental 
-variable to comfort non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN 
-block will load and turn on smart comment reporting.  There are three levels of 'Smartness' 
+The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if the '-ENV'
+option is set.  The 'use' is encapsulated in an if block triggered by an environmental
+variable to comfort non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN
+block will load and turn on smart comment reporting.  There are three levels of 'Smartness'
 available in this module '###',  '####', and '#####'.
 
 =back

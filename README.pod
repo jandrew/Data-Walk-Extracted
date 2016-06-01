@@ -1190,26 +1190,26 @@ This software is copyrighted (c) 2013 by Jed Lund.
 
 =over
 
-L<version|https://metacpan.org/module/version>
+L<version>
 
 L<5.010|http://perldoc.perl.org/perl5100delta.html> (for use of
 L<defined or|http://perldoc.perl.org/perlop.html#Logical-Defined-Or> //)
 
-L<Class::Inspector|https://metacpan.org/module/Class::Inspector>
+L<Class::Inspector>
 
-L<Scalar::Util|https://metacpan.org/module/Scalar::Util>
+L<Scalar::Util>
 
-L<Carp|https://metacpan.org/module/Carp>
+L<Carp>
 
-L<Moose|https://metacpan.org/module/Moose>
+L<Moose>
 
-L<MooseX::StrictConstructor|https://metacpan.org/module/MooseX::StrictConstructor>
+L<MooseX::StrictConstructor>
 
-L<MooseX::Types::Moose|https://metacpan.org/module/MooseX::Types::Moose>
+L<MooseX::Types::Moose>
 
-L<Data::Walk::Extracted::Types|https://metacpan.org/module/Data::Walk::Extracted::Types>
+L<Data::Walk::Extracted::Types>
 
-L<Data::Walk::Extracted::Dispatch|https://metacpan.org/module/Data::Walk::Extracted::Dispatch>
+L<Data::Walk::Extracted::Dispatch>
 
 =back
 
@@ -1217,23 +1217,23 @@ L<Data::Walk::Extracted::Dispatch|https://metacpan.org/module/Data::Walk::Extrac
 
 =over
 
-L<Smart::Comments|https://metacpan.org/module/Smart::Comments> - is used if the -ENV option is set
+L<Smart::Comments> - is used if the -ENV option is set
 
-L<Data::Walk|https://metacpan.org/module/Data::Walk>
+L<Data::Walk>
 
-L<Data::Walker|https://metacpan.org/module/Data::Walker>
+L<Data::Walker>
 
-L<Data::Dumper|https://metacpan.org/module/Data::Dumper> - Dumper
+L<Data::Dumper> - Dumper
 
-L<YAML|https://metacpan.org/module/YAML> - Dump
+L<YAML> - Dump
 
-L<Data::Walk::Print|https://metacpan.org/module/Data::Walk::Print> - available Data::Walk::Extracted Role
+L<Data::Walk::Print> - available Data::Walk::Extracted Role
 
-L<Data::Walk::Prune|https://metacpan.org/module/Data::Walk::Prune> - available Data::Walk::Extracted Role
+L<Data::Walk::Prune> - available Data::Walk::Extracted Role
 
-L<Data::Walk::Graft|https://metacpan.org/module/Data::Walk::Graft> - available Data::Walk::Extracted Role
+L<Data::Walk::Graft> - available Data::Walk::Extracted Role
 
-L<Data::Walk::Clone|https://metacpan.org/module/Data::Walk::Clone> - available Data::Walk::Extracted Role
+L<Data::Walk::Clone> - available Data::Walk::Extracted Role
 
 =back
 

@@ -1,5 +1,5 @@
 package Data::Walk::Extracted::Dispatch;
-use version; our $VERSION = version->declare('v0.26.10');
+use version; our $VERSION = version->declare('v0.26.12');
 use Moose::Role;
 use Carp qw( confess );
 if( $ENV{ Smart_Comments } ){
@@ -24,7 +24,7 @@ sub _dispatch_method{
         ##### <where> - running the DEFAULT action ...
         return $self->$action( @arg_list );
     }else{
-		my 	$dispatch_name = 
+		my 	$dispatch_name =
 				( exists $dispatch_ref->{name} ) ?
 					$dispatch_ref->{name} : undef ;
 		my	$string = "Failed to find the '$call' dispatch";
@@ -54,7 +54,7 @@ Data::Walk::Extracted::Dispatch - Dispatch table management
 	package Data::Walk::Extracted;
 	use Moose;
 	with 'Data::Walk::Extracted::Dispatch';
-	
+
 	my 	$main_down_level_data ={
 			###### Purpose: Used to build the generic elements of the next passed ref down
 			###### Recieves: the upper ref value
@@ -65,23 +65,23 @@ Data::Walk::Extracted::Dispatch - Dispatch table management
 			after_method => sub{ return $_[1] },
 			branch_ref => \&_main_down_level_branch_ref,
 		};
-	
-	
+
+
 	for my $key ( keys %$upper_ref ){
 		my $return = 	$self->_dispatch_method(
 							$main_down_level_data, $key, $upper_ref->{$key},
 						);
 		$lower_ref->{$key} = $return if defined $return;
 	}
-	
+
 	### this example will not run on it's own it just demonstrates usage!
-	
-	
-    
+
+
+
 =head1 DESCRIPTION
 
-This role only serves the purpose of standardizing the handling of dispatch tables.  It 
-will first attempt to call the passed dispatch call.  If it cannot find it then it will 
+This role only serves the purpose of standardizing the handling of dispatch tables.  It
+will first attempt to call the passed dispatch call.  If it cannot find it then it will
 attempt a 'DEFAULT' call after which it will 'confess' to failure.
 
 =head1 Methods
@@ -90,16 +90,16 @@ attempt a 'DEFAULT' call after which it will 'confess' to failure.
 
 =over
 
-B<Definition:> To make a class extensible, the majority of the decision points 
-can be managed by (hash) dispatch tables.  In order to have the dispatch behavior 
-common across all methods this role can be attached to the class to provided for 
-common dispatching.  If the hash key requested is not available then the dispatch 
+B<Definition:> To make a class extensible, the majority of the decision points
+can be managed by (hash) dispatch tables.  In order to have the dispatch behavior
+common across all methods this role can be attached to the class to provided for
+common dispatching.  If the hash key requested is not available then the dispatch
 method will attempt to call 'DEFAULT'.  If both fail the method will 'confess'.
 
-B<Accepts:> This method expects to be called by $self.  It first receives the 
-dispatch table (hash) as a data reference. Next, the target hash key is accepted as 
-$call.  Finally, any arguments needed by the dispatch table are passed through in 
-@arg_list.  if the dispatch table has a name => key the value will be used in any 
+B<Accepts:> This method expects to be called by $self.  It first receives the
+dispatch table (hash) as a data reference. Next, the target hash key is accepted as
+$call.  Finally, any arguments needed by the dispatch table are passed through in
+@arg_list.  if the dispatch table has a name => key the value will be used in any
 confessed error message.
 
 B<Returns:> defined by the dispatch (hash) table
@@ -112,10 +112,10 @@ B<Returns:> defined by the dispatch (hash) table
 
 =item B<$ENV{Smart_Comments}>
 
-The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if 
-the '-ENV' option is set.  The 'use' is encapsulated in an 'if' block triggered 
-by an environmental variable to comfort non-believers.  Setting the variable 
-$ENV{Smart_Comments} will load and turn on smart comment reporting for this role.  
+The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if
+the '-ENV' option is set.  The 'use' is encapsulated in an 'if' block triggered
+by an environmental variable to comfort non-believers.  Setting the variable
+$ENV{Smart_Comments} will load and turn on smart comment reporting for this role.
 There are three levels of 'Smartness' available in this module '### #### #####'.
 
 =back
