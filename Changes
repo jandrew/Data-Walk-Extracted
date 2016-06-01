@@ -8,6 +8,12 @@ Revision history for Data-Walk-Extracted
 
 {{$NEXT}}
 
+	* Another cool change
+
+v0.26.10  2016-05-31 17:47:47-07:00 America/Los_Angeles
+
+	+ Update travis.yml to build and test against 5.22 as well
+	+ Add the full Dist::Zilla build stuff
 	+ Changed the github reported version to pull from sheilds.io github tags
 	! bumped the minimum Moose requirement to 2.1803
 		https://github.com/jandrew/Data-Walk-Extracted/issues/2
