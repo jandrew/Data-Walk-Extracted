@@ -4,7 +4,7 @@ BEGIN{
 	#~ $ENV{ Smart_Comments } = '### #### #####';
 }
 
-use Test::Most;
+use Test::Most tests => 252;
 use Test::Moose;
 use Capture::Tiny 0.12 qw( 
 	capture_stdout 

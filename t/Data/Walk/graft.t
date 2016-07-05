@@ -1,6 +1,6 @@
 #!perl
 #######  Test File for Data::Walk::Graft  #######
-use Test::Most;
+use Test::Most tests => 44;
 use Test::Moose;
 use MooseX::ShortCut::BuildInstance 0.008 qw( build_instance );
 use lib	

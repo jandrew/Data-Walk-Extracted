@@ -1,7 +1,7 @@
 #! C:/Perl/bin/perl
 #######  Test File for the joining of all Data::Walk::XXX modules  #######
 
-use Test::Most;
+use Test::Most tests => 68;
 use Test::Moose;
 use MooseX::ShortCut::BuildInstance 0.008 qw( build_instance );
 use lib	

@@ -1,5 +1,5 @@
 package Data::Walk::Extracted;
-use	version 0.77; our $VERSION = version->declare('v0.26.16');
+use	version 0.77; our $VERSION = version->declare('v0.26.18');
 use	5.010;
 use	Moose 2.1803;
 use	MooseX::StrictConstructor;
@@ -1137,7 +1137,7 @@ B<primary_ref =E<gt>> the piece of the primary data ref below this element
 B<primary_type =E<gt>> the lower primary (walker)
 L<ref type|/_extracted_ref_type( $test_ref )>
 
-B<match =E<gt>> YES|NO (This indicates if the secondary ref meets matching critera
+B<match =E<gt>> YES|NO (This indicates if the secondary ref meets matching critera)
 
 B<skip =E<gt>> YES|NO Checks L<the three skip attributes|/skipped_nodes> against
 the lower primary_ref node.  This can also be set in the 'before_method' upon arrival
@@ -2094,7 +2094,7 @@ it and/or modify it under the same terms as Perl itself.
 The full text of the license can be found in the
 LICENSE file included with this module.
 
-This software is copyrighted (c) 2013 by Jed Lund.
+This software is copyrighted (c) 2013, 2016 by Jed Lund.
 
 =head1 Dependencies
 

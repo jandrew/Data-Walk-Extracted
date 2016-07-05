@@ -1,5 +1,5 @@
 package Data::Walk::Clone;
-use version; our $VERSION = version->declare('v0.26.16');
+use version; our $VERSION = version->declare('v0.26.18');
 use Moose::Role;
 requires
 	'_process_the_data',

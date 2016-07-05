@@ -1,6 +1,6 @@
 #!perl
 ### Test that the module(s) load!(s)
-use	Test::More;
+use	Test::More tests => 16;
 BEGIN{ use_ok( version ) };
 BEGIN{ use_ok( Test::Moose ) };
 BEGIN{ use_ok( MooseX::StrictConstructor ) };

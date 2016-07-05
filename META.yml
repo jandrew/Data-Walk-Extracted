@@ -22,25 +22,25 @@ name: Data-Walk-Extracted
 provides:
   Data::Walk::Clone:
     file: lib/Data/Walk/Clone.pm
-    version: v0.26.16
+    version: v0.26.18
   Data::Walk::Extracted:
     file: lib/Data/Walk/Extracted.pm
-    version: v0.26.16
+    version: v0.26.18
   Data::Walk::Extracted::Dispatch:
     file: lib/Data/Walk/Extracted/Dispatch.pm
-    version: v0.26.16
+    version: v0.26.18
   Data::Walk::Extracted::Types:
     file: lib/Data/Walk/Extracted/Types.pm
-    version: v0.26.16
+    version: v0.26.18
   Data::Walk::Graft:
     file: lib/Data/Walk/Graft.pm
-    version: v0.26.16
+    version: v0.26.18
   Data::Walk::Print:
     file: lib/Data/Walk/Print.pm
-    version: v0.26.16
+    version: v0.26.18
   Data::Walk::Prune:
     file: lib/Data/Walk/Prune.pm
-    version: v0.26.16
+    version: v0.26.18
 requires:
   Carp: '0'
   Class::Inspector: '0'
@@ -62,5 +62,5 @@ resources:
   bugtracker: https://github.com/jandrew/Data-Walk-Extracted/issues
   homepage: https://github.com/jandrew/Data-Walk-Extracted
   repository: https://github.com/jandrew/Data-Walk-Extracted.git
-version: v0.26.16
+version: v0.26.18
 x_authority: cpan:JANDREW
