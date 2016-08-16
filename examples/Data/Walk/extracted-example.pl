@@ -49,9 +49,7 @@ sub _mangle_data_after_method{
 }
 
 package main;
-use MooseX::ShortCut::BuildInstance qw(
-		build_instance
-	);
+use MooseX::ShortCut::BuildInstance qw( build_instance );
 my 	$AT_ST = build_instance( 
 		package			=> 'Greeting',
 		superclasses	=> [ 'Data::Walk::Extracted' ],

@@ -1,17 +1,16 @@
 #!perl
-use Moose::Util qw( with_traits );
+use MooseX::ShortCut::BuildInstance qw( build_instance );
 use lib '../lib';
 use Data::Walk::Extracted;
 use Data::Walk::Prune;
 use Data::Walk::Print;
 
-my  $edward_scissorhands = with_traits(
-		'Data::Walk::Extracted',
-		( 
-			'Data::Walk::Prune', 
-			'Data::Walk::Print',
-		),
-	)->new( change_array_size => 1, );#Default
+my  $edward_scissorhands = build_instance( 
+		package => 'Edward::Scissorhands',
+		superclasses =>['Data::Walk::Extracted'],
+		roles =>[qw( Data::Walk::Print Data::Walk::Prune )],
+		change_array_size => 1, #Default
+    );
 my  $firstref = {
         Helping => [
             'Somelevel',

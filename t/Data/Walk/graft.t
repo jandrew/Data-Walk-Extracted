@@ -5,10 +5,13 @@ use Test::Moose;
 use MooseX::ShortCut::BuildInstance 0.008 qw( build_instance );
 use lib	
 		'../../../lib',
-		'../../lib';
-use Data::Walk::Extracted 0.026;
-use Smart::Comments -ENV;
-use Data::Walk::Graft 0.026;
+		'../../lib',
+		'../../../../Log-Shiras/lib',
+		;
+#~ use Log::Shiras::Unhide qw( :InternalExtracteD :InternalExtracteDDispatcH :InternalExtracteDGrafT );
+#~ use Data::Walk::Extracted::Dispatch;# To unhide debug
+use Data::Walk::Extracted;
+use Data::Walk::Graft;
 use YAML::Any;
 
 my( 

@@ -1,6 +1,6 @@
 #!perl
 use YAML::Any;
-use Moose::Util qw( with_traits );
+use MooseX::ShortCut::BuildInstance qw( build_instance );
 use lib '../lib';
 use Data::Walk::Extracted;
 use Data::Walk::Print;
@@ -41,10 +41,10 @@ my  $secondref = Load(
                     - bavalue3
                     BottomKey1: 12354'
 );
-my $AT_ST = with_traits( 
-		'Data::Walk::Extracted', 
-		( 'Data::Walk::Print' ),
-	)->new(
+my $AT_ST = build_instance( 
+		package => 'Gutenberg',
+		superclasses =>['Data::Walk::Extracted'],
+		roles =>[qw( Data::Walk::Print )],
 		match_highlighting => 1,#This is the default
     );
 $AT_ST->print_data(

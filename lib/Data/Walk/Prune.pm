@@ -1,16 +1,14 @@
 package Data::Walk::Prune;
-use version; our $VERSION = version->declare('v0.26.18');
-
+use version; our $VERSION = version->declare('v0.28.0');
+###InternalExtracteDPrunE	warn "You uncovered internal logging statements for Data::Walk::Prune-$VERSION";
+###InternalExtracteDPrunE	use Data::Dumper;
+use 5.010;
+use utf8;
 use Moose::Role;
-requires
-	'_process_the_data',
-	'_dispatch_method',
-	'_build_branch';
-use	Types::Standard -types;
-if( $ENV{ Smart_Comments } ){
-	use Smart::Comments -ENV;
-	### Smart-Comments turned on for Data-Walk-Prune ...
-}
+requires qw(
+	_get_had_secondary		_process_the_data			_dispatch_method
+);
+use MooseX::Types::Moose qw( ArrayRef Bool Item HashRef );
 
 #########1 Package Variables  3#########4#########5#########6#########7#########8#########9
 
@@ -45,7 +43,6 @@ my 	$prune_decision_dispatch = {######<-------------------------------  ADD New 
 #########1 Public Attributes  3#########4#########5#########6#########7#########8#########9
 
 has 'prune_memory'	=>(
-    is			=> 'ro',
     isa     	=> Bool,
     writer  	=> 'set_prune_memory',
 	reader		=> 'get_prune_memory',
@@ -56,25 +53,23 @@ has 'prune_memory'	=>(
 #########1 Public Methods     3#########4#########5#########6#########7#########8#########9
 
 sub prune_data{#Used to convert names
-    ### <where> - Made it to prune_data
     ##### <where> - Passed input  : @_
-    my  $self = $_[0];
-    my  $passed_ref = ( @_ == 2 and is_HashRef( $_[1] ) ) ? $_[1] : { @_[1 .. $#_] } ;
-    ##### <where> - Passed hashref: $passed_ref
+    my( $self, @args ) = @_;
+    ###InternalExtracteDPrunE	warn "Made it to prune_data with input:" . Dumper( @args );
+    my  $passed_ref = ( @args == 1 and is_HashRef( $args[0] ) ) ? $args[0] : { @args } ;
+    ###InternalExtracteDPrunE	warn "Resolved hashref:" . Dumper( $passed_ref );
     @$passed_ref{ 'before_method', 'after_method' } = # Hash slice
         ( '_prune_before_method', '_prune_after_method' );
 	$self->_clear_pruned_positions;
-    ##### <where> - Start recursive parsing with: $passed_ref
+    ###InternalExtracteDPrunE	warn "Start recursive parsing with:" . Dumper( $passed_ref );
     $passed_ref = $self->_process_the_data( $passed_ref, $prune_keys );
-    ### <where> - End recursive parsing with: $passed_ref
-	##### <where> - self: $self
+    ###InternalExtracteDPrunE	warn "End recursive parsing with:" . Dumper( $passed_ref );
     return $passed_ref->{tree_ref};
 }
 
 #########1 Private Attributes 3#########4#########5#########6#########7#########8#########9
 
 has '_prune_list' =>(
-    is			=> 'ro',
     traits		=> ['Array'],
     isa			=> ArrayRef[ArrayRef[Item]],
     handles => {
@@ -86,7 +81,6 @@ has '_prune_list' =>(
 );
 
 has '_pruned_positions' =>(
-    is				=> 'ro',
     traits  		=> ['Array'],
     isa     		=> ArrayRef[HashRef],
     handles => {
@@ -102,60 +96,57 @@ has '_pruned_positions' =>(
 
 sub _prune_before_method{
     my ( $self, $passed_ref ) = @_;
-    ### <where> - reached _prune_before_method
-    #### <where> - received input: $passed_ref
+    ###InternalExtracteDPrunE	warn "reached _prune_before_method with input" . Dumper( $passed_ref );
     if( !exists $passed_ref->{secondary_ref} ){
-        ### <where> - no matching tree_ref element so 'skip'ing the slice node ...
+        ###InternalExtracteDPrunE	warn "no matching tree_ref element so 'skip'ing the slice node ...";
         $passed_ref->{skip} = 'YES';
     }
-	#### <where> - skip state: $passed_ref->{skip}
+	###InternalExtracteDPrunE	warn "skip state: $passed_ref->{skip}";
     return $passed_ref;
 }
 
 sub _prune_after_method{
     my ( $self, $passed_ref ) = @_;
-    ### <where> - reached _prune_after_method
-    #### <where> - received input: $passed_ref
-	### <where> - Slice state: $self->_has_prune_list
-	### <where> - running the cut test ...
+    ###InternalExtracteDPrunE	warn "reached _prune_after_method with input" . Dumper( $passed_ref );
+	###InternalExtracteDPrunE	warn "Running the cut test with slice state: $self->_has_prune_list";
 	if( $passed_ref->{skip} eq 'NO') {
-		### <where> - The node was not skipped ...
+		###InternalExtracteDPrunE	warn "The node was not skipped ...";
 		if( $self->_dispatch_method(
 				$prune_decision_dispatch,
 				$passed_ref->{primary_type},
 				$passed_ref,				) ){
-			### <where> - adding prune item: $passed_ref->{branch_ref}->[-1]
+			###InternalExtracteDPrunE	warn "adding prune item:" . Dumper( $passed_ref->{branch_ref}->[-1] );
 			$self->_add_prune_item( $passed_ref->{branch_ref}->[-1] );
-			### <where> - go back up and prune ...
+			###InternalExtracteDPrunE	warn "go back up and prune ...";
 		}elsif( $self->_has_prune_list ){
 			my  $tree_ref   =
 				( exists $passed_ref->{secondary_ref} ) ?
 					$passed_ref->{secondary_ref} : undef ;
-			### <where> - tree_ref: $tree_ref
+			###InternalExtracteDPrunE	warn "tree_ref:" . Dumper( $tree_ref );
 			while( my $item_ref = $self->_next_prune_item ){
-				### <where> - item ref: $item_ref
+				###InternalExtracteDPrunE	warn "item ref:" . Dumper( $item_ref );
 				$tree_ref = $self->_prune_the_item( $item_ref, $tree_ref );
-				#### <where> - tree ref: $tree_ref
+				###InternalExtracteDPrunE	warn "tree ref:" . Dumper( $tree_ref );
 				if(	$self->has_prune_memory and
 					$self->get_prune_memory 	){
-					### <where> - building the rememberance ref ...
+					###InternalExtracteDPrunE	warn "building the rememberance ref ...";
 					my $rememberance_ref = $self->_dispatch_method(
 							$remember_dispatch,
 							$item_ref->[0],
 							$item_ref,
 					);
-					###  <where> - current branch ref is: $passed_ref->{branch_ref}
+					###InternalExtracteDPrunE	warn "current branch ref is:" . Dumper( $passed_ref->{branch_ref} );
 					$rememberance_ref = $self->_build_branch(
 						$rememberance_ref,
 						@{ $passed_ref->{branch_ref}},
 					);
-					###  <where> - rememberance ref: $rememberance_ref
+					###InternalExtracteDPrunE	warn "rememberance ref:" . Dumper( $rememberance_ref );
 					$self->_remember_prune_item( $rememberance_ref );
-					#### <where> - prune memory: $self->get_pruned_positions
+					###InternalExtracteDPrunE	warn "prune memory:" . Dumper( $self->get_pruned_positions );
 				}
 			}
 			$passed_ref->{secondary_ref} = $tree_ref;
-			### <where> - finished pruning at this node - clear the prune list ...
+			###InternalExtracteDPrunE	warn "finished pruning at this node - clear the prune list ...";
 			$self->_clear_prune_list;
 		}
     }
@@ -164,60 +155,54 @@ sub _prune_after_method{
 
 sub _prune_the_item{
     my ( $self, $item_ref, $tree_ref ) = @_;
-    ### <where> - Made it to _prune_the_item
-    ### <where> - item ref  : $item_ref
-    ##### <where> - tree ref  : $tree_ref
+    ###InternalExtracteDPrunE	warn "reached _prune_the_item with item:" . Dumper( $item_ref );
+    ###InternalExtracteDPrunE	warn ".. and tree ref:" . Dumper( $tree_ref );
 	$tree_ref = $self->_dispatch_method(
 		$prune_dispatch,
 		$item_ref->[0],
 		$item_ref,
 		$tree_ref,
 	);
-    ### <where> - cut completed succesfully
+    ###InternalExtracteDPrunE	warn "cut completed succesfully";
     return $tree_ref;
 }
 
 sub _remove_hash_key{
     my ( $self, $item_ref, $tree_ref ) = @_;
-    ### <where> - Made it to _remove_hash_key
-    ##### <where> - self      : $self
-    ### <where> - item ref  : $item_ref
-    ##### <where> - tree ref  : $tree_ref
+    ###InternalExtracteDPrunE	warn "reached _remove_hash_key with item:" . Dumper( $item_ref );
+    ###InternalExtracteDPrunE	warn ".. and tree ref:" . Dumper( $tree_ref );
     delete $tree_ref->{$item_ref->[1]};
-    ##### <where> - tree ref  : $tree_ref
+    ###InternalExtracteDPrunE	warn "New tree ref:" . Dumper( $tree_ref );
     return $tree_ref;
 }
 
 sub _clear_array_position{
     my ( $self, $item_ref, $tree_ref ) = @_;
-    ### <where> - Made it to _clear_array_position
-    ### <where> - item ref  : $item_ref
-    ##### <where> - tree ref  : $tree_ref
+    ###InternalExtracteDPrunE	warn "reached _clear_array_position with item:" . Dumper( $item_ref );
+    ###InternalExtracteDPrunE	warn ".. and tree ref:" . Dumper( $tree_ref );
     if( $self->change_array_size ){
-        ### <where> - splicing out position: $item_ref->[2]
+        ###InternalExtracteDPrunE	warn "splicing out position:" . Dumper( $item_ref->[2] );
         splice( @$tree_ref, $item_ref->[2]);
     }else{
-        ### <where> - Setting undef at position: $item_ref->[2]
+        ###InternalExtracteDPrunE	warn "Setting undef at position:" . Dumper( $item_ref->[2] );
         $tree_ref->[$item_ref->[2]] = undef;
     }
-    ##### <where> - tree ref  : $tree_ref
+    ###InternalExtracteDPrunE	warn "New tree ref:" . Dumper( $tree_ref );
     return $tree_ref;
 }
 
 sub _build_hash_cut{
     my ( $self, $item_ref ) = @_;
-    ### <where> - Made it to _build_hash_cut
-    ### <where> - item ref  : $item_ref
+    ###InternalExtracteDPrunE	warn "reached _build_hash_cut with item:" . Dumper( $item_ref );
 	return { $item_ref->[1] => {} };
 }
 
 sub _build_array_cut{
     my ( $self, $item_ref ) = @_;
-    ### <where> - Made it to _build_array_cut
-    ### <where> - item ref  : $item_ref
+    ###InternalExtracteDPrunE	warn "reached _build_array_cut with item:" . Dumper( $item_ref );
 	my  $array_ref;
 	$array_ref->[$item_ref->[2]] = [];
-    ### <where> - item ref  : $item_ref
+    ###InternalExtracteDPrunE	warn "New item ref:" . Dumper( $item_ref );
 	return $item_ref;
 }
 
@@ -240,18 +225,17 @@ Data::Walk::Prune - A way to say what should be removed
 =head1 SYNOPSIS
 
 	#!perl
-	use Moose::Util qw( with_traits );
+	use MooseX::ShortCut::BuildInstance qw( build_instance );
 	use Data::Walk::Extracted;
 	use Data::Walk::Prune;
 	use Data::Walk::Print;
 
-	my $edward_scissorhands = with_traits(
-			'Data::Walk::Extracted',
-			(
-				'Data::Walk::Prune',
-				'Data::Walk::Print',
-			),
-		)->new( change_array_size => 1, );#Default
+	my  $edward_scissorhands = build_instance( 
+			package => 'Edward::Scissorhands',
+			superclasses =>['Data::Walk::Extracted'],
+			roles =>[qw( Data::Walk::Print Data::Walk::Prune )],
+			change_array_size => 1, #Default
+		);
 	my  $firstref = {
 			Helping => [
 				'Somelevel',
@@ -269,7 +253,7 @@ Data::Walk::Prune - A way to say what should be removed
 			],
 		};
 	my	$result = $edward_scissorhands->prune_data(
-			tree_ref    => $firstref,
+			tree_ref    => $firstref, 
 			slice_ref   => {
 				Helping => [
 					undef,

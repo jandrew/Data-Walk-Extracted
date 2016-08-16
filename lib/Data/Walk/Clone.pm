@@ -1,19 +1,14 @@
 package Data::Walk::Clone;
-use version; our $VERSION = version->declare('v0.26.18');
+use version; our $VERSION = version->declare('v0.28.0');
+###InternalExtracteDClonE	warn "You uncovered internal logging statements for Data::Walk::Clone-$VERSION";
+###InternalExtracteDClonE	use Data::Dumper;
+use 5.010;
+use utf8;
 use Moose::Role;
-requires
-	'_process_the_data',
-	'_dispatch_method',
-	'_get_had_secondary';
-use	Types::Standard qw(
-		HashRef
-		is_HashRef
-		Bool
-	);
-if( $ENV{ Smart_Comments } ){
-	use Smart::Comments -ENV;
-	### Smart-Comments turned on for Data-Walk-Clone
-}
+requires qw(
+	_process_the_data			_dispatch_method			_get_had_secondary
+);
+use MooseX::Types::Moose qw( HashRef Bool );
 
 #########1 Package Variables  3#########4#########5#########6#########7#########8#########9
 
@@ -53,7 +48,6 @@ my 	$seed_clone_dispatch ={######<------------------------------------  ADD New 
 #########1 Public Attributes  3#########4#########5#########6#########7#########8#########9
 
 has 'should_clone' =>(
-	is			=> 'ro',
 	isa			=> Bool,
 	writer		=> 'set_should_clone',
 	reader		=> 'get_should_clone',
@@ -61,41 +55,39 @@ has 'should_clone' =>(
 	default		=> 1,
 );
 
-sub clear_should_clone{
-	### <where> - turn cloning back on at clear_should_clone ...
-    my ( $self, ) = @_;
-	$self->set_should_clone( 1 );
-	return 1;
-}
-
 #########1 Public Methods     3#########4#########5#########6#########7#########8#########9
 
 sub deep_clone{#Used to convert names for Data::Walk:Extracted
-    ### <where> - Made it to deep_clone
-    ##### <where> - Passed input  : @_
+    ###InternalExtracteDClonE	warn "Made it to deep_clone with input:" . Dumper( @_ );
     my  $self = $_[0];
     my  $passed_ref =
 		( @_ == 2 ) ?
 			( 	( is_HashRef( $_[1] ) and exists $_[1]->{donor_ref} ) ?
 					$_[1] : { donor_ref =>  $_[1] } ) :
 			{ @_[1 .. $#_] } ;
-    ##### <where> - Passed hashref: $passed_ref
+    ###InternalExtracteDClonE	warn "transformed hashref:" . Dumper( $passed_ref );
 	@$passed_ref{
 		'before_method', 'after_method',
 	} = (
 		'_clone_before_method',	'_clone_after_method',
 	);
-	##### <where> - Start recursive parsing with  : $passed_ref
+	###InternalExtracteDClonE	warn "Start recursive parsing with:" . Dumper( $passed_ref );
 	$passed_ref = $self->_process_the_data( $passed_ref, $clone_keys );
 	$self->_set_first_pass( 1 );# Re-set
-	### <where> - End recursive parsing with    : $passed_ref
+	###InternalExtracteDClonE	warn "End recursive parsing with:" . Dumper( $passed_ref );
 	return $passed_ref->{secondary_ref};
+}
+
+sub clear_should_clone{
+	###InternalExtracteDClonE	warn "turn cloning back on at clear_should_clone ...";
+    my ( $self, ) = @_;
+	$self->set_should_clone( 1 );
+	return 1;
 }
 
 #########1 Private Attributes 3#########4#########5#########6#########7#########8#########9
 
 has '_first_pass' =>(
-	is			=> 'ro',
 	isa			=> Bool,
 	writer		=> '_set_first_pass',
 	reader		=> '_get_first_pass',
@@ -106,17 +98,14 @@ has '_first_pass' =>(
 
 sub _clone_before_method{
     my ( $self, $passed_ref ) = @_;
-    ### <where> - reached _clone_before_method
-    #### <where> - received input: $passed_ref
-    ### <where> - doner_ref: $passed_ref->{primary_ref}
-	##### <where> - self: $self
+    ###InternalExtracteDClonE	warn "reached _clone_before_method with input:" . Dumper( $passed_ref );
 	if( $self->_get_first_pass ){
-		### <where> perform a one time test for should_clone ...
+		###InternalExtracteDClonE	warn "perform a one time test for should_clone ...";
 		if( !$self->get_should_clone ){
-			### <where> - skipping level now ...
+			###InternalExtracteDClonE	warn "skipping level now ...";
 			$passed_ref->{skip} = 'YES';
 		}else{
-			### <where> - turn on one element of cloning ...
+			###InternalExtracteDClonE	warn "turn on one element of cloning ...";
 			$self->_set_had_secondary( 1 );
 		}
 		$self->_set_first_pass( 0 );
@@ -126,13 +115,11 @@ sub _clone_before_method{
 
 sub _clone_after_method{
     my ( $self, $passed_ref ) = @_;
-    ### <where> - reached _clone_after_method
-    #### <where> - received input: $passed_ref
-	### <where> - current item: $passed_ref->{branch_ref}->[-1]
-	### <where> - should clone?: $self->get_should_clone
+    ###InternalExtracteDClonE	warn "reached _clone_after_method with input:" . Dumper( $passed_ref );
+	###InternalExtracteDClonE	warn "should clone?:" . $self->get_should_clone;
 	if( $self->get_should_clone and
 		$passed_ref->{skip} eq 'NO'	){
-		### <where> - seeding the clone as needed for: $passed_ref->{primary_type}
+		###InternalExtracteDClonE	warn "seeding the clone as needed for: $passed_ref->{primary_type}";
 		$passed_ref = $self->_dispatch_method(
 			$seed_clone_dispatch,
 			$passed_ref->{primary_type},
@@ -142,7 +129,7 @@ sub _clone_after_method{
 		# Eliminating the clone at this level
 		$passed_ref->{secondary_ref} =  $passed_ref->{primary_ref};
 	}
-    #### <where> - the new passed_ref is: $passed_ref
+    ###InternalExtracteDClonE	warn "the new passed_ref is:" . Dumper( $passed_ref );
     return $passed_ref;
 }
 
@@ -165,13 +152,15 @@ Data::Walk::Clone - deep data cloning with boundaries
 
 	#!perl
 	use Moose::Util qw( with_traits );
+	use lib '../lib';
 	use Data::Walk::Extracted;
 	use Data::Walk::Clone;
+	use MooseX::ShortCut::BuildInstance qw( build_instance );
 
-	my $dr_nisar_ahmad_wani = with_traits(
-			'Data::Walk::Extracted',
-			( 'Data::Walk::Clone',  )
-		)->new(
+	my  $dr_nisar_ahmad_wani = build_instance( 
+			package => 'Clone::Camels',
+			superclasses =>['Data::Walk::Extracted'],
+			roles =>[ 'Data::Walk::Clone' ],
 			skip_node_tests =>[  [ 'HASH', 'LowerKey2', 'ALL',   'ALL' ] ],
 		);
 	my  $donor_ref = {
@@ -206,8 +195,8 @@ Data::Walk::Clone - deep data cloning with boundaries
 		$donor_ref->{Helping}->[1]->{MyKey}->{MiddleKey}->{LowerKey2}		){
 		print "The data is not cloned at the skip point\n";
 	}
-
-	if(
+		
+	if( 
 		$injaz_ref->{Helping}->[1]->{MyKey}->{MiddleKey} ne
 		$donor_ref->{Helping}->[1]->{MyKey}->{MiddleKey}		){
 		print "The data is cloned above the skip point\n";
@@ -221,30 +210,23 @@ Data::Walk::Clone - deep data cloning with boundaries
 
 =head1 DESCRIPTION
 
-This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> contains
-methods for implementing the method L<deep_clone|/deep_clone( $arg_ref|%args|$data_ref )> using
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>.
-This method is used to deep clone (clone many/all) levels of a data ref.  Deep cloning
-is accomplished by sending a 'donor_ref' that has data nodes that you want copied into a
-different memory location.  In general Data::Walk::Extracted already deep clones any
-output as part of its data walking so the primary value of this role is to manage
-deep cloning boundaries. It may be that some portion of the data should maintain common
-memory references to the original memory references and so all of the Data::Walk::Extracted
-skip methods will be recognized and supported.  Meaning that if a node is skipped the
-data reference will be copied directly rather than cloned.  The deep clone boundaries
-are managed using the L<skip attributes
+This L<Moose::Role> contains methods for implementing the method L<deep_clone
+|/deep_clone( $arg_ref|%args|$data_ref )> using L<Data::Walk::Extracted>.  This method is 
+used to deep clone (clone many/all) levels of a data ref.  Deep cloning is accomplished by 
+sending a 'donor_ref' that has data nodes that you want copied into a different memory 
+location.  In general Data::Walk::Extracted already deep clones any output as part of its 
+data walking so the primary value of this role is to manage deep cloning boundaries. It may 
+be that some portion of the data should maintain common memory references to the original 
+memory references and so all of the Data::Walk::Extracted skip methods will be recognized 
+and supported.  Meaning that if a node is skipped the data reference will be copied directly 
+rather than cloned.  The deep clone boundaries are managed using the L<skip attributes
 |https://metacpan.org/module/Data::Walk::Extracted#skipped_nodes> in Data::Walk::Extracted.
 
 =head2 USE
 
-This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> specifically
-designed to be used with L<Data::Walk::Extracted
+This is a L<Moose::Role> specifically designed to be used with L<Data::Walk::Extracted
 |https://metacpan.org/module/Data::Walk::Extracted#Extending-Data::Walk::Extracted>.
-It can be combined traditionaly to the ~::Extracted class using L<Moose
-|https://metacpan.org/module/Moose::Manual::Roles> methods or for information on how to join
-this role to Data::Walk::Extracted at run time see L<Moose::Util
-|https://metacpan.org/module/Moose::Util> or L<MooseX::ShortCut::BuildInstance
-|https://metacpan.org/module/MooseX::ShortCut::BuildInstance> for more information.
+It can be combined at run time with L<Moose::Util> or L<MooseX::ShortCut::BuildInstance>.
 
 =head1 Attributes
 
@@ -381,20 +363,6 @@ B<Returns:> nothing
 
 =back
 
-=head1 GLOBAL VARIABLES
-
-=over
-
-B<$ENV{Smart_Comments}>
-
-The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if the '-ENV'
-option is set.  The 'use' is encapsulated in an if block triggered by an environmental
-variable to comfort non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN
-block will load and turn on smart comment reporting.  There are three levels of 'Smartness'
-available in this module '###',  '####', and '#####'.
-
-=back
-
 =head1 SUPPORT
 
 =over
@@ -407,14 +375,11 @@ L<github Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extract
 
 =over
 
-B<1.> Add L<Log::Shiras|https://metacpan.org/module/Log::Shiras> debugging in exchange for
-L<Smart::Comments|https://metacpan.org/module/Smart::Comments>
+B<1.> Support cloning through class instance nodes (can should you even do this?)
 
-B<2.> Support cloning through class instance nodes (can should you even do this?)
+B<2.> Support cloning through CodeRef nodes
 
-B<3.> Support cloning through CodeRef nodes
-
-B<4.> Support cloning through REF nodes
+B<3.> Support cloning through REF nodes
 
 =back
 
@@ -436,15 +401,19 @@ it and/or modify it under the same terms as Perl itself.
 The full text of the license can be found in the
 LICENSE file included with this module.
 
-This software is copyrighted (c) 2013 by Jed Lund.
+This software is copyrighted (c) 2012, 2016 by Jed Lund.
 
 =head1 Dependencies
 
 =over
 
-L<version|https://metacpan.org/module/version>
+L<version> - 0.77
 
-L<Moose::Role|https://metacpan.org/module/Moose::Role>
+L<utf8>
+
+L<MooseX::Types>
+
+L<Moose::Role>
 
 =over
 
@@ -460,13 +429,11 @@ B<requires>
 
 =back
 
+L<Data::Walk::Extracted>
+
+L<Data::Walk::Extracted::Dispatch>
+
 =back
-
-L<MooseX::Types::Moose|https://metacpan.org/module/MooseX::Types::Moose>
-
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>
-
-L<Data::Walk::Extracted::Dispatch|https://metacpan.org/module/Data::Walk::Extracted::Dispatch>
 
 =back
 
@@ -474,19 +441,13 @@ L<Data::Walk::Extracted::Dispatch|https://metacpan.org/module/Data::Walk::Extrac
 
 =over
 
-L<Smart::Comments|https://metacpan.org/module/Smart::Comments> - is used if the -ENV option is set
+L<Clone> - clone
 
-L<Data::Walk|https://metacpan.org/module/Data::Walk>
+L<Log::Shiras::Unhide> - Can use to unhide '###InternalExtracteDClonE' tags
 
-L<Data::Walker|https://metacpan.org/module/Data::Walker>
+L<Log::Shiras::TapWarn> - to manage the output of exposed '###InternalExtracteDClonE' lines
 
-L<Storable|https://metacpan.org/module/Storable> - dclone
-
-L<Data::Walk::Print|https://metacpan.org/module/Data::Walk::Print> - available Data::Walk::Extracted Role
-
-L<Data::Walk::Graft|https://metacpan.org/module/Data::Walk::Graft> - available Data::Walk::Extracted Role
-
-L<Data::Walk::Prune|https://metacpan.org/module/Data::Walk::Prune> - available Data::Walk::Extracted Role
+L<Data::Dumper> - used in the '###InternalExtracteDGrafT' lines
 
 =back
 

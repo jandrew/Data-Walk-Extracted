@@ -7,6 +7,11 @@ META.yml
 Makefile.PL
 README.pod
 dist.ini
+examples/Data/Walk/clone-example.pl
+examples/Data/Walk/extracted-example.pl
+examples/Data/Walk/graft-example.pl
+examples/Data/Walk/print-example.pl
+examples/Data/Walk/prune-examle.pl
 lib/Data/Walk/Clone.pm
 lib/Data/Walk/Extracted.pm
 lib/Data/Walk/Extracted/Dispatch.pm
@@ -14,11 +19,6 @@ lib/Data/Walk/Extracted/Types.pm
 lib/Data/Walk/Graft.pm
 lib/Data/Walk/Print.pm
 lib/Data/Walk/Prune.pm
-t/Data-Walk-Clone-example.pl
-t/Data-Walk-Extracted-example.pl
-t/Data-Walk-Graft-example.pl
-t/Data-Walk-Print-example.pl
-t/Data-Walk-Prune-example.pl
 t/Data/Walk/all.t
 t/Data/Walk/clone.t
 t/Data/Walk/graft.t

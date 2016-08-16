@@ -8,7 +8,11 @@ use Test::Moose;
 use MooseX::ShortCut::BuildInstance 0.008 qw( build_instance );
 use lib	
 		'../../../lib',
-		'../../lib';
+		'../../lib',
+		'../../../../Log-Shiras/lib',
+		;
+#~ use Log::Shiras::Unhide qw( :InternalExtracteD :InternalExtracteDDispatcH :InternalExtracteDPrunE );
+#~ use Data::Walk::Extracted::Dispatch;# To unhide debug
 use Data::Walk::Extracted 0.026;
 use Data::Walk::Prune 0.026;
 
@@ -74,7 +78,7 @@ lives_ok{
 					},
 				],
 			};
-}										'Build the $treeref for testing';
+}										'Build the $tree_ref for testing';
 lives_ok{   
 			$answerref =  {
 				Parsing         =>{
@@ -99,7 +103,7 @@ lives_ok{
 					},
 				],
 			};
-}										'Build the $answerref for testing';
+}										'Build the $answer_ref for testing';
 is_deeply	$edward_scissorhands->prune_data(
                 slice_ref 	=> { Someotherkey => {} }, 
                 tree_ref	=> $treeref,
@@ -118,7 +122,7 @@ lives_ok{
 					},
 				],
 			};
-}										'build a $sliceref for testing';
+}										'build a $slice_ref for testing';
 lives_ok{   
 			$answerref =  {
 				Parsing         =>{
@@ -139,7 +143,7 @@ lives_ok{
 					},
 				],
 			};
-}										'... change the $answerref for testing';
+}										'... change the $answer_ref for testing';
 is_deeply	$edward_scissorhands->prune_data(
                 tree_ref    => $treeref, 
                 slice_ref   => $sliceref
@@ -161,7 +165,7 @@ lives_ok{
 					},
 				],
 			};
-}										'... change the $sliceref for testing';
+}										'... change the $slice_ref for testing';
 lives_ok{   
 			$answerref =  {
 				Parsing =>{
@@ -181,7 +185,7 @@ lives_ok{
 					},
 				],
 			};
-}										'... change the $answerref for testing';
+}										'... change the $answer_ref for testing';
 ok 			$edward_scissorhands->set_prune_memory( 1 ),	
 										'Turn on prune rememberance';
 is_deeply	$edward_scissorhands->prune_data(
@@ -202,7 +206,7 @@ lives_ok{
 					},
 				],
 			};
-}										'... change the $sliceref for testing';
+}										'... change the $slice_ref for testing';
 ok 			$edward_scissorhands->has_pruned_positions,
 										'See if any slices were remembered';
 is 			$edward_scissorhands->number_of_cuts, 1,

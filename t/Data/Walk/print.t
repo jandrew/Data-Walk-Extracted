@@ -1,8 +1,5 @@
 #!perl
-#######  Test File for Data::Walk::Extracted  #######
-BEGIN{
-	#~ $ENV{ Smart_Comments } = '### #### #####';
-}
+#######  Test File for Data::Walk::Print  #######
 
 use Test::Most tests => 252;
 use Test::Moose;
@@ -12,13 +9,13 @@ use Capture::Tiny 0.12 qw(
 use MooseX::ShortCut::BuildInstance 0.008;
 use lib	
 		'../../../lib',
-		'../../lib';
-use Data::Walk::Extracted 0.026;
-use Data::Walk::Print 0.026;
-if( $ENV{ Smart_Comments } ){
-	use Smart::Comments -ENV;#'###'
-	### Smart-Comments turned on for the Data-Walk-Print test ...
-}
+		'../../lib',
+		'../../../../Log-Shiras/lib',
+		;
+#~ use Log::Shiras::Unhide qw( :InternalExtracteD :InternalExtracteDDispatcH :InternalExtracteDPrinT );
+#~ use Data::Walk::Extracted::Dispatch;# To unhide debug
+use Data::Walk::Extracted;
+use Data::Walk::Print;
 
 my  ( 
 			$first_ref, $second_ref, $newclass, $gutenberg, 

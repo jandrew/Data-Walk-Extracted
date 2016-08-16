@@ -1,21 +1,14 @@
 package Data::Walk::Print;
-use version; our $VERSION = version->declare('v0.26.18');
-
+use version; our $VERSION = version->declare('v0.28.0');
+###InternalExtracteDPrinT	warn "You uncovered internal logging statements for Data::Walk::Print-$VERSION";
+###InternalExtracteDPrinT	use Data::Dumper;
+use 5.010;
+use utf8;
 use Moose::Role;
-requires
-	'_get_had_secondary',
-	'_process_the_data',
-	'_dispatch_method';
-use	Types::Standard qw(
-		Str
-		Bool
-		is_HashRef
-		is_Num
-	);
-if( $ENV{ Smart_Comments } ){
-	use Smart::Comments -ENV;
-	### Smart-Comments turned on for Data-Walk-Print ...
-}
+requires qw(
+	_get_had_secondary		_process_the_data			_dispatch_method
+);
+use MooseX::Types::Moose qw( Str Bool HashRef Num );
 
 #########1 Package Variables  3#########4#########5#########6#########7#########8#########9
 
@@ -90,24 +83,20 @@ has 'to_string' =>(
 #########1 Public Methods     3#########4#########5#########6#########7#########8#########9
 
 sub print_data{
-    ### <where> - Made it to print
-    ##### <where> - Passed input  : @_
-    my  $self = $_[0];
+    my ( $self, @args )= @_;
+    ###InternalExtracteDPrinT	warn "Made it to print with input" . Dumper( @args );
     my  $passed_ref =
-            ( 	@_ == 2 and
-                (   ( is_HashRef( $_[1] ) and
-					!( exists $_[1]->{print_ref} ) ) or
-				!is_HashRef( $_[1] )						) ) ?
-					{ print_ref => $_[1] }  :
-            ( 	@_ == 2 and is_HashRef( $_[1] ) ) ?
-					$_[1] :
-					{ @_[1 .. $#_] } ;
-    ##### <where> - Passed hashref: $passed_ref
+            @args == 1 ? 
+				( is_HashRef( $args[0] ) ? 
+					( !exists $args[0]->{print_ref} ? { print_ref => $args[0] } : $args[0] ) :
+					{ print_ref => $args[0] } 													) :
+                { @args } ;
+	###InternalExtracteDPrinT	warn "Resolved hashref:" . Dumper( $passed_ref );
     @$passed_ref{ 'before_method', 'after_method' } =
         ( '_print_before_method', '_print_after_method' );
-    ##### <where> - Start recursive parsing with: $passed_ref
+    ###InternalExtracteDPrinT	warn "Start recursive parsing with:" . Dumper( $passed_ref );
     $passed_ref = $self->_process_the_data( $passed_ref, $print_keys );
-    ### <where> - End recursive parsing with: $passed_ref
+    ###InternalExtracteDPrinT	warn "End recursive parsing with:" . Dumper( $passed_ref );
 	my $return = ( $self->get_to_string ) ? $self->_get_final_string : 1;
 	$self->_clear_final_string;
     return $return;
@@ -116,7 +105,6 @@ sub print_data{
 #########1 Private Attributes 3#########4#########5#########6#########7#########8#########9
 
 has '_pending_string' =>(
-    is          => 'ro',
     isa         => Str,
     writer      => '_set_pending_string',
     clearer     => '_clear_pending_string',
@@ -125,7 +113,6 @@ has '_pending_string' =>(
 );
 
 has '_match_string' =>(
-    is          => 'ro',
     isa         => Str,
     writer      => '_set_match_string',
     clearer     => '_clear_match_string',
@@ -134,7 +121,6 @@ has '_match_string' =>(
 );
 
 has '_final_string' =>(
-    is          => 'ro',
     isa         => Str,
     traits  	=> ['String'],
     writer      => '_set_final_string',
@@ -143,7 +129,7 @@ has '_final_string' =>(
 	reader		=> '_get_final_string',
     handles => {
         _add_to_final_string => 'append',
-    },,
+    },
     default => q{},
 );
 
@@ -151,17 +137,15 @@ has '_final_string' =>(
 
 sub _print_before_method{
     my ( $self, $passed_ref ) = @_;
-    ### <where> - reached before_method ...
-    #### <where> - received input: $passed_ref
-	##### <where> - self: $self
+    ###InternalExtracteDPrinT	warn "reached before_method with input:" . Dumper( $passed_ref );
 	my ( $should_print );
 	if( 	$self->get_match_highlighting and
 			!$self->_has_match_string 			){
 		$self->_set_match_string( '#<--- ' );
 	}
-	### <where> - add before pre-string ...
+	###InternalExtracteDPrinT	warn "add before pre-string ...";
 	if( $self->_get_current_level ){
-		### <where> - only available at level 1 + ...
+		###InternalExtracteDPrinT	warn "only available at level 1 + ...";
 		$self->_dispatch_method(
 			$before_pre_string_dispatch,
 			$passed_ref->{branch_ref}->[-1]->[0],
@@ -169,7 +153,7 @@ sub _print_before_method{
 			$passed_ref->{branch_ref}->[-1],
 		);
 	}
-	### <where> - printing reference bracket ...
+	###InternalExtracteDPrinT	warn "printing reference bracket ...";
 	if( $passed_ref->{skip} eq 'NO' ){
 		$should_print = $self->_dispatch_method(
 			$before_method_dispatch,
@@ -177,41 +161,37 @@ sub _print_before_method{
 			$passed_ref,
 		);
 	}else{
-		### <where> - Found a skip - handling it in the after_method ...
+		###InternalExtracteDPrinT	warn "Found a skip - handling it in the after_method ...";
 	}
-	### <where> - print as needed ...
+	###InternalExtracteDPrinT	warn "print as needed ...";
     if( $should_print ){
-		### <where> - found a line that should print ...
+		###InternalExtracteDPrinT	warn "found a line that should print ...";
         $self->_print_pending_string;
     }
-    ### <where> - leaving before_method
+    ###InternalExtracteDPrinT	warn "leaving before_method";
 	return $passed_ref;
 }
 
 sub _print_after_method{
     my ( $self, $passed_ref ) = @_;
-    ### <where> - reached the print after_method ...
-    #### <where> - received input: $passed_ref
-	##### <where> - self: $self
+    ###InternalExtracteDPrinT	warn "reached the print after_method with input:" . Dumper( $passed_ref );
 	my  $should_print = $self->_dispatch_method(
 		$after_method_dispatch,
 		$passed_ref->{primary_type},
 		$passed_ref,
 	);
-	### <where> - Should Print: $should_print
+	###InternalExtracteDPrinT	warn "Testing should Print with: $should_print";
     if( $should_print ){
-		### <where> - found a line that should print ...
+		###InternalExtracteDPrinT	warn "found a line that should print ...";
         $self->_print_pending_string;
     }
-    ### <where> - after_method complete
-    #### <where> - returning: $passed_ref
+    ###InternalExtracteDPrinT	warn "after_method complete returning:" . Dumper( $passed_ref );
     return $passed_ref;
 }
 
 sub _add_to_pending_string{
     my ( $self, $string ) = @_;
-    ### <where> - reached _add_to_pending_string
-    ### <where> - adding: $string
+    ###InternalExtracteDPrinT	warn "reached _add_to_pending_string with: $string";
     $self->_set_pending_string(
         (($self->_has_pending_string) ?
             $self->_get_pending_string : '') .
@@ -222,8 +202,7 @@ sub _add_to_pending_string{
 
 sub _add_to_match_string{
     my ( $self, $string ) = @_;
-    ### <where> - reached _add_to_match_string
-    ### <where> - adding: $string
+    ###InternalExtracteDPrinT	warn "reached _add_to_match_string with: $string";
     $self->_set_match_string(
         (($self->_has_match_string) ?
             $self->_get_match_string : '') .
@@ -234,12 +213,11 @@ sub _add_to_match_string{
 
 sub _print_pending_string{
     my ( $self, $input ) = @_;
-    ### <where> - reached print pending string ...
-	### <where> - called with additional input: $input
-	#### <where> - match_highlighting called: $self->has_match_highlighting
-	#### <where> - match_highlighting on: $self->get_match_highlighting
-	#### <where> - secondary_ref exists: $self->_get_had_secondary
-	#### <where> - has pending match string: $self->_has_match_string
+    ###InternalExtracteDPrinT	warn "reached print pending string with input:" . Dumper( $input );
+	###InternalExtracteDPrinT	warn "match_highlighting set ?:" . $self->has_match_highlighting;
+	###InternalExtracteDPrinT	warn "match_highlighting on:" . $self->get_match_highlighting if $self->has_match_highlighting;
+	###InternalExtracteDPrinT	warn "secondary_ref exists:" . $self->_get_had_secondary;
+	###InternalExtracteDPrinT	warn "has pending match string:" . $self->_has_match_string;
     if( $self->_has_pending_string ){
         my	$new_string = $self->_add_tabs( $self->_get_current_level );
 			$new_string .= $self->_get_pending_string;
@@ -248,11 +226,11 @@ sub _print_pending_string{
                 $self->get_match_highlighting and
                 $self->_get_had_secondary and
                 $self->_has_match_string        ){
-                ### <where> - match_highlighting on - adding match string
+                ###InternalExtracteDPrinT	warn "match_highlighting on - adding match string";
                 $new_string .= $self->_get_match_string;
             }
             $new_string .= "\n";
-        ### <where> - printing string: $new_string
+        ###InternalExtracteDPrinT	warn "printing string: $new_string";
 		if( $self->get_to_string ){
 			$self->_add_to_final_string( $new_string );
 		}else{
@@ -266,74 +244,69 @@ sub _print_pending_string{
 
 sub _before_hash_pre_string{
     my ( $self, $passed_ref, $branch_ref ) = @_;
-    ### <where> - reached _before_hash_pre_string ...
-	#### <where> - passed ref: $passed_ref
+    ###InternalExtracteDPrinT	warn "reached _before_hash_pre_string with:" . Dumper( $passed_ref );
 	$self->_add_to_pending_string( $branch_ref->[1] . ' => ' );
 	$self->_add_to_match_string(
 		( $passed_ref->{secondary_type} ne 'DNE' ) ?
 			'Hash Key Match - ' : 'Hash Key Mismatch - '
 	);
-	### <where> - current pending string: $self->_get_pending_string
-	### <where> - current match string: $self->_get_match_string
+	###InternalExtracteDPrinT	warn "current pending string:" . $self->_get_pending_string;
+	###InternalExtracteDPrinT	warn "current match string:" . $self->_get_match_string;
 }
 
 sub _before_array_pre_string{
     my ( $self, $passed_ref, $branch_ref ) = @_;
-    ### <where> - reached _before_array_pre_string ...
-	#### <where> - passed ref: $passed_ref
+    ###InternalExtracteDPrinT	warn "reached _before_array_pre_string with:" . Dumper( $passed_ref );
 	$self->_add_to_match_string(
 		( $passed_ref->{secondary_type} ne 'DNE' ) ?
 			'Position Exists - ' : 'No Matching Position - '
 	);
-	### <where> - current pending string: $self->_get_pending_string
-	### <where> - current match string: $self->_get_match_string
+	###InternalExtracteDPrinT	warn "current pending string:" . $self->_get_pending_string;
+	###InternalExtracteDPrinT	warn "current match string:" . $self->_get_match_string;
 }
 
 sub _before_hash_printing{
     my ( $self, $passed_ref ) = @_;
-    ### <where> - reached _before_hash_printing ...
+    ###InternalExtracteDPrinT	warn "reached _before_hash_printing ...";
 	$self->_add_to_pending_string( '{' );
 	$self->_add_to_match_string(
 		( $passed_ref->{secondary_type} eq 'HASH' ) ?
 			'Ref Type Match' : 'Ref Type Mismatch'
 	);
-	### <where> - current pending string: $self->_get_pending_string
-	### <where> - current match string: $self->_get_match_string
+	###InternalExtracteDPrinT	warn "current pending string:" . $self->_get_pending_string;
+	###InternalExtracteDPrinT	warn "current match string:" . $self->_get_match_string;
     return 1;
 }
 
 sub _before_array_printing{
     my ( $self, $passed_ref ) = @_;
-    ### <where> - reached _before_array_printing ...
-	#### <where> - passed ref: $passed_ref
+    ###InternalExtracteDPrinT	warn "reached _before_array_printing with:" . Dumper( $passed_ref );
 	$self->_add_to_pending_string( '[' );
 	$self->_add_to_match_string(
 		( $passed_ref->{secondary_type} eq 'ARRAY' ) ?
 			'Ref Type Match' : 'Ref Type Mismatch'
 	);
-	### <where> - current pending string: $self->_get_pending_string
-	### <where> - current match string: $self->_get_match_string
+	###InternalExtracteDPrinT	warn "current pending string:" . $self->_get_pending_string;
+	###InternalExtracteDPrinT	warn "current match string:" . $self->_get_match_string;
     return 1;
 }
 
 sub _before_object_printing{
     my ( $self, $passed_ref ) = @_;
-    ### <where> - reached _before_object_printing ...
-	#### <where> - passed ref: $passed_ref
+    ###InternalExtracteDPrinT	warn "reached _before_object_printing with:" . Dumper( $passed_ref );
 	$self->_add_to_pending_string( 'BLESS : [' );
 	$self->_add_to_match_string(
 		( $passed_ref->{secondary_type} eq 'ARRAY' ) ?
 			'Ref Type Match' : 'Ref Type Mismatch'
 	);
-	### <where> - current pending string: $self->_get_pending_string
-	### <where> - current match string: $self->_get_match_string
+	###InternalExtracteDPrinT	warn "current pending string:" . $self->_get_pending_string;
+	###InternalExtracteDPrinT	warn "current match string:" . $self->_get_match_string;
     return 1;
 }
 
 sub _after_scalar_printing{
     my ( $self, $passed_ref, ) = @_;
-    ### <where> - reached _after_scalar_printing ...
-	##### <where> - passed ref: $passed_ref
+    ###InternalExtracteDPrinT	warn "reached _after_scalar_printing with:" . Dumper( $passed_ref );
 	$self->_add_to_pending_string(
 		(
 			( is_Num( $passed_ref->{primary_ref} )  ) ?
@@ -346,65 +319,60 @@ sub _after_scalar_printing{
 			'Scalar Value Matches' :
 			'Scalar Value Does NOT Match'
 	);
-	### <where> - current pending string: $self->_get_pending_string
-	### <where> - current match string: $self->_get_match_string
+	###InternalExtracteDPrinT	warn "current pending string:" . $self->_get_pending_string;
+	###InternalExtracteDPrinT	warn "current match string:" . $self->_get_match_string;
 	return 1;
 }
 
 sub _after_undef_printing{
     my ( $self, $passed_ref, ) = @_;
-    ### <where> - reached _after_scalar_printing ...
-	##### <where> - passed ref: $passed_ref
+    ###InternalExtracteDPrinT	warn "reached _after_scalar_printing with:" . Dumper( $passed_ref );
 	$self->_add_to_pending_string(
 		"undef,"
 	);
-	### <where> - current pending string: $self->_get_pending_string
+	###InternalExtracteDPrinT	warn "current pending string:" . $self->_get_pending_string;
 	return 1;
 }
 
 sub _after_array_printing{
     my ( $self, $passed_ref ) = @_;
-    ### <where> - reached _after_array_printing ...
-	##### <where> - passed ref: $passed_ref
+    ###InternalExtracteDPrinT	warn "reached _after_array_printing with:" . Dumper( $passed_ref );
 	if( $passed_ref->{skip} eq 'YES' ){
 		$self->_add_to_pending_string( $passed_ref->{primary_ref} . ',' );
 	}else{
 		$self->_add_to_pending_string( '],' );
 	}
-	### <where> - current pending string: $self->_get_pending_string
+	###InternalExtracteDPrinT	warn "current pending string:" . $self->_get_pending_string;
 	return 1;
 }
 
 sub _after_hash_printing{
     my ( $self, $passed_ref, $skip_method ) = @_;
-    ### <where> - reached _after_hash_printing ...
-	##### <where> - passed ref: $passed_ref
+    ###InternalExtracteDPrinT	warn "reached _after_hash_printing with:" . Dumper( $passed_ref );
 	if( $passed_ref->{skip} eq 'YES' ){
 		$self->_add_to_pending_string( $passed_ref->{primary_ref} . ',' );
 	}else{
 		$self->_add_to_pending_string( '},' );
 	}
-	### <where> - current pending string: $self->_get_pending_string
+	###InternalExtracteDPrinT	warn "current pending string:" . $self->_get_pending_string;
 	return 1;
 }
 
 sub _after_object_printing{
     my ( $self, $passed_ref, $skip_method ) = @_;
-    ### <where> - reached _after_object_printing ...
-	##### <where> - passed ref: $passed_ref
+    ###InternalExtracteDPrinT	warn "reached _after_object_printing with:" . Dumper( $passed_ref );
 	if( $passed_ref->{skip} eq 'YES' ){
 		$self->_add_to_pending_string( $passed_ref->{primary_ref} . ',' );
 	}else{
 		$self->_add_to_pending_string( '},' );
 	}
-	### <where> - current pending string: $self->_get_pending_string
+	###InternalExtracteDPrinT	warn "current pending string:" . $self->_get_pending_string;
 	return 1;
 }
 
 sub _add_tabs{
     my ( $self, $current_level ) = @_;
-    ### <where> - reached _add_tabs ...
-	##### <where> - current level: $current_level
+    ###InternalExtracteDPrinT	warn "reached _add_tabs with current level: $current_level";
     return ("\t" x $current_level);
 }
 
@@ -426,8 +394,8 @@ Data::Walk::Print - A data printing function
 =head1 SYNOPSIS
 
 	#!perl
+	use MooseX::ShortCut::BuildInstance qw( build_instance );
 	use YAML::Any;
-	use Moose::Util qw( with_traits );
 	use Data::Walk::Extracted;
 	use Data::Walk::Print;
 
@@ -467,10 +435,10 @@ Data::Walk::Print - A data printing function
 						- bavalue3
 						BottomKey1: 12354'
 	);
-	my $AT_ST = with_traits(
-			'Data::Walk::Extracted',
-			( 'Data::Walk::Print' ),
-		)->new(
+	my $AT_ST = build_instance( 
+			package => 'Gutenberg',
+			superclasses =>['Data::Walk::Extracted'],
+			roles =>[qw( Data::Walk::Print )],
 			match_highlighting => 1,#This is the default
 		);
 	$AT_ST->print_data(
@@ -517,22 +485,18 @@ Data::Walk::Print - A data printing function
 =head1 DESCRIPTION
 
 This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> is mostly written
-as a demonstration module for
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>.
-Both L<Data::Dumper|https://metacpan.org/module/Data::Dumper#Functions> - Dumper and
-L<YAML|https://metacpan.org/module/YAML::Any#SUBROUTINES> - Dump functions are more mature than
-the printing function included here.
+as a demonstration module for L<Data::Walk::Extracted>. 
+Both L<Data::Dumper|Data::Dumper/Functions> - Dumper and L<YAML|YAML/SUBROUTINES> 
+- Dump functions are more mature than the printing function included here.
 
 =head2 USE
 
-This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> specifically
+This is a L<Moose::Role> specifically
 designed to be used with L<Data::Walk::Extracted
-|https://metacpan.org/module/Data::Walk::Extracted#Extending-Data::Walk::Extracted>.
-It can be combined traditionaly to the ~::Extracted class using L<Moose
-|https://metacpan.org/module/Moose::Manual::Roles> methods or for information on how to join
-this role to Data::Walk::Extracted at run time see L<Moose::Util
-|https://metacpan.org/module/Moose::Util> or L<MooseX::ShortCut::BuildInstance
-|https://metacpan.org/module/MooseX::ShortCut::BuildInstance> for more information.
+|Data::Walk::Extracted/Extending Data::Walk::Extracted> It can be combined traditionaly 
+to the ~::Extracted class using L<Moose::Roles> or for information on how to join
+this role to Data::Walk::Extracted at run time see L<Moose::Util> or 
+L<MooseX::ShortCut::BuildInstance> for more information.
 
 =head1 Attributes
 
@@ -757,20 +721,6 @@ nodes to be skipped.  When a node is skipped the L<print_data
 |/print_data( $arg_ref|%args|$data_ref )> function prints the scalar (perl pointer description)
 of that node.
 
-=head1 GLOBAL VARIABLES
-
-=over
-
-B<$ENV{Smart_Comments}>
-
-The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if the '-ENV'
-option is set.  The 'use' is encapsulated in an if block triggered by an environmental
-variable to comfort non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN
-block will load and turn on smart comment reporting.  There are three levels of 'Smartness'
-available in this module '###',  '####', and '#####'.
-
-=back
-
 =head1 SUPPORT
 
 =over
@@ -783,14 +733,11 @@ L<github Data-Walk-Extracted/issues|https://github.com/jandrew/Data-Walk-Extract
 
 =over
 
-B<1.> Convert from L<Smart::Comments|https://metacpan.org/module/Smart::Comments> debugging
-to L<Log::Shiras|https://metacpan.org/module/Log::Shiras> debugging messages.
+B<1.> Support printing Objects / Instances
 
-B<2.> Support printing Objects / Instances
+B<2.> Support printing CodeRefs
 
-B<3.> Support printing CodeRefs
-
-B<4.> Support REF types
+B<3.> Support REF types
 
 =back
 
@@ -812,13 +759,15 @@ it and/or modify it under the same terms as Perl itself.
 The full text of the license can be found in the
 LICENSE file included with this module.
 
-This software is copyrighted (c) 2013 by Jed Lund.
+This software is copyrighted (c) 2012, 2016 by Jed Lund.
 
 =head1 Dependencies
 
-L<version|https://metacpan.org/module/version>
+L<version>
 
-L<Moose::Role|https://metacpan.org/module/Moose::Role>
+L<utf8>
+
+L<Moose::Role>
 
 =over
 
@@ -836,32 +785,28 @@ B<requires>
 
 =back
 
-L<MooseX::Types::Moose|https://metacpan.org/module/MooseX::Types::Moose>
+L<MooseX::Types::Moose>
 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>
-
-L<Data::Walk::Extracted::Dispatch|https://metacpan.org/module/Data::Walk::Extracted::Dispatch>
+L<Data::Walk::Extracted>
 
 
 =head1 SEE ALSO
 
 =over
 
-L<Smart::Comments|https://metacpan.org/module/Smart::Comments> - is used if the -ENV option is set
+L<Log::Shiras::Unhide> - Can use to unhide '###InternalExtracteDGrafT' tags
 
-L<Data::Walk|https://metacpan.org/module/Data::Walk>
+L<Log::Shiras::TapWarn> - to manage the output of exposed '###InternalExtracteDGrafT' lines
 
-L<Data::Walker|https://metacpan.org/module/Data::Walker>
+L<Data::Dumper> - used in the '###InternalExtracteDGrafT' lines
 
-L<Data::Dumper|https://metacpan.org/module/Data::Dumper> - Dumper
+L<Data::Walk>
 
-L<YAML|https://metacpan.org/module/YAML> - Dump
+L<Data::Walker>
 
-L<Data::Walk::Prune|https://metacpan.org/module/Data::Walk::Prune> - available Data::Walk::Extracted Role
+L<Data::Dumper> - Dumper
 
-L<Data::Walk::Graft|https://metacpan.org/module/Data::Walk::Graft> - available Data::Walk::Extracted Role
-
-L<Data::Walk::Clone|https://metacpan.org/module/Data::Walk::Clone> - available Data::Walk::Extracted Role
+L<YAML> - Dump
 
 =back
 

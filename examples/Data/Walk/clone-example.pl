@@ -1,13 +1,13 @@
 #!perl
-use Moose::Util qw( with_traits );
 use lib '../lib';
 use Data::Walk::Extracted;
 use Data::Walk::Clone;
+use MooseX::ShortCut::BuildInstance qw( build_instance );
 
-my  $dr_nisar_ahmad_wani = with_traits( 
-		'Data::Walk::Extracted', 
-		( 'Data::Walk::Clone',  ) 
-	)->new( 
+my  $dr_nisar_ahmad_wani = build_instance( 
+		package => 'Clone::Camels',
+		superclasses =>['Data::Walk::Extracted'],
+		roles =>[ 'Data::Walk::Clone' ],
 		skip_node_tests =>[  [ 'HASH', 'LowerKey2', 'ALL',   'ALL' ] ],
 	);
 my  $donor_ref = {

@@ -1,18 +1,14 @@
 #!perl
-use Moose::Util qw( with_traits );
 use lib '../lib', 'lib';
 use Data::Walk::Extracted;
 use Data::Walk::Graft;
 use Data::Walk::Print;
+use MooseX::ShortCut::BuildInstance qw( build_instance );
 
-my  $gardener = with_traits( 
-        'Data::Walk::Extracted', 
-        ( 
-            'Data::Walk::Graft', 
-			'Data::Walk::Clone',
-            'Data::Walk::Print',
-        ) 
-    )->new(
+my  $gardener = build_instance( 
+		package => 'Jordan::Porter',
+		superclasses =>['Data::Walk::Extracted'],
+		roles =>[qw( Data::Walk::Graft Data::Walk::Clone Data::Walk::Print )],
 		sorted_nodes =>{
 			HASH => 1,
 		},# For demonstration consistency

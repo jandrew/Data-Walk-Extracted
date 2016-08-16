@@ -1,27 +1,26 @@
 package Data::Walk::Extracted::Dispatch;
-use version; our $VERSION = version->declare('v0.26.18');
+use version; our $VERSION = version->declare('v0.28.0');
+###InternalExtracteDDispatcH	warn "You uncovered internal logging statements for Data::Walk::Extracted::Dispatch-$VERSION" if !$ENV{hide_warn_for_test};
+###InternalExtracteDDispatcH	use Data::Dumper;
+use 5.010;
+use utf8;
 use Moose::Role;
 use Carp qw( confess );
-if( $ENV{ Smart_Comments } ){
-	use Smart::Comments -ENV;
-	### Smart-Comments turned on for Data-Walk-Extracted-Dispatch ...
-}
 
 #########1 private methods    3#########4#########5#########6#########7#########8#########9
 
 sub _dispatch_method{
     my ( $self, $dispatch_ref, $call, @arg_list ) = @_;
-    ### <where> - Made it to _dispatch_method
-    ### <where> - calling: $call
-    #### <where> - for dispatch ref: $dispatch_ref
-    ##### <where> - the passed arguments: @arg_list
+    ###InternalExtracteDDispatcH	warn "Made it to _dispatch_method with call: $call" if !$ENV{hide_warn_for_test};
+    ###InternalExtracteDDispatcH	warn "...for dispatch ref:" . Dumper( $dispatch_ref ) if !$ENV{hide_warn_for_test};
+	###InternalExtracteDDispatcH	warn "...with the passed arguments:" . Dumper( @arg_list ) if !$ENV{hide_warn_for_test};
     if( exists $dispatch_ref->{$call} ){
         my $action  = $dispatch_ref->{$call};
-        ##### <where> - the action is: $call
+        ###InternalExtracteDDispatcH	warn "found the action: $call" if !$ENV{hide_warn_for_test};
         return $self->$action( @arg_list );
     }elsif( exists $dispatch_ref->{DEFAULT} ){
         my $action  = $dispatch_ref->{DEFAULT};
-        ##### <where> - running the DEFAULT action ...
+        ###InternalExtracteDDispatcH	warn "running the DEFAULT action ..." if !$ENV{hide_warn_for_test};
         return $self->$action( @arg_list );
     }else{
 		my 	$dispatch_name =
@@ -29,7 +28,6 @@ sub _dispatch_method{
 					$dispatch_ref->{name} : undef ;
 		my	$string = "Failed to find the '$call' dispatch";
 			$string .= " in the $dispatch_name" if $dispatch_name;
-		### <where> - error string: $string
         confess $string;
     }
 }
@@ -106,26 +104,11 @@ B<Returns:> defined by the dispatch (hash) table
 
 =back
 
-=head1 GLOBAL VARIABLES
-
-=over
-
-=item B<$ENV{Smart_Comments}>
-
-The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if
-the '-ENV' option is set.  The 'use' is encapsulated in an 'if' block triggered
-by an environmental variable to comfort non-believers.  Setting the variable
-$ENV{Smart_Comments} will load and turn on smart comment reporting for this role.
-There are three levels of 'Smartness' available in this module '### #### #####'.
-
-=back
-
 =head1 TODO
 
 =over
 
-B<1.> Add L<Log::Shiras|https://metacpan.org/module/Log::Shiras> debugging in exchange for
-L<Smart::Comments|https://metacpan.org/module/Smart::Comments>
+B<1.> Nothing yet!
 
 =back
 
@@ -155,17 +138,19 @@ it and/or modify it under the same terms as Perl itself.
 The full text of the license can be found in the
 LICENSE file included with this module.
 
-This software is copyrighted (c) 2013 by Jed Lund.
+This software is copyrighted (c) 2013, 2016 by Jed Lund.
 
 =head1 Dependencies
 
 =over
 
-L<version|https://metacpan.org/module/version>
+L<version>
 
-L<Carp|https://metacpan.org/module/Carp>
+L<utf8>
 
-L<Moose::Role|https://metacpan.org/module/Moose::Role>
+L<Carp> - confess
+
+L<Moose::Role>
 
 =back
 
@@ -173,9 +158,11 @@ L<Moose::Role|https://metacpan.org/module/Moose::Role>
 
 =over
 
-L<Smart::Comments|https://metacpan.org/module/Smart::Comments> - is used if the -ENV option is set
+L<Log::Shiras::Unhide> - Can use to unhide '###InternalExtracteDDispatcH' tags
 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>
+L<Log::Shiras::TapWarn> - to manage the output of exposed '###InternalExtracteDDispatcH' lines
+
+L<Data::Walk::Extracted>
 
 =back
 

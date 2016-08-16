@@ -87,9 +87,7 @@ roles in this package.
 	}
 
 	package main;
-	use MooseX::ShortCut::BuildInstance qw(
-			build_instance
-		);
+	use MooseX::ShortCut::BuildInstance qw( build_instance );
 	my 	$AT_ST = build_instance(
 			package		=> 'Greeting',
 			superclasses	=> [ 'Data::Walk::Extracted' ],
@@ -1091,20 +1089,6 @@ track of it's location.
 The passed data references are effectivly deep cloned during this process.  To leave
 the primary_ref pointer intact see L<fixed_primary|/fixed_primary>
 
-=head1 GLOBAL VARIABLES
-
-=over
-
-B<$ENV{Smart_Comments}>
-
-The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if the '-ENV'
-option is set.  The 'use' is encapsulated in an if block triggered by an environmental
-variable to comfort non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN
-block will load and turn on smart comment reporting.  There are three levels of 'Smartness'
-available in this module '###',  '####', and '#####'.
-
-=back
-
 =head1 Build/Install from Source
 
 B<1.> Download a compressed file with the code
@@ -1159,10 +1143,7 @@ B<4.> Add a Data::Walk::Top Role to the package
 
 B<5.> Add a Data::Walk::Thin Role to the package
 
-B<6.> Add a Data::Walk::Substitute Role to the package
-
-B<7.> Add L<Log::Shiras|https://metacpan.org/module/Log::Shiras> debugging in exchange for
-L<Smart::Comments|https://metacpan.org/module/Smart::Comments>
+B<6.> Convert test suite to Test2 direct usage
 
 =back
 
@@ -1184,7 +1165,7 @@ it and/or modify it under the same terms as Perl itself.
 The full text of the license can be found in the
 LICENSE file included with this module.
 
-This software is copyrighted (c) 2013, 2016 by Jed Lund.
+This software is copyrighted (c) 2012, 2016 by Jed Lund.
 
 =head1 Dependencies
 
@@ -1195,15 +1176,25 @@ L<version>
 L<5.010|http://perldoc.perl.org/perl5100delta.html> (for use of
 L<defined or|http://perldoc.perl.org/perlop.html#Logical-Defined-Or> //)
 
+L<utf8>
+
 L<Class::Inspector>
 
 L<Scalar::Util>
 
-L<Carp>
+L<Carp> - confess
 
-L<Moose>
+L<Moose> - 2.1803
 
 L<MooseX::StrictConstructor>
+
+L<MooseX::HasDefaults::RO>
+
+L<MooseX::Types::Moose>
+
+L<Class::Inspector>
+
+L<Scalar::Util> - reftype
 
 L<MooseX::Types::Moose>
 
@@ -1217,7 +1208,9 @@ L<Data::Walk::Extracted::Dispatch>
 
 =over
 
-L<Smart::Comments> - is used if the -ENV option is set
+L<Log::Shiras::Unhide> - Can use to unhide '###InternalExtracteD' tags
+
+L<Log::Shiras::TapWarn> - to manage the output of exposed '###InternalExtracteD' lines
 
 L<Data::Walk>
 

@@ -1,22 +1,15 @@
 package Data::Walk::Graft;
-use version; our $VERSION = version->declare('v0.26.18');
+use version; our $VERSION = version->declare('v0.28.0');
+###InternalExtracteDGrafT	warn "You uncovered internal logging statements for Data::Walk::Graft-$VERSION";
+###InternalExtracteDGrafT	use Data::Dumper;
+use 5.010;
+use utf8;
 use Moose::Role;
-requires
-	'_process_the_data',
-	'_dispatch_method',
-	'_build_branch';
-use	Types::Standard qw(
-		Bool
-		ArrayRef
-		is_ArrayRef
-		HashRef
-		is_HashRef
-	);
+requires qw(
+	_get_had_secondary		_process_the_data			_dispatch_method
+);
+use MooseX::Types::Moose qw( Bool ArrayRef HashRef );
 use Carp qw( cluck );
-if( $ENV{ Smart_Comments } ){
-	use Smart::Comments -ENV;
-	### Smart-Comments turned on for Data-Walk-Graft ...
-}
 
 #########1 Package Variables  3#########4#########5#########6#########7#########8#########9
 
@@ -33,7 +26,6 @@ my $graft_keys = {
 #########1 Public Attributes  3#########4#########5#########6#########7#########8#########9
 
 has 'graft_memory' =>(
-    is			=> 'ro',
     isa			=> Bool,
     writer		=> 'set_graft_memory',
 	reader		=> 'get_graft_memory',
@@ -44,27 +36,25 @@ has 'graft_memory' =>(
 #########1 Public Methods     3#########4#########5#########6#########7#########8#########9
 
 sub graft_data{#Used to convert names
-    ### <where> - Made it to graft_data
-    ##### <where> - Passed input: @_
-    my  $self = $_[0];
-    my  $passed_ref = ( @_ == 2 and is_HashRef( $_[1] ) ) ? $_[1] : { @_[1 .. $#_] } ;
-    ##### <where> - Passed hashref: $passed_ref
+    my ( $self, @args ) = @_;
+    ###InternalExtracteDGrafT	warn "Made it to graft_data with input:" . Dumper( @args );
+    my  $passed_ref = ( @args == 1 and is_HashRef( $args[0] ) ) ? $args[0] : { @args } ;
+    ###InternalExtracteDGrafT	warn "reconciled hashref:" . Dumper( $passed_ref );
 	if( $passed_ref->{scion_ref} ){
 		$passed_ref->{before_method} = '_graft_before_method';
 		$self->_clear_grafted_positions;
-		##### <where> - Start recursive parsing with: $passed_ref
+		###InternalExtracteDGrafT	warn "Start recursive parsing with:" . Dumper( $passed_ref );
 		$passed_ref = $self->_process_the_data( $passed_ref, $graft_keys );
 	}else{
 		cluck "No scion was provided to graft";
 	}
-	### <where> - End recursive parsing with: $passed_ref
+	###InternalExtracteDGrafT	warn "End recursive parsing with:" . Dumper( $passed_ref );
 	return $passed_ref->{tree_ref};
 }
 
 #########1 Private Attributes 3#########4#########5#########6#########7#########8#########9
 
 has '_grafted_positions' =>(
-    is			=> 'ro',
     traits  	=> ['Array'],
     isa     	=> ArrayRef[HashRef],
     handles => {
@@ -80,23 +70,22 @@ has '_grafted_positions' =>(
 
 sub _graft_before_method{
     my ( $self, $passed_ref ) = @_;
-    ### <where> - reached _graft_before_method
-    #### <where> - received input: $passed_ref
+    ###InternalExtracteDGrafT	warn "reached _graft_before_method with input:" . Dumper( $passed_ref );
 	if(	$passed_ref->{primary_type} eq 'SCALAR' and
 		$passed_ref->{primary_ref} eq 'IGNORE' ){
-		### <where> - nothing to see here! IGNOREing ...
+		###InternalExtracteDGrafT	warn "nothing to see here! IGNOREing ...";
 		$passed_ref->{skip} = 'YES';
     }elsif( $self->_check_graft_state( $passed_ref ) ){
-        ### <where> - Found a difference - adding new element ...
-		### <where> - can deep clone: $self->can( 'deep_clone' )
+        ###InternalExtracteDGrafT	warn "Found a difference - adding new element ...";
+		###InternalExtracteDGrafT	warn "can deep clone: " . ( $self->can( 'deep_clone' ) );
 		my 	$clone_value = ( $self->can( 'deep_clone' ) ) ?
 				$self->deep_clone( $passed_ref->{primary_ref} ) :
 				'CRAZY' ;#$passed_ref->{primary_ref} ;
-		### <where> - clone value: $clone_value
+		###InternalExtracteDGrafT	warn "clone value: $clone_value";
 			$passed_ref->{secondary_ref} = $clone_value;
 		if( $self->has_graft_memory ){
-			### <where> - recording the most recent grafted scion ...
-			###  <where> - current branch ref is: $passed_ref->{branch_ref}
+			###InternalExtracteDGrafT	warn "recording the most recent grafted scion ...";
+			###InternalExtracteDGrafT	warn "current branch ref is:" . Dumper( $passed_ref->{branch_ref} );
 			$self->_remember_graft_item(
 				$self->_build_branch(
 					$clone_value,
@@ -104,35 +93,33 @@ sub _graft_before_method{
 					@{$passed_ref->{branch_ref}},
 				)
 			);
-			#### <where> - graft memory: $self->get_grafted_positions
+			###InternalExtracteDGrafT	warn "graft memory:" . Dumper( $self->get_grafted_positions );
 		}else{
-			#### <where> - forget this graft - whats done is done ...
+			###InternalExtracteDGrafT	warn "forget this graft - whats done is done ...";
 		}
-		#~ $wait = <> if $ENV{ special_variable };
         $passed_ref->{skip} = 'YES';
     }else{
-        ### <where> - no action required - continue on
+        ###InternalExtracteDGrafT	warn "no action required - continue on";
     }
-	### <where> - the current passed ref is: $passed_ref
+	###InternalExtracteDGrafT	warn "the current passed ref is:" . Dumper( $passed_ref );
     return $passed_ref;
 }
 
 sub _check_graft_state{
 	my ( $self, $passed_ref ) = @_;
 	my	$answer = 0;
-	### <where> - reached _check_graft_state ...
-	### <where> - passed_ref: $passed_ref
+	###InternalExtracteDGrafT	warn "reached _check_graft_state with passed_ref:" . Dumper( $passed_ref );
 	if( $passed_ref->{match} eq 'NO' ){
-		### <where> - found possible difference ...
+		###InternalExtracteDGrafT	warn "found possible difference ...";
 		if(	( $passed_ref->{primary_type} eq 'SCALAR' ) and
 			$passed_ref->{primary_ref} =~ /IGNORE/i			){
-			### <where> - IGNORE case found ...
+			###InternalExtracteDGrafT	warn "IGNORE case found ...";
 		}else{
-			### <where> - grafting now ...
+			###InternalExtracteDGrafT	warn "grafting now ...";
 			$answer = 1;
 		}
 	}
-	### <where> - the current answer is: $answer
+	###InternalExtracteDGrafT	warn "the current answer is: $answer";
 	return $answer;
 }
 
@@ -154,25 +141,21 @@ Data::Walk::Graft - A way to say what should be added
 =head1 SYNOPSIS
 
 	#!perl
-	use Moose::Util qw( with_traits );
 	use Data::Walk::Extracted;
 	use Data::Walk::Graft;
 	use Data::Walk::Print;
+	use MooseX::ShortCut::BuildInstance qw( build_instance );
 
-	my $gardener = with_traits(
-			'Data::Walk::Extracted',
-			(
-				'Data::Walk::Graft',
-				'Data::Walk::Clone',
-				'Data::Walk::Print',
-			)
-		)->new(
+	my  $gardener = build_instance( 
+			package => 'Jordan::Porter',
+			superclasses =>['Data::Walk::Extracted'],
+			roles =>[qw( Data::Walk::Graft Data::Walk::Clone Data::Walk::Print )],
 			sorted_nodes =>{
 				HASH => 1,
 			},# For demonstration consistency
 			#Until Data::Walk::Extracted and ::Graft support these types
 			#(watch Data-Walk-Extracted on github)
-			skipped_nodes =>{
+			skipped_nodes =>{ 
 				OBJECT => 1,
 				CODEREF => 1,
 			},
@@ -258,25 +241,20 @@ Data::Walk::Graft - A way to say what should be added
 
 =head1 DESCRIPTION
 
-This L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> contains methods for
-adding a new branch ( or three ) to an existing data ref.  The method used to do this is
-L<graft_data|/graft_data( %args|$arg_ref )> using
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>.
-Grafting is accomplished by sending a $scion_ref that has additions that need to be made
-to a $tree_ref.  Anything in the scion ref that does not exist in the tree ref is grafted
-to the tree ref.  I<Anytime the scion_ref is different from the tree_ref the scion_ref branch
-will replace the tree_ref branch!>
+This L<Moose::Role> contains methods for adding a new branch ( or three ) to an existing 
+data ref.  The method used to do this is L<graft_data|/graft_data( %args|$arg_ref )> using
+L<Data::Walk::Extracted>.  Grafting is accomplished by sending a $scion_ref that has 
+additions that need to be made to a $tree_ref.  Anything in the scion ref that does not 
+exist in the tree ref is grafted to the tree ref.  I<Anytime the scion_ref is different 
+from the tree_ref the scion_ref branch will replace the tree_ref branch!>
 
 =head2 USE
 
 This is a L<Moose::Role|https://metacpan.org/module/Moose::Manual::Roles> specifically
 designed to be used with L<Data::Walk::Extracted
-|https://metacpan.org/module/Data::Walk::Extracted#Extending-Data::Walk::Extracted>.
-It can be combined traditionaly to the ~::Extracted class using L<Moose
-|https://metacpan.org/module/Moose::Manual::Roles> methods or for information on how to join
-this role to Data::Walk::Extracted at run time see L<Moose::Util
-|https://metacpan.org/module/Moose::Util> or L<MooseX::ShortCut::BuildInstance
-|https://metacpan.org/module/MooseX::ShortCut::BuildInstance> for more information.
+|Data::Walk::Extracted/Extending Data::Walk::Extracted>.  It can be combined traditionaly 
+to the ~::Extracted class using L<Moose> or at run time. see L<Moose::Util> and 
+L<MooseX::ShortCut::BuildInstance> for more information.
 
 =head2 Deep cloning the graft
 
@@ -284,10 +262,9 @@ In general grafted data refs are subject to external modification by changing th
 in that ref from another location of the code.  This module assumes that you don't want
 to do that!  As a consequence it checks to see if a 'deep_clone' method has been provided to
 the class that consumes this role.  If so it calls that method on the data ref to be
-grafted.  One possiblity is to add the Role L<Data::Walk::Clone
-|https://metacpan.org/module/Data::Walk::Clone> to your object so that a deep_clone method
-is automatically available (all compatability testing complete).  If you choose to add your
-own deep_clone method it will be called like this;
+grafted.  One possiblity is to add the Role L<Data::Walk::Clone> to your object so that 
+a deep_clone method is automatically available (all compatability testing complete).  If 
+you choose to add your own deep_clone method it will be called like this;
 
 	my $clone_value = ( $self->can( 'deep_clone' ) ) ?
 				$self->deep_clone( $scion_ref ) : $scion_ref ;
@@ -297,9 +274,8 @@ Where $self is the active object instance.
 =head2 Grafting unsupported node types
 
 If you want to add data from another ref to a current ref and the add ref contains nodes
-that are not supported then you need to L<skip
-|https://metacpan.org/module/Data::Walk::Extracted#skipped_nodes> those nodes in the
-cloning process.
+that are not supported then you need to L<skip|Data::Walk::Extracted/skipped_nodes> those 
+nodes in the cloning process.
 
 =head1 Attributes
 
@@ -573,15 +549,15 @@ it and/or modify it under the same terms as Perl itself.
 The full text of the license can be found in the
 LICENSE file included with this module.
 
-This software is copyrighted (c) 2013 by Jed Lund.
+This software is copyrighted (c) 2012, 2016 by Jed Lund.
 
 =head1 Dependencies
 
 =over
 
-L<version|https://metacpan.org/module/version>
+L<version>
 
-L<Moose::Role|https://metacpan.org/module/Moose::Role>
+L<Moose::Role>
 
 =over
 
@@ -599,11 +575,13 @@ B<requires>
 
 =back
 
-L<MooseX::Types::Moose|https://metacpan.org/module/MooseX::Types::Moose>
+L<MooseX::Types::Moose>
 
-L<Data::Walk::Extracted|https://metacpan.org/module/Data::Walk::Extracted>
+L<Data::Walk::Extracted>
 
-L<Data::Walk::Extracted::Dispatch|https://metacpan.org/module/Data::Walk::Extracted::Dispatch>
+L<Data::Walk::Extracted::Dispatch>
+
+L<Carp> - cluck
 
 =back
 
@@ -611,19 +589,11 @@ L<Data::Walk::Extracted::Dispatch|https://metacpan.org/module/Data::Walk::Extrac
 
 =over
 
-L<Smart::Comments|https://metacpan.org/module/Smart::Comments> - is used if the -ENV option is set
+L<Log::Shiras::Unhide> - Can use to unhide '###InternalExtracteDGrafT' tags
 
-L<Data::Walk::Clone|https://metacpan.org/module/Data::Walk::Clone> - manufacturers recommendation
+L<Log::Shiras::TapWarn> - to manage the output of exposed '###InternalExtracteDGrafT' lines
 
-L<Data::ModeMerge|https://metacpan.org/module/Data::ModeMerge>
-
-L<Data::Walk|https://metacpan.org/module/Data::Walk>
-
-L<Data::Walker|https://metacpan.org/module/Data::Walker>
-
-L<Data::Walk::Print|https://metacpan.org/module/Data::Walk::Print> - available Data::Walk::Extracted Role
-
-L<Data::Walk::Prune|https://metacpan.org/module/Data::Walk::Prune> - available Data::Walk::Extracted Role
+L<Data::Dumper> - used in the '###InternalExtracteDGrafT' lines
 
 =back
 

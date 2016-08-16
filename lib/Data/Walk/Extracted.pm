@@ -1,26 +1,23 @@
 package Data::Walk::Extracted;
-use	version 0.77; our $VERSION = version->declare('v0.26.18');
-use	5.010;
+use	version 0.77; our $VERSION = version->declare('v0.28.0');
+###InternalExtracteD	warn "You uncovered internal logging statements for Data::Walk::Extracted-$VERSION";
+###InternalExtracteD	use Data::Dumper;
+use 5.010;
+use utf8;
 use	Moose 2.1803;
 use	MooseX::StrictConstructor;
 use	MooseX::HasDefaults::RO;
 use	Class::Inspector;
 use	Scalar::Util qw( reftype );
 use	Carp qw( confess );
-use	Types::Standard qw(
-		Str							is_Str					ArrayRef				is_ArrayRef
-		HashRef					is_HashRef			Int							Bool
-		CodeRef					is_CodeRef			Object					is_Object
+use	MooseX::Types::Moose qw(
+		Str						ArrayRef			HashRef					Int
+		Bool					CodeRef				Object
 	);
-if( $ENV{ Smart_Comments } ){
-	use	Smart::Comments -ENV;
-	### Smart-Comments turned on for Data-Walk-Extracted ...
-}
 use	lib '../../../lib';
-use	Data::Walk::Extracted::Types 0.024 qw(
-		PosInt
-	);
-with 'Data::Walk::Extracted::Dispatch' =>{ -VERSION => 0.026 };
+use Data::Walk::Extracted::Dispatch;
+use	Data::Walk::Extracted::Types qw( PosInt );
+with 'Data::Walk::Extracted::Dispatch';
 
 #########1 Package Variables  3#########4#########5#########6#########7#########8#########9
 
@@ -31,7 +28,7 @@ my 	$data_key_tests = {
 			primary_ref
 		) ],
 		at_least_one => [ qw(
-			before_method
+			before_method	
 			after_method
 		) ],
 		all_possibilities => {
@@ -39,7 +36,7 @@ my 	$data_key_tests = {
 			branch_ref => 1,
 		},
 	};
-# Adding elements from the firts two keys to all ...
+# Adding elements from the first two keys to all ...
 for my $key ( @{$data_key_tests->{required}}, @{$data_key_tests->{at_least_one}} ){
 	$data_key_tests->{all_possibilities}->{$key} = 1;
 }
@@ -49,15 +46,11 @@ my	$base_type_ref ={
 	};
 
 my	@data_key_list = qw(
-		primary_ref
-		secondary_ref
+		primary_ref			secondary_ref
 	);
 
 my	@lower_key_list = qw(
-		primary_type
-		secondary_type
-		match
-		skip
+		primary_type		secondary_type		match				skip
 	);
 
 # This is also the order of type investigaiton testing
@@ -190,6 +183,34 @@ my  $reconstruction_dispatch = {######<-----------------------------  ADD New ty
 		ARRAY 	=> \&_rebuild_array_level,
 	};
 
+#########1 import   2#########3#########4#########5#########6#########7#########8#########9
+
+###InternalExtracteD	sub import {
+###InternalExtracteD	    my( $class, @args ) = @_;
+###InternalExtracteD			
+###InternalExtracteD		# Handle versions (and other nonsense)
+###InternalExtracteD		if( $args[0] and $args[0] =~ /^v?\d+\.?\d*/ ){# Version check since import highjacks the built-in
+###InternalExtracteD			warn "Running version check on version: $args[0]";
+###InternalExtracteD			my $result = $VERSION <=> version->parse( $args[0]);
+###InternalExtracteD			warn "Tested against version -$VERSION- gives result: $result";
+###InternalExtracteD			if( $result < 0 ){
+###InternalExtracteD				confess "Version -$args[0]- requested for Log::Shiras::Switchboard " .
+###InternalExtracteD						"- the installed version is: $VERSION";
+###InternalExtracteD			}
+###InternalExtracteD			shift @args;
+###InternalExtracteD		}
+###InternalExtracteD		if( @args ){
+###InternalExtracteD			confess "Unknown flags passed to Log::Shiras::Switchboard: " . join( ' ', @args );
+###InternalExtracteD		}
+###InternalExtracteD		
+###InternalExtracteD		# Still not sure why this is needed but Unhide wanders off otherwise
+###InternalExtracteD		no warnings 'once';
+###InternalExtracteD		if($Log::Shiras::Unhide::strip_match) {
+###InternalExtracteD			eval 'use Log::Shiras::Unhide';
+###InternalExtracteD		}
+###InternalExtracteD		use warnings 'once';
+###InternalExtracteD	} 
+
 #########1 Public Attributes  3#########4#########5#########6#########7#########8#########9
 
 has 'sorted_nodes' =>(
@@ -309,36 +330,36 @@ has '_single_pass_attributes' =>(
 #########1 Methods for Roles  3#########4#########5#########6#########7#########8#########9
 
 sub _process_the_data{#Used to scrub high level input
-    ### <where> - Made it to _process_the_data
-    ##### <where> - Passed input  : @_
+    ###InternalExtracteD	warn "Made it to _process_the_data";
+    ###InternalExtracteD	warn "Passed input:" . Dumper( @_ );
     my ( $self, $passed_ref, $conversion_ref, ) = @_;
     ### <where> - review the ref keys for requirements and conversion ...
 	my $return_conversion;
 	( $passed_ref, $return_conversion ) =
 		$self->_convert_data( $passed_ref, $conversion_ref );
-	#### <where> - new passed_ref: $passed_ref
+	###InternalExtracteD	warn "new passed_ref:" . Dumper( $passed_ref );
 	$self->_has_required_inputs( $passed_ref, $return_conversion );
 	$passed_ref = $self->_has_at_least_one_input( $passed_ref, $return_conversion );
 	$passed_ref = $self->_manage_the_rest( $passed_ref );
-	##### <where> - Start recursive parsing with: $passed_ref
+	###InternalExtracteD	warn "Start recursive parsing with:" . Dumper( $passed_ref );
 	my $return_ref = $self->_walk_the_data( $passed_ref );
-    ### <where> - convert the data keys back to the role names
+    ###InternalExtracteD	warn "convert the data keys back to the role names";
 	( $return_ref, $conversion_ref ) =
 		$self->_convert_data( $return_ref, $return_conversion );
-    ### <where> - restoring instance clone attributes as needed ...
+    ###InternalExtracteD	warn "restoring instance clone attributes as needed ...";
 	$self->_restore_attributes;
 	$self->_clear_had_secondary;
-	##### <where> - End recursive parsing with: $return_ref
+	###InternalExtracteD	warn "End recursive parsing with:" . Dumper( $return_ref );
     return $return_ref;
 }
 
 sub _build_branch{
     my ( $self, $base_ref, @arg_list ) = @_;
-    ## <where> - Made it to _build_branch ...
-    ### <where> - base ref : $base_ref
-    ##### <where> - the passed arguments  : @arg_list
+    ###InternalExtracteD	warn "Made it to _build_branch ...";
+    ###InternalExtracteD	warn "base ref:" . Dumper( $base_ref );
+    ###InternalExtracteD	warn "the passed arguments:" . Dumper( @arg_list );
 	if( $arg_list[-1]->[3] == 0 ){
-		### <where> - zeroth level found: @arg_list
+		###InternalExtracteD	warn "zeroth level found:" . Dumper( @arg_list );
 		return $base_ref;
 	}elsif( @arg_list ){
         my $current_ref  = pop @arg_list;
@@ -349,10 +370,10 @@ sub _build_branch{
 			$base_ref,
 		);
 		my $answer = $self->_build_branch( $base_ref, @arg_list );
-		### <where> - back up with : $answer
+		###InternalExtracteD	warn "back up with:" . Dumper( $answer );
         return $answer;
     }else{
-		### <where> - reached the bottom - returning: $base_ref
+		###InternalExtracteD	warn "reached the bottom - returning:" . Dumper( $base_ref );
 		return $base_ref;
     }
 
@@ -362,34 +383,32 @@ sub _build_branch{
 
 sub _walk_the_data{
     my( $self, $passed_ref ) = @_;
-    ### <where> - Made it to _walk_the_data
-    ##### <where> - Passed input  : $passed_ref
-	### <where> - running the before_method ...
+    ###InternalExtracteD	warn "Made it to _walk_the_data with input:" . Dumper( $passed_ref );
+	###InternalExtracteD	warn "checking for a before_method ...";
 	if( exists $passed_ref->{before_method} ){
 		my  $before_method = $passed_ref->{before_method};
-		### <where> - role has a before_method: $before_method
+		###InternalExtracteD	warn "role has a before_method:" . Dumper( $before_method );
 		$passed_ref = $self->$before_method( $passed_ref );
-		### <where> - completed before_method
-		#### <where> - the current passed ref is: $passed_ref
+		###InternalExtracteD	warn "completed before_method with current passed ref:" . Dumper( $passed_ref );
 	}else{
-		### <where> - No before_method found
+		###InternalExtracteD	warn "No before_method found";
 	}
-    ### <where> - See if the node should be parsed ...
+    ###InternalExtracteD	warn "See if the node should be parsed ...";
 	my $list_ref;
     if(	$passed_ref->{skip} eq 'YES' ){
-		### <where> - Skip condition identified ...
+		###InternalExtracteD	warn "Skip condition identified ...";
 	}elsif( exists $base_type_ref->{$passed_ref->{primary_type}} ){
-		### <where> - base type identified as: $passed_ref->{primary_type}
+		###InternalExtracteD	warn "base type identified as: $passed_ref->{primary_type}";
 	}else{
-		### <where> - get the lower ref list ...
+		###InternalExtracteD	warn "get the lower ref list ...";
 		$list_ref = $self->_dispatch_method(
 						$node_list_dispatch,
 						$passed_ref->{primary_type},
 						$passed_ref->{primary_ref},
 					);
-		### <where> - sorting the list as needed for: $list_ref
+		###InternalExtracteD	warn "sorting the list as needed for:" . Dumper( $list_ref );
 		if(	$self->check_sorted_node( $passed_ref->{primary_type} ) ){
-			### <where> - The list should be sorted ...
+			###InternalExtracteD	warn "The list should be sorted ...";
 			my $sort_function =
 				( is_CodeRef(
 					$self->_retrieve_sorted_nodes( $passed_ref->{primary_type} )
@@ -398,48 +417,46 @@ sub _walk_the_data{
 					sub{ $a cmp $b } ;
 			$list_ref = [ sort $sort_function @$list_ref ];
 			if( $passed_ref->{primary_type} eq 'ARRAY' ){
-				### <where> - This is an array ref and the array ref will be sorted ...
+				###InternalExtracteD	warn "This is an array ref and the array ref will be sorted ...";
 				$passed_ref->{primary_ref} =
 					[sort $sort_function @{$passed_ref->{primary_ref}}];
 			}
-			##### <where> - sorted list: $list_ref
+			###InternalExtracteD	warn "sorted list:" . Dumper( $list_ref );
 		}
 	}
 	if( $list_ref ){
-		### <where> - climbing up the node tree ...
-		#### <where> - running the list: $list_ref
+		###InternalExtracteD	warn "climbing up the node tree and running the list:" . Dumper( $list_ref );
 		$self->_set_current_level( 1 + $self->_get_current_level );
-		#### <where> - new current level: $self->_get_current_level
+		###InternalExtracteD	warn "new current level:" . Dumper( $self->_get_current_level );
 		my	$lower_ref = $self->_down_load_general( $passed_ref );
-		#### <where> - the core lower ref is: $lower_ref
+		###InternalExtracteD	warn "the core lower ref is:" . Dumper( $lower_ref );
 		my	$x = 0;
 		for my $item ( @{$list_ref} ){
-			### <where> - now parsing: $item
+			###InternalExtracteD	warn "now parsing: $item";
 			delete $lower_ref->{secondary_ref};
 			$lower_ref = 	$self->_get_lower_refs(
 								$passed_ref, $lower_ref, $item,
 								$x, $self->_get_current_level,
 							);
-			#### <where>- lower ref: $lower_ref
+			###InternalExtracteD	warn "lower ref:" . Dumper( $lower_ref );
 			for my $key ( @lower_key_list ){
-				### <where> - working to load: $key
+				###InternalExtracteD	warn "working to load: $key";
 				$lower_ref->{$key} = $self->_dispatch_method(
 					$down_level_tests_dispatch, $key, $lower_ref,
 				);
 			}
-			##### <where> - walking the data: $lower_ref
+			###InternalExtracteD	warn "walking the data:" . Dumper( $lower_ref );
 			$lower_ref = $self->_walk_the_data( $lower_ref );
 			my	$old_branch_ref = pop @{$lower_ref->{branch_ref}};
-			### <where> - pass any data reference adjustments upward ...
-			#### <where> - using branch ref: $old_branch_ref
+			###InternalExtracteD	warn "pass any data reference adjustments with branch ref:" . Dumper( $old_branch_ref );
 			for my $key ( @data_key_list ){
-				### <where> - processing: $key
+				###InternalExtracteD	warn "processing: $key";
 				if( $key eq 'primary_ref' and
 					$self->has_fixed_primary and
 					$self->get_fixed_primary 		){
-					### <where> - the primary ref is fixed and no changes will be passed upwards ...
+					###InternalExtracteD	warn "the primary ref is fixed and no changes will be passed upwards ...";
 				}elsif( exists $lower_ref->{$key} 	){
-					### <where> - a lower ref was identified and will be passed upwards for: $key
+					###InternalExtracteD	warn "a lower ref was identified and will be passed upwards for: $key";
 					$passed_ref = $self->_dispatch_method(
 						$up_ref_dispatch,
 						$old_branch_ref->[0],
@@ -449,33 +466,31 @@ sub _walk_the_data{
 						$lower_ref,
 					);
 				}
-				#### <where> - new passed ref: $passed_ref
+				###InternalExtracteD	warn "new passed ref:" . Dumper( $passed_ref );
 			}
 			$x++;
 		}
-		### <where> - climbing back down the node tree ...
-		#### <where> - current level: $self->_get_current_level
+		###InternalExtracteD	warn "climbing back down the node tree from level:" . Dumper( $self->_get_current_level );
 		$self->_set_current_level( -1 + $self->_get_current_level );
 	}
 
-	### <where> - running the after_method ...
+	###InternalExtracteD	warn "Attempting the after_method ...";
     if( exists $passed_ref->{after_method} ){
         my $after_method = $passed_ref->{after_method};
-        ### <where> - role has an after_method: $after_method
+        ###InternalExtracteD	warn "role has an after_method: $after_method";
         $passed_ref = $self->$after_method( $passed_ref );
-        #### <where> - returned from after_method: $passed_ref
+        ###InternalExtracteD	warn "returned from after_method:" . Dumper( $passed_ref );
     }else{
-        ### <where> - No after_method found
+        ###InternalExtracteD	warn "No after_method found";
     }
-    #### <where> - returning passedref: $passed_ref
+    ###InternalExtracteD	warn "returning passedref:" . Dumper( $passed_ref );
     return $passed_ref;
 }
 
 sub _convert_data{
 	my ( $self, $passed_ref, $conversion_ref, ) = @_;
-	### <where> - reached _convert_data ...
-	#### <where> - conversion ref: $conversion_ref
-	#### <where> - passed ref: $passed_ref
+	###InternalExtracteD	warn "Reached _convert_data with ref:" . Dumper( $conversion_ref );
+	###InternalExtracteD	warn "...for passed ref:" . Dumper( $passed_ref );
 	for my $key ( keys %$conversion_ref ){
 		if( exists $passed_ref->{$key} ){
 			$passed_ref->{$conversion_ref->{$key}} =
@@ -484,17 +499,16 @@ sub _convert_data{
 			delete $passed_ref->{$key};
 		}
 	}
-	### <where> - inverting conversion ref ...
+	###InternalExtracteD	warn "inverting conversion ref ...";
 	my  $return_conversion = { reverse %$conversion_ref };
-	### <where> - passed ref now equals: $passed_ref
+	###InternalExtracteD	warn "passed ref now equals:" . Dumper( $passed_ref );
 	return( $passed_ref, $return_conversion );
 }
 
 sub _has_required_inputs{
     my ( $self, $passed_ref, $lookup_ref, ) = @_;
-    ### <where> - Made it to _has_required_inputs ...
-	##### <where> - Passed ref: $passed_ref
-    ##### <where> - Lookup ref: $lookup_ref
+	###InternalExtracteD	warn "Reached _has_required_inputs with ref:" . Dumper( $lookup_ref );
+	###InternalExtracteD	warn "...for passed ref:" . Dumper( $passed_ref );
     for my $key ( @{$data_key_tests->{required}} ){
 		if( !exists $passed_ref->{$key} ){
 			confess '-' .
@@ -507,9 +521,8 @@ sub _has_required_inputs{
 
 sub _has_at_least_one_input{
     my ( $self, $passed_ref, $lookup_ref ) = @_;
-    ### <where> - Made it to _has_at_least_one_input ...
-    ##### <where> - Passed ref: $passed_ref
-    ##### <where> - Lookup ref: $lookup_ref
+	###InternalExtracteD	warn "Reached _has_at_least_one_input with ref:" . Dumper( $lookup_ref );
+	###InternalExtracteD	warn "...for passed ref:" . Dumper( $passed_ref );
 	my $count;
     for my $key ( @{$data_key_tests->{at_least_one}} ){
 		if( !exists $passed_ref->{$key} ){
@@ -540,19 +553,17 @@ sub _has_at_least_one_input{
 
 sub _manage_the_rest{
     my ( $self, $passed_ref ) = @_;
-    ### <where> - Made it to _manage_the_rest ...
-    ### <where> - Passed ref: $passed_ref
-	### <where> - load a passed branch_ref ...
+	###InternalExtracteD	warn "Reached _manage_the_rest with ref:" . Dumper( $passed_ref );
 	$passed_ref->{branch_ref} =	$self->_main_down_level_branch_ref(
 									$passed_ref->{branch_ref}
 								);
-	### <where> - handle one shot attributes ...
+	###InternalExtracteD	warn "handle one shot attributes ...";
 	my $attributes_at_level = {};
 	for my $key ( keys %$passed_ref ){
 		if( exists $data_key_tests->{all_possibilities}->{$key} ){
 			### <where> - found standard key: $key
 		}elsif( $self->meta->find_attribute_by_name( $key )  ){
-			### <where> - found an attribute: $key
+			###InternalExtracteD	warn "found an attribute: $key";
 			$key =~ /^(_)?([^_].*)/;
 			my ( $predicate, $writer, $reader, $clearer ) =
 					( "has_$2", "set_$2", "get_$2", "clear_$2", );
@@ -560,7 +571,7 @@ sub _manage_the_rest{
 				( $predicate, $writer, $reader, $clearer ) =
 					( "_$predicate", "_$writer", "_$reader", "_$clearer" );
 			}
-			### <where> - Testing for attribute use as a "one-shot" attribute ...
+			###InternalExtracteD	warn 'Testing for attribute use as a "one-shot" attribute ...';
 			for my $method ( $predicate, $reader, $writer, $clearer ){
 				if( $self->can( $method ) ){
 					### <where> - so far so good for: $method
@@ -569,66 +580,64 @@ sub _manage_the_rest{
 						"so one shot attribute test failed";
 				}
 			}
-			### <where> - First save the old settings ...
+			###InternalExtracteD	warn "First save the old settings ...";
 			$attributes_at_level->{$key} = ( $self->$predicate ) ?
 				$self->$reader : undef;
-			### <where> - load the new settings: $passed_ref->{$key}
+			###InternalExtracteD	warn "load the new settings:" . Dumper( $passed_ref->{$key} );
 			$self->$writer( $passed_ref->{$key} );
 			delete $passed_ref->{$key};
 		}else{
 			confess "-$key- is not an accepted hash key value";
 		}
 	}
-	#### <where> - attribute storage: $attributes_at_level
+	###InternalExtracteD	warn "attribute storage:" . Dumper( $attributes_at_level );
 	$self->_add_saved_attribute_level( $attributes_at_level );
-	### <where> - setting the secondary flag as needed ...
+	###InternalExtracteD	warn "setting the secondary flag as needed ...";
 	if( exists $passed_ref->{secondary_ref} ){
 		$self->_set_had_secondary( 1 );
 	}
-	### <where> - setting the remaining keys ...
+	###InternalExtracteD	warn "setting the remaining keys ...";
 	for my $key ( @lower_key_list ){
-		### <where> - working to load: $key
+		###InternalExtracteD	warn "working to load: $key";
 		$passed_ref->{$key} =	$self->_dispatch_method(
 			$down_level_tests_dispatch, $key, $passed_ref,
 		);
 	}
-	#### <where> - current passed ref: $passed_ref
-	##### <where> - self: $self
+	###InternalExtracteD	warn "current passed ref:" . Dumper( $passed_ref );
+	###InternalExtracteD	warn "self:" . Dumper( $self );
     return $passed_ref;
 }
 
 sub _main_down_level_branch_ref{
     my ( $self, $value ) = @_;
-    ### <where> - reached _main_down_level_branch_ref ...
+    ###InternalExtracteD	warn "reached _main_down_level_branch_ref ...";
 	$value //= [ [ 'SCALAR', undef, 0, 0, ] ];
-	#### <where> - using: $value
+	###InternalExtracteD	warn "using: $value";
 	my	$return;
 	map{ push @$return, $_ } @$value;
-	### <where> - returning: $return
+	###InternalExtracteD	warn "returning:" . Dumper( $return );
 	return $return;
 }
 
 sub _get_object_list{
     my ( $self, $data_reference ) = @_;
-    ### <where> - Made it to _get_object_list ...
-	##### <where> - passed reference: $data_reference
+    ###InternalExtracteD	warn "Made it to _get_object_list with reference:" . Dumper( $data_reference );
 	my $list_ref;
 	if( scalar( @{$self->_get_object_attributes( $data_reference )} ) ){
-		### <where> - found attributes ...
+		###InternalExtracteD	warn "found attributes ...";
 		push @$list_ref, 'attributes';
 	}
 	if( scalar( @{$self->_get_object_methods( $data_reference )} ) ){
 		### <where> - found methods ...
 		push @$list_ref, 'methods';
 	}
-	### <where> - final list: $list_ref
+	###InternalExtracteD	warn "final list:" . Dumper( $list_ref );
 	return $list_ref;
 }
 
 sub _down_load_general{
 	my( $self, $upper_ref, ) = @_;
-	### <where> - reached _down_load_general ...
-	#### <where> - upper ref: $upper_ref
+	###InternalExtracteD	warn "reached _down_load_general with upper ref:" . Dumper( $upper_ref );
 	my $lower_ref;
 	for my $key ( keys %$upper_ref ){
 		my $return = 	$self->_dispatch_method(
@@ -636,30 +645,30 @@ sub _down_load_general{
 						);
 		$lower_ref->{$key} = $return if defined $return;
 	}
-	#### <where> - returning lower_ref: $lower_ref
+	###InternalExtracteD	warn "returning lower_ref:" . Dumper(  $lower_ref );
 	return $lower_ref;
 }
 
 sub _restore_attributes{
     my ( $self, ) = @_;
 	my ( $answer, ) = (0, );
-    ### <where> - reached _restore_attributes ...
+    ###InternalExtracteD	warn "reached _restore_attributes ...";
 	my 	$attribute_ref = $self->_get_saved_attribute_level;
 	for my $attribute ( keys %$attribute_ref ){
-		### <where> - restoring: $attribute
+		###InternalExtracteD	warn "restoring: $attribute";
 		$attribute =~ /^(_)?([^_].*)/;
 		my ( $writer, $clearer ) = ( "set_$2", "clear_$2", );
 		if( defined $1 ){
 			( $writer, $clearer ) = ( "_$writer", "_$clearer" );
 		}
-		### <where> - possible clearer: $clearer
-		### <where> - possible writer: $writer
+		###InternalExtracteD	warn "possible clearer: $clearer";
+		###InternalExtracteD	warn "possible writer: $writer";
 		$self->$clearer;
 		if( defined $attribute_ref->{$attribute} ){
-			### <where> - resetting attribute value: $attribute_ref->{$attribute}
+			###InternalExtracteD	warn "resetting attribute value:" . Dumper( $attribute_ref->{$attribute} );
 			$self->$writer( $attribute_ref->{$attribute} );
 		}
-		### <where> - finished restoring: $attribute
+		###InternalExtracteD	warn "finished restoring: $attribute";
 	}
 	return 1;
 }
@@ -676,100 +685,97 @@ sub _item_down_level_type{
 
 sub _extracted_ref_type{
     my ( $self, $ref_key, $passed_ref, ) = @_;
-    ### <where> - made it to _extracted_ref_type ...
+    ###InternalExtracteD	warn "made it to _extracted_ref_type ...";
     my $ref_type;
 	if( exists $passed_ref->{$ref_key} ){
 		$ref_type = ref $passed_ref->{$ref_key};
 		if( exists $discover_type_dispatch->{$ref_type} ){
-			### <where> - confirmed ref: $ref_type
+			###InternalExtracteD	warn "confirmed ref: $ref_type";
 		}else{
 			CHECKALLTYPES: for my $key ( @$supported_type_list ){
-				### <where> - testing: $key
+				###InternalExtracteD	warn "testing: $key";
 				if( $self->_dispatch_method(
 						$discover_type_dispatch,
 						$key,
 						$passed_ref->{$ref_key},
 					) 							){
-					### <where> - found a match for: $key
+					###InternalExtracteD	warn "found a match for: $key";
 					$ref_type = $key;
 					last CHECKALLTYPES;
 				}
-				### <where> - no match ...
+				###InternalExtracteD	warn "no match ...";
 			}
 		}
 	}else{
 		$ref_type = 'DNE';
 	}
-	##### <where> - ref type is: $ref_type
+	###InternalExtracteD	warn "ref type is: $ref_type";
 	if( !$ref_type ){
 		confess "Attempting to parse the unsupported node type -" .
 			( ref $passed_ref ) . "-";
 	}
-    ### <where> - returning: $ref_type
+    ###InternalExtracteD	warn "returning: $ref_type";
     return $ref_type;
 }
 
 sub _ref_matching{
 	my ( $self, $passed_ref, ) = @_;
-	### <where> - reached _ref_matching ...
-	### <where> - matching for type: $passed_ref->{branch_ref}->[-1]->[0]
-	##### <where> - passed items: @_
+	###InternalExtracteD	warn "reached _ref_matching for type: $passed_ref->{branch_ref}->[-1]->[0]";
+	###InternalExtracteD	warn "passed items:" . Dumper( $passed_ref );
 	my	$match = 'NO';
 	if( $passed_ref->{secondary_type} eq 'DNE' ){
-		### <where> - nothing to match ...
+		###InternalExtracteD	warn "nothing to match ...";
 	}elsif( $passed_ref->{secondary_type} ne $passed_ref->{primary_type} ){
-		### <where> - failed a type match ...
+		###InternalExtracteD	warn "failed a type match ...";
 	}else{
-		### <where> - The obvious match issues pass - testing deeper ...
+		###InternalExtracteD	warn "The obvious match issues pass - testing deeper ...";
 		$match = $self->_dispatch_method(
 			$secondary_match_dispatch, $passed_ref->{primary_type},
 			$passed_ref, @{$passed_ref->{branch_ref}->[-1]}[1,2],
 		);
 	}
-	### <where> - returning: $match
+	###InternalExtracteD	warn "returning: $match";
 	return $match;
 }
 
 sub _will_parse_next_ref{
     my ( $self, $passed_ref, ) = @_;
-    ### <where> - Made it to _will_parse_next_ref ...
-    #### <where> - Passed ref: $passed_ref
+    ###InternalExtracteD	warn "Made it to _will_parse_next_ref for ref:" . Dumper( $passed_ref );
 	my  $skip = 'NO';
 	if(	$self->has_skipped_nodes and
 		$self->check_skipped_node( $passed_ref->{primary_type} ) ){
-		### <where> - skipping the current nodetype: $passed_ref->{primary_type}
+		###InternalExtracteD	warn "skipping the current nodetype: $passed_ref->{primary_type}";
 		$skip = 'YES';
 	}elsif($self->has_skip_level and
 			$self->get_skip_level ==
 			( ( $passed_ref->{branch_ref}->[-1]->[3] ) + 1 ) ){
-		### <where> - skipping the level: ( $passed_ref->{branch_ref}->[-1]->[3] + 1 )
+		###InternalExtracteD	warn "skipping the level:" . ( $passed_ref->{branch_ref}->[-1]->[3] + 1 );
 		$skip = 'YES';
 	}elsif( $self->has_skip_node_tests ){
 		my	$current_branch = $passed_ref->{branch_ref}->[-1];
-		### <where> - found skip tests: $self->get_skip_node_tests
+		###InternalExtracteD	warn "found skip tests:" . Dumper( $self->get_skip_node_tests );
 		SKIPNODE: for my $test ( @{$self->get_skip_node_tests} ){
-			### <where> - running test: $test
+			###InternalExtracteD	warn "running test: $test";
 			$skip = $self->_general_skip_node_test(
 						$test, $current_branch,
 					);
 			last SKIPNODE if $skip eq 'YES';
 		}
 	}
-	### <where> - returning skip eq: $skip
+	###InternalExtracteD	warn "returning skip eq: $skip";
 	return $skip;
 }
 
 sub _general_skip_node_test{
     my ( $self, $test_ref, $branch_ref, ) = @_;
 	my	$match_level= 0;
-    ### <where> - reached _general_skip_node_test ...
-	### <where> - test_ref: $test_ref
-	### <where> - branch_ref: $branch_ref
+    ###InternalExtracteD	warn "reached _general_skip_node_test for test_ref:" . Dumper( $test_ref );
+	###InternalExtracteD	warn ".. and branch_ref:" . Dumper( $branch_ref );
 	my $item = $branch_ref->[1];
-	### <where> - item: $item
+	###InternalExtracteD	warn "item:" . Dumper( $item );
 	$match_level++ if
 		(	$test_ref->[0] eq $branch_ref->[0] );
-	### <where> - match level after type match: $match_level
+	###InternalExtracteD	warn "match level after type match: $match_level";
 	$match_level++ if
 		(
 			( $test_ref->[1] eq 'ARRAY' ) or
@@ -781,67 +787,63 @@ sub _general_skip_node_test{
 				)
 			)
 		);
-	### <where> - match level after item match: $match_level
+	###InternalExtracteD	warn "match level after item match: $match_level";
 	$match_level++ if
 		(	$test_ref->[2] =~ /^(any|all)$/i or
 			( 	is_Num( $test_ref->[2] ) and
 				$test_ref->[2] == $branch_ref->[2] ) );
-	### <where> - match level after position match: $match_level
+	###InternalExtracteD	warn "match level after position match: $match_level";
 	$match_level++ if
 		(	$test_ref->[3] =~ /^(any|all)$/i or
 			( 	is_Num( $test_ref->[3] ) and
 				$test_ref->[3] == $branch_ref->[3] ) );
-	### <where> - match level after depth match: $match_level
+	###InternalExtracteD	warn "match level after depth match: $match_level";
 	my	$answer = ( $match_level == 4 ) ? 'YES' : 'NO' ;
-	### <where> - answer: $answer
+	###InternalExtracteD	warn "answer: $answer";
 	return $answer;
 }
 
 sub _get_lower_refs{
 	my ( $self, $upper_ref, $lower_ref, $item, $position, $level ) = @_;
-	### <where> - reached _get_lower_refs ...
-	##### <where> - passed: @_
+	###InternalExtracteD	warn "reached _get_lower_refs for:" . Dumper( @_[1 .. 5] );
 	for my $key ( @data_key_list ){
-		### <where> - running key: $key
+		###InternalExtracteD	warn "running key: $key";
 		my $test = 1;
 		if( $key eq 'secondary_ref' ){
-			###<where> - secondary ref check ...
+			###InternalExtracteD	warn "secondary ref check ...";
 			$test = $self->_dispatch_method(
 						$secondary_ref_exists_dispatch,
 						$upper_ref->{primary_type},
 						$upper_ref, $item, $position,
 					);
-			### <where> - secondary ref exists result: $test
+			###InternalExtracteD	warn "secondary ref exists result: $test";
 		}
 		if(	$test ){
-			### <where> - loading lower ref needed ...
+			###InternalExtracteD	warn "loading lower ref needed ...";
 			$lower_ref->{$key} = $self->_dispatch_method(
 				$sub_ref_dispatch,
 				$upper_ref->{primary_type},
 				$upper_ref->{$key}, $item, $position,
 			);
 		}
-		##### <where> - lower_ref: $lower_ref
+		###InternalExtracteD	warn "lower_ref:" . Dumper( $lower_ref );
 	}
 	push @{$lower_ref->{branch_ref}}, [
 		$upper_ref->{primary_type},
 		$item, $position, $level,
 	];
-	#### <where> - returning: $lower_ref
+	###InternalExtracteD	warn "returning:" . Dumper( $lower_ref );
 	return $lower_ref;
 }
 
 sub _get_object_element{
     my ( $self, $data_reference, $item, $position, ) = @_;
-    ### <where> - Made it to _get_object_attributes ...
-	#### <where> - data reference: $data_reference
-	#### <where> - data reference: $item
-	#### <where> - data reference: $position
+    ###InternalExtracteD	warn "Made it to _get_object_attributes for:" . Dumper( @_[1 .. 3] );
 	my $item_ref;
 	if( $item eq 'attributes' ){
 		my $scalar_util_val = reftype( $data_reference );
 		$scalar_util_val //= 'DEFAULT';
-		### <where> - Scalar-Util-reftype: $scalar_util_val
+		###InternalExtracteD	warn "Scalar-Util-reftype: $scalar_util_val";
 		$item_ref = $self->_dispatch_method(
 			$object_extraction_dispatch,
 			$scalar_util_val,
@@ -854,45 +856,43 @@ sub _get_object_element{
 	}else{
 		confess "Get -$item- element not written yet";
 	}
-	### <where> - the attribute list is: $item_ref
+	###InternalExtracteD	warn "the attribute list is:" . Dumper( $item_ref );
 	return $item_ref;
 }
 
 sub _load_hash_up{
     my ( $self, $key, $branch_ref_item, $passed_ref, $lower_passed_ref, ) = @_;
-    ### <where> - Made it to _load_hash_up for the: $key
-	### <where> - the branch ref is: $branch_ref_item
-	##### <where> - passed info: @_
+    ###InternalExtracteD	warn "Made it to _load_hash_up for the: $key";
+	###InternalExtracteD	warn "the branch ref is:" . Dumper( $branch_ref_item );
+	###InternalExtracteD	warn "additional passed info:" . Dumper( @_[3, 4] );
 	$passed_ref->{$key}->{$branch_ref_item->[1]} =
 		$lower_passed_ref->{$key};
-	##### <where> - the new passed_ref is: $passed_ref
+	###InternalExtracteD	warn "the new passed_ref is:" . Dumper( $passed_ref );
 	return $passed_ref;
 }
 
 sub _load_array_up{
     my ( $self, $key, $branch_ref_item, $passed_ref, $lower_passed_ref, ) = @_;
-    ### <where> - Made it to _load_array_up for the: $key
-	### <where> - the branch ref is: $branch_ref_item
-	##### <where> - lower ref: $lower_passed_ref
+    ###InternalExtracteD	warn "Made it to _load_array_up for the: $key";
+	###InternalExtracteD	warn "the branch ref is:" . Dumper( $branch_ref_item );
+	###InternalExtracteD	warn "lower ref:". Dumper( $lower_passed_ref );
 	$passed_ref->{$key}->[$branch_ref_item->[2]] =
 		$lower_passed_ref->{$key};
-	##### <where> - the new passed_ref is: $passed_ref
+	###InternalExtracteD	warn "the new passed_ref is:" . Dumper( $passed_ref );
 	return $passed_ref;
 }
 
 sub _rebuild_hash_level{
     my ( $self, $item_ref, $base_ref, ) = @_;
-    ### <where> - Made it to _rebuild_hash_level
-    ### <where> - item ref  : $item_ref
-    ### <where> - base ref  : $base_ref
+	###InternalExtracteD	warn "Made it to _rebuild_hash_level for item ref:" . Dumper(  $item_ref );
+    ###InternalExtracteD	warn ".. and base ref:" . Dumper( $base_ref );
 	return { $item_ref->[1] => $base_ref };
 }
 
 sub _rebuild_array_level{
     my ( $self, $item_ref, $base_ref, ) = @_;
-    ### <where> - Made it to _rebuild_array_level
-    ### <where> - item ref  : $item_ref
-    ### <where> - base ref  : $base_ref
+    ###InternalExtracteD	warn "Made it to _rebuild_array_level for item ref:" . Dumper(  $item_ref );
+    ###InternalExtracteD	warn ".. and base ref:" . Dumper( $base_ref );
 	my  $array_ref = [];
 	$array_ref->[$item_ref->[2]] = $base_ref;
 	return $array_ref;
@@ -997,9 +997,7 @@ roles in this package.
 	}
 
 	package main;
-	use MooseX::ShortCut::BuildInstance qw(
-			build_instance
-		);
+	use MooseX::ShortCut::BuildInstance qw( build_instance );
 	my 	$AT_ST = build_instance(
 			package		=> 'Greeting',
 			superclasses	=> [ 'Data::Walk::Extracted' ],
@@ -2001,20 +1999,6 @@ track of it's location.
 The passed data references are effectivly deep cloned during this process.  To leave
 the primary_ref pointer intact see L<fixed_primary|/fixed_primary>
 
-=head1 GLOBAL VARIABLES
-
-=over
-
-B<$ENV{Smart_Comments}>
-
-The module uses L<Smart::Comments|https://metacpan.org/module/Smart::Comments> if the '-ENV'
-option is set.  The 'use' is encapsulated in an if block triggered by an environmental
-variable to comfort non-believers.  Setting the variable $ENV{Smart_Comments} in a BEGIN
-block will load and turn on smart comment reporting.  There are three levels of 'Smartness'
-available in this module '###',  '####', and '#####'.
-
-=back
-
 =head1 Build/Install from Source
 
 B<1.> Download a compressed file with the code
@@ -2069,10 +2053,7 @@ B<4.> Add a Data::Walk::Top Role to the package
 
 B<5.> Add a Data::Walk::Thin Role to the package
 
-B<6.> Add a Data::Walk::Substitute Role to the package
-
-B<7.> Add L<Log::Shiras|https://metacpan.org/module/Log::Shiras> debugging in exchange for
-L<Smart::Comments|https://metacpan.org/module/Smart::Comments>
+B<6.> Convert test suite to Test2 direct usage
 
 =back
 
@@ -2094,7 +2075,7 @@ it and/or modify it under the same terms as Perl itself.
 The full text of the license can be found in the
 LICENSE file included with this module.
 
-This software is copyrighted (c) 2013, 2016 by Jed Lund.
+This software is copyrighted (c) 2012, 2016 by Jed Lund.
 
 =head1 Dependencies
 
@@ -2105,15 +2086,25 @@ L<version>
 L<5.010|http://perldoc.perl.org/perl5100delta.html> (for use of
 L<defined or|http://perldoc.perl.org/perlop.html#Logical-Defined-Or> //)
 
+L<utf8>
+
 L<Class::Inspector>
 
 L<Scalar::Util>
 
-L<Carp>
+L<Carp> - confess
 
-L<Moose>
+L<Moose> - 2.1803
 
 L<MooseX::StrictConstructor>
+
+L<MooseX::HasDefaults::RO>
+
+L<MooseX::Types::Moose>
+
+L<Class::Inspector>
+
+L<Scalar::Util> - reftype
 
 L<MooseX::Types::Moose>
 
@@ -2127,7 +2118,9 @@ L<Data::Walk::Extracted::Dispatch>
 
 =over
 
-L<Smart::Comments> - is used if the -ENV option is set
+L<Log::Shiras::Unhide> - Can use to unhide '###InternalExtracteD' tags
+
+L<Log::Shiras::TapWarn> - to manage the output of exposed '###InternalExtracteD' lines
 
 L<Data::Walk>
 

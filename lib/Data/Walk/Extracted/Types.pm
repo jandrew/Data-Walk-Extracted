@@ -1,18 +1,15 @@
 package Data::Walk::Extracted::Types;
-use version; our $VERSION = version->declare('v0.26.18');
+use version; our $VERSION = version->declare('v0.28.0');
+use 5.010;
+use utf8;
 use strict;
 use warnings;
-use Type::Utils -all;
-use Type::Library
-	-base,
-	-declare => qw(
-		PosInt
-	);
-use Types::Standard -types;
+use MooseX::Types::Moose qw( Int );
+use MooseX::Types -declare => [qw( PosInt )];
 
 #########1 SubType Library    3#########4#########5#########6#########7#########8#########9
 
-declare PosInt, as Int,
+subtype PosInt, as Int,
     where{ $_ >= 0 },
     message{ "$_ is not a positive integer" };
 
@@ -115,15 +112,19 @@ it and/or modify it under the same terms as Perl itself.
 The full text of the license can be found in the
 LICENSE file included with this module.
 
+This software is copyrighted (c) 2013, 2016 by Jed Lund.
+
 =head1 DEPENDENCIES
 
 =over
 
-L<version|https://metacpan.org/module/version>
+L<version>
 
-L<MooseX::Types|https://metacpan.org/module/MooseX::Types>
+L<utf8>
 
-L<MooseX::Types::Moose|https://metacpan.org/module/MooseX::Types::Moose>
+L<MooseX::Types>
+
+L<MooseX::Types::Moose>
 
 =back
 
@@ -131,7 +132,7 @@ L<MooseX::Types::Moose|https://metacpan.org/module/MooseX::Types::Moose>
 
 =over
 
-L<MooseX::Types::Perl|https://metacpan.org/module/MooseX::Types::Perl>
+L<MooseX::Types::Perl>
 
 =back
 

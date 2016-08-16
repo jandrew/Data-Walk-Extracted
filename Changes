@@ -7,8 +7,13 @@ Revision history for Data-Walk-Extracted
 	* Place holder
 
 {{$NEXT}}
-
+	
 	* Another cool change
+
+v0.28.0   2016-08-16 10:22:01-07:00 America/Los_Angeles
+
+	+ Integrated with Log::Shiras::Unhide
+	! Moved back to MooseX::Types::Moose Types so the Exporter works better
 
 v0.26.18  2016-07-05 13:03:08-07:00 America/Los_Angeles
 
